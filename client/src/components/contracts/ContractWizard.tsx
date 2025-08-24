@@ -93,7 +93,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
       weeklyHours: initialData?.weeklyHours || 40,
       startDate: initialData?.startDate || "",
       endDate: initialData?.endDate || "",
-      byDay: initialData?.recurrence.byDay || [],
+      byDay: initialData?.recurrence.byDay || ['MON', 'TUE', 'WED', 'THU', 'FRI'],
       defaultStart: initialData?.recurrence.defaultStart || "07:00",
       defaultEnd: initialData?.recurrence.defaultEnd || "19:00",
     },
@@ -356,38 +356,6 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
             {/* Step 2: Schedule */}
             {currentStep === 2 && (
               <div className="space-y-6" data-testid="step-contract-schedule">
-                <FormField
-                  control={form.control}
-                  name="byDay"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Working Days *</FormLabel>
-                      <FormControl>
-                        <div className="grid grid-cols-2 gap-4">
-                          {DAYS_OF_WEEK.map((day) => (
-                            <div key={day.value} className="flex items-center space-x-2">
-                              <Checkbox
-                                checked={field.value?.includes(day.value)}
-                                onCheckedChange={(checked) => {
-                                  const currentValue = field.value || [];
-                                  if (checked) {
-                                    field.onChange([...currentValue, day.value]);
-                                  } else {
-                                    field.onChange(currentValue.filter((d) => d !== day.value));
-                                  }
-                                }}
-                                data-testid={`checkbox-day-${day.value.toLowerCase()}`}
-                              />
-                              <label className="text-sm font-medium">{day.label}</label>
-                            </div>
-                          ))}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 <div className="grid grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
@@ -425,6 +393,38 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="byDay"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Working Days *</FormLabel>
+                      <FormControl>
+                        <div className="grid grid-cols-2 gap-4">
+                          {DAYS_OF_WEEK.map((day) => (
+                            <div key={day.value} className="flex items-center space-x-2">
+                              <Checkbox
+                                checked={field.value?.includes(day.value)}
+                                onCheckedChange={(checked) => {
+                                  const currentValue = field.value || [];
+                                  if (checked) {
+                                    field.onChange([...currentValue, day.value]);
+                                  } else {
+                                    field.onChange(currentValue.filter((d) => d !== day.value));
+                                  }
+                                }}
+                                data-testid={`checkbox-day-${day.value.toLowerCase()}`}
+                              />
+                              <label className="text-sm font-medium">{day.label}</label>
+                            </div>
+                          ))}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             )}
 
