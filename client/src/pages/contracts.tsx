@@ -1,10 +1,18 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, FileText } from "lucide-react";
+import { Plus, FileText, Filter } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { ContractCard } from "@/components/contracts/ContractCard";
 import { ContractWizard } from "@/components/contracts/ContractWizard";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageLoader } from "@/components/ui/loader";
 import { contractApi } from "@/api/mock";
@@ -15,14 +23,45 @@ import { Contract } from "@/types";
 export default function ContractsPage() {
   const [showContractWizard, setShowContractWizard] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | undefined>();
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('facility');
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: contracts = [], isLoading } = useQuery({
+  const { data: allContracts = [], isLoading } = useQuery({
     queryKey: ['/api/contracts'],
     queryFn: () => contractApi.listContracts(),
   });
+
+  const contracts = useMemo(() => {
+    let filtered = [...allContracts];
+    
+    // Filter by status
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(contract => contract.status === statusFilter);
+    }
+    
+    // Sort contracts
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'facility':
+          return a.facility.localeCompare(b.facility);
+        case 'role':
+          return a.role.localeCompare(b.role);
+        case 'startDate':
+          return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+        case 'endDate':
+          return new Date(a.endDate).getTime() - new Date(b.endDate).getTime();
+        case 'status':
+          return a.status.localeCompare(b.status);
+        default:
+          return 0;
+      }
+    });
+    
+    return filtered;
+  }, [allContracts, statusFilter, sortBy]);
 
   const createContractMutation = useMutation({
     mutationFn: (contractData: Omit<Contract, 'id'>) => contractApi.createContract(contractData),
@@ -106,6 +145,54 @@ export default function ContractsPage() {
       />
 
       <div className="lg:px-8 px-4 py-6">
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Filters</span>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4 flex-1">
+                <div className="min-w-0 sm:w-48">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger data-testid="select-status-filter">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="planned">Planned</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="archive">Archive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="min-w-0 sm:w-48">
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger data-testid="select-sort-by">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="facility">Sort by Facility</SelectItem>
+                      <SelectItem value="role">Sort by Role</SelectItem>
+                      <SelectItem value="startDate">Sort by Start Date</SelectItem>
+                      <SelectItem value="endDate">Sort by End Date</SelectItem>
+                      <SelectItem value="status">Sort by Status</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="text-sm text-gray-500">
+                {contracts.length} contract{contracts.length !== 1 ? 's' : ''}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Contracts List */}
         {contracts.length > 0 ? (
           <div className="space-y-4">
