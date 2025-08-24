@@ -135,7 +135,7 @@ export default function ExpensesPage() {
 
       <div className="lg:px-8 px-4 py-6">
         {/* Expenses Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-4 mb-6">
           <StatCard
             label="Total This Month"
             value={formatCurrency(stats.totalMonth)}
