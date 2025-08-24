@@ -166,15 +166,17 @@ export function CalendarWeekView({ currentDate, events, onDateChange, onDayClick
               return (
                 <div
                   key={date.toISOString()}
-                  className="p-2 border-r border-gray-200 last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors"
+                  className={`p-2 border-r border-gray-200 last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors relative ${
+                    isToday(date) ? "bg-blue-100 border-2 border-blue-500" : ""
+                  }`}
                   onClick={() => onDayClick(dateStr)}
                   data-testid={`day-${dateStr}`}
                 >
                   <div className="flex flex-col h-full">
                     <div className="flex items-center justify-between mb-1">
-                      <span className={`text-sm font-medium ${
+                      <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-semibold ${
                         isToday(date) 
-                          ? 'text-white bg-primary rounded-full w-6 h-6 flex items-center justify-center' 
+                          ? 'bg-blue-500 text-white shadow-md' 
                           : isCurrentMonth(date) 
                             ? 'text-gray-900' 
                             : 'text-gray-400'
