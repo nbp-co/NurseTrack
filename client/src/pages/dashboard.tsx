@@ -110,8 +110,8 @@ export default function DashboardPage() {
       />
 
       <div className="lg:px-8 px-4 py-6">
-        {/* Weekly Stats Row */}
-        <div className="grid grid-cols-1 gap-4 mb-8">
+        {/* Weekly and Monthly Stats Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -140,15 +140,6 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Summary Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-          <StatCard
-            label="Active Contracts"
-            value={dashboardStats.activeContracts}
-            icon={<BarChart3 className="w-6 h-6 text-primary" />}
-          />
           
           <Card>
             <CardContent className="p-6">
@@ -183,9 +174,17 @@ export default function DashboardPage() {
         {/* Recent Shifts */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold text-gray-900">
-              Recent Shifts
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Recent Shifts
+              </CardTitle>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <BarChart3 className="w-4 h-4 text-primary" />
+                <span data-testid="text-active-contracts-label">
+                  {dashboardStats.activeContracts} Active Contracts
+                </span>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             {recentShifts.length > 0 ? (
