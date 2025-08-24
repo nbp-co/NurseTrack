@@ -143,24 +143,41 @@ export default function DashboardPage() {
         </div>
 
         {/* Summary Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           <StatCard
             label="Active Contracts"
             value={dashboardStats.activeContracts}
             icon={<BarChart3 className="w-6 h-6 text-primary" />}
           />
           
-          <StatCard
-            label="Monthly Earnings"
-            value={formatCurrency(dashboardStats.monthlyEarnings)}
-            icon={<DollarSign className="w-6 h-6 text-success-500" />}
-          />
-          
-          <StatCard
-            label="Hours This Month"
-            value={dashboardStats.hoursWorked}
-            icon={<Clock className="w-6 h-6 text-warning-500" />}
-          />
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600" data-testid="text-monthly-label">
+                    This Month
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-warning-500" />
+                      <p className="text-2xl font-bold text-gray-900" data-testid="text-monthly-hours">
+                        {dashboardStats.hoursWorked} hours
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-success-500" />
+                      <p className="text-2xl font-bold text-gray-900" data-testid="text-monthly-earnings">
+                        {formatCurrency(dashboardStats.monthlyEarnings)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Recent Shifts */}
