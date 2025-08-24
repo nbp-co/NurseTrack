@@ -83,42 +83,46 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
               </Badge>
             </div>
             
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-              <div>
-                <p className="text-gray-500 flex items-center">
-                  <DollarSign className="w-4 h-4 mr-1" />
-                  OT Rate
-                </p>
-                <p className="font-medium text-gray-900" data-testid={`text-contract-ot-rate-${contract.id}`}>
-                  {contract.overtimeRate ? `${formatCurrency(contract.overtimeRate)}/hour` : 'N/A'}
-                </p>
+            <div className="grid grid-cols-2 gap-6 text-sm">
+              <div className="space-y-3">
+                <div>
+                  <p className="text-gray-500 flex items-center">
+                    <Calendar className="w-4 h-4 mr-1" />
+                    Duration
+                  </p>
+                  <p className="font-medium text-gray-900" data-testid={`text-contract-duration-${contract.id}`}>
+                    {formatDateRange(contract.startDate, contract.endDate)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 flex items-center">
+                    <Clock className="w-4 h-4 mr-1" />
+                    HRS/WK
+                  </p>
+                  <p className="font-medium text-gray-900" data-testid={`text-contract-hours-${contract.id}`}>
+                    {contract.weeklyHours} hours
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-gray-500 flex items-center">
-                  <DollarSign className="w-4 h-4 mr-1" />
-                  Base Rate
-                </p>
-                <p className="font-medium text-gray-900" data-testid={`text-contract-rate-${contract.id}`}>
-                  {formatCurrency(contract.baseRate)}/{contract.payType === 'hourly' ? 'hour' : 'salary'}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-500 flex items-center">
-                  <Calendar className="w-4 h-4 mr-1" />
-                  Duration
-                </p>
-                <p className="font-medium text-gray-900" data-testid={`text-contract-duration-${contract.id}`}>
-                  {formatDateRange(contract.startDate, contract.endDate)}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-500 flex items-center">
-                  <Clock className="w-4 h-4 mr-1" />
-                  HRS/WK
-                </p>
-                <p className="font-medium text-gray-900" data-testid={`text-contract-hours-${contract.id}`}>
-                  {contract.weeklyHours} hours
-                </p>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-gray-500 flex items-center">
+                    <DollarSign className="w-4 h-4 mr-1" />
+                    Base Rate
+                  </p>
+                  <p className="font-medium text-gray-900" data-testid={`text-contract-rate-${contract.id}`}>
+                    {formatCurrency(contract.baseRate)}/{contract.payType === 'hourly' ? 'hour' : 'salary'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 flex items-center">
+                    <DollarSign className="w-4 h-4 mr-1" />
+                    OT Rate
+                  </p>
+                  <p className="font-medium text-gray-900" data-testid={`text-contract-ot-rate-${contract.id}`}>
+                    {contract.overtimeRate ? `${formatCurrency(contract.overtimeRate)}/hour` : 'N/A'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
