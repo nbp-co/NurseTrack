@@ -178,10 +178,9 @@ export default function DashboardPage() {
               <CardTitle className="text-lg font-semibold text-gray-900">
                 Recent Shifts
               </CardTitle>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <BarChart3 className="w-4 h-4 text-primary" />
+              <div className="text-sm text-gray-600">
                 <span data-testid="text-active-contracts-label">
-                  {dashboardStats.activeContracts} Active Contracts
+                  {dashboardStats.activeContracts} Active Contract{dashboardStats.activeContracts !== 1 ? 's' : ''}
                 </span>
               </div>
             </div>
