@@ -42,8 +42,18 @@ export default function ContractsPage() {
       filtered = filtered.filter(contract => contract.status === statusFilter);
     }
     
-    // Sort contracts
+    // Sort contracts - Active always on top
     filtered.sort((a, b) => {
+      // First priority: Active contracts always on top
+      const statusPriority = { 'active': 0, 'planned': 1, 'completed': 2, 'archive': 3 };
+      const aStatusPriority = statusPriority[a.status as keyof typeof statusPriority] ?? 4;
+      const bStatusPriority = statusPriority[b.status as keyof typeof statusPriority] ?? 4;
+      
+      if (aStatusPriority !== bStatusPriority) {
+        return aStatusPriority - bStatusPriority;
+      }
+      
+      // Secondary sort by selected criteria within same status
       switch (sortBy) {
         case 'facility':
           return a.facility.localeCompare(b.facility);
