@@ -84,6 +84,7 @@ export function CalendarMonth({ currentDate, events, onDateChange, onDayClick, u
     onDateChange(today);
   };
 
+
   const formatShiftDate = (dateStr: string) => {
     const date = new Date(dateStr);
     const today = new Date();
@@ -105,6 +106,7 @@ export function CalendarMonth({ currentDate, events, onDateChange, onDayClick, u
 
   // Get next 3 upcoming shifts
   const nextThreeShifts = upcomingShifts.slice(0, 3);
+
 
   return (
     <div>

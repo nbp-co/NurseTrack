@@ -46,8 +46,10 @@ export default function LoginPage() {
   const handleSubmit = async (data: LoginFormData) => {
     try {
       await login(data.email, data.password);
+
       // Show welcome dialog instead of navigating immediately
       setShowWelcomeDialog(true);
+
     } catch (error) {
       toast({
         title: "Login failed",

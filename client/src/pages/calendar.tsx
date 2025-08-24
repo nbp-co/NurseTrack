@@ -104,6 +104,7 @@ export default function CalendarPage() {
       .slice(0, 5);
   }, [shifts]);
 
+
   const nextThreeShifts = useMemo(() => {
     const today = new Date();
     const nextMonth = new Date(today);
@@ -117,6 +118,7 @@ export default function CalendarPage() {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .slice(0, 3);
   }, [shifts]);
+
 
   const handleDayClick = (date: string) => {
     setSelectedDate(date);
