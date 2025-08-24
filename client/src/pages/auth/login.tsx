@@ -44,7 +44,7 @@ export default function LoginPage() {
   const handleSubmit = async (data: LoginFormData) => {
     try {
       await login(data.email, data.password);
-      setLocation("/contracts");
+      setLocation("/dashboard");
       toast({
         title: "Welcome back!",
         description: "You have been successfully logged in.",
