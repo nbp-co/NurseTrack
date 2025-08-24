@@ -401,7 +401,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                     <FormItem>
                       <FormLabel>Working Days *</FormLabel>
                       <FormControl>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                           {DAYS_OF_WEEK.map((day) => (
                             <div key={day.value} className="flex items-center space-x-2">
                               <Checkbox
