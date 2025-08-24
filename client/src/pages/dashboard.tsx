@@ -115,19 +115,13 @@ export default function DashboardPage() {
           <StatCard
             label="This Week"
             value={`${dashboardStats.weeklyStats.hours} hours`}
-            subtext={`${Math.max(0, 40 - dashboardStats.weeklyStats.hours)} hours remaining`}
             icon={<Clock className="w-6 h-6 text-primary" />}
-            trend={dashboardStats.weeklyStats.hours > 32 ? "up" : "neutral"}
-            trendColor="success"
           />
           
           <StatCard
             label="Weekly Earnings"
             value={formatCurrency(dashboardStats.weeklyStats.earnings)}
-            subtext="12% vs last week"
             icon={<DollarSign className="w-6 h-6 text-success-500" />}
-            trend="up"
-            trendColor="success"
           />
         </div>
 
@@ -136,28 +130,19 @@ export default function DashboardPage() {
           <StatCard
             label="Active Contracts"
             value={dashboardStats.activeContracts}
-            subtext="12% from last month"
             icon={<BarChart3 className="w-6 h-6 text-primary" />}
-            trend="up"
-            trendColor="success"
           />
           
           <StatCard
             label="Monthly Earnings"
             value={formatCurrency(dashboardStats.monthlyEarnings)}
-            subtext="8% from last month"
             icon={<DollarSign className="w-6 h-6 text-success-500" />}
-            trend="up"
-            trendColor="success"
           />
           
           <StatCard
             label="Hours This Month"
             value={dashboardStats.hoursWorked}
-            subtext="2 hours under target"
             icon={<Clock className="w-6 h-6 text-warning-500" />}
-            trend="neutral"
-            trendColor="warning"
           />
         </div>
 
