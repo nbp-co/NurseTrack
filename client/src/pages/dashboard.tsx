@@ -111,18 +111,35 @@ export default function DashboardPage() {
 
       <div className="lg:px-8 px-4 py-6">
         {/* Weekly Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-          <StatCard
-            label="This Week"
-            value={`${dashboardStats.weeklyStats.hours} hours`}
-            icon={<Clock className="w-6 h-6 text-primary" />}
-          />
-          
-          <StatCard
-            label="Weekly Earnings"
-            value={formatCurrency(dashboardStats.weeklyStats.earnings)}
-            icon={<DollarSign className="w-6 h-6 text-success-500" />}
-          />
+        <div className="grid grid-cols-1 gap-4 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600" data-testid="text-weekly-label">
+                    This Week
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-primary" />
+                      <p className="text-2xl font-bold text-gray-900" data-testid="text-weekly-hours">
+                        {dashboardStats.weeklyStats.hours} hours
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-success-500" />
+                      <p className="text-2xl font-bold text-gray-900" data-testid="text-weekly-earnings">
+                        {formatCurrency(dashboardStats.weeklyStats.earnings)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Summary Stats Row */}
