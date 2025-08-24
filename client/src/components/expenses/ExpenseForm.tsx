@@ -92,7 +92,7 @@ export function ExpenseForm({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-[425px]" data-testid="dialog-expense-form">
         <DialogHeader>
           <DialogTitle data-testid="text-expense-form-title">
