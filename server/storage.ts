@@ -172,6 +172,8 @@ export class MemStorage implements IStorage {
       ...expenseData, 
       id, 
       note: expenseData.note || null,
+      contractId: expenseData.contractId || null,
+      deductible: expenseData.deductible || false,
       createdAt: new Date() 
     };
     this.expenses.set(id, expense);
