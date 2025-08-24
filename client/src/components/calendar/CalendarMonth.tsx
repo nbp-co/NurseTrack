@@ -200,9 +200,6 @@ export function CalendarMonth({ currentDate, events, onDateChange, onDayClick, u
                 onClick={() => onDayClick(day.dateString)}
                 data-testid={`cell-calendar-day-${day.dateString}`}
               >
-                {day.isToday && (
-                  <div className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full"></div>
-                )}
                 <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-semibold ${
                   day.isToday 
                     ? "bg-blue-500 text-white shadow-md" 
