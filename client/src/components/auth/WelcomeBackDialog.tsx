@@ -46,8 +46,16 @@ export function WelcomeBackDialog({ open, onOpenChange }: WelcomeBackDialogProps
     setLocation(path);
   };
 
+  const handleDialogClose = (open: boolean) => {
+    if (!open) {
+      // When dialog is closed (including X button), navigate to dashboard
+      setLocation('/dashboard');
+    }
+    onOpenChange(open);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogClose}>
       <DialogContent className="sm:max-w-[500px] bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200" data-testid="dialog-welcome-back">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-2">
