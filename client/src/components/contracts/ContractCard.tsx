@@ -8,9 +8,10 @@ interface ContractCardProps {
   contract: Contract;
   onEdit: () => void;
   onViewDetails?: () => void;
+  shiftsCount?: number;
 }
 
-export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardProps) {
+export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 }: ContractCardProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -24,10 +25,12 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
     
     return `${start.toLocaleDateString('en-US', { 
       month: 'short', 
-      day: 'numeric' 
+      day: 'numeric', 
+      year: 'numeric'
     })} - ${end.toLocaleDateString('en-US', { 
       month: 'short', 
-      day: 'numeric' 
+      day: 'numeric', 
+      year: 'numeric' 
     })}`;
   };
 
@@ -80,16 +83,7 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
               </Badge>
             </div>
             
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-              <div>
-                <p className="text-gray-500 flex items-center">
-                  <Calendar className="w-4 h-4 mr-1" />
-                  Role
-                </p>
-                <p className="font-medium text-gray-900" data-testid={`text-contract-role-${contract.id}`}>
-                  {contract.role}
-                </p>
-              </div>
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 text-sm">
               <div>
                 <p className="text-gray-500 flex items-center">
                   <DollarSign className="w-4 h-4 mr-1" />
@@ -97,6 +91,15 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
                 </p>
                 <p className="font-medium text-gray-900" data-testid={`text-contract-rate-${contract.id}`}>
                   {formatCurrency(contract.baseRate)}/{contract.payType === 'hourly' ? 'hour' : 'salary'}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-500 flex items-center">
+                  <DollarSign className="w-4 h-4 mr-1" />
+                  OT Rate
+                </p>
+                <p className="font-medium text-gray-900" data-testid={`text-contract-ot-rate-${contract.id}`}>
+                  {contract.overtimeRate ? `${formatCurrency(contract.overtimeRate)}/hour` : 'N/A'}
                 </p>
               </div>
               <div>
@@ -111,10 +114,19 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
               <div>
                 <p className="text-gray-500 flex items-center">
                   <Clock className="w-4 h-4 mr-1" />
-                  Weekly Hours
+                  HRS/WK
                 </p>
                 <p className="font-medium text-gray-900" data-testid={`text-contract-hours-${contract.id}`}>
                   {contract.weeklyHours} hours
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-500 flex items-center">
+                  <Calendar className="w-4 h-4 mr-1" />
+                  # SHIFTS
+                </p>
+                <p className="font-medium text-gray-900" data-testid={`text-contract-shifts-${contract.id}`}>
+                  {shiftsCount}
                 </p>
               </div>
             </div>
