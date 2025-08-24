@@ -69,7 +69,7 @@ export function ExpenseForm({
     resolver: zodResolver(expenseFormSchema),
     defaultValues: {
       date: initialData?.date || new Date().toISOString().split('T')[0],
-      contractId: initialData?.contractId || "",
+      contractId: initialData?.contractId || "none",
       category: initialData?.category || "",
       amount: initialData?.amount || 0,
       description: initialData?.description || "",
@@ -81,7 +81,7 @@ export function ExpenseForm({
   const handleSubmit = (data: ExpenseFormData) => {
     onSubmit({
       date: data.date,
-      contractId: data.contractId || undefined,
+      contractId: data.contractId === "none" ? undefined : data.contractId || undefined,
       category: data.category,
       amount: data.amount,
       description: data.description,
@@ -133,7 +133,7 @@ export function ExpenseForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No contract</SelectItem>
+                      <SelectItem value="none">No contract</SelectItem>
                       {contracts.map((contract) => (
                         <SelectItem key={contract.id} value={contract.id}>
                           {contract.facility} - {contract.role}
