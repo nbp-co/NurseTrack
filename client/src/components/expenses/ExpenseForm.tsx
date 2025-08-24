@@ -122,50 +122,17 @@ export function ExpenseForm({
 
             <FormField
               control={form.control}
-              name="contractId"
+              name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Related Contract</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-expense-contract">
-                        <SelectValue placeholder="Select a contract (optional)" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">No contract</SelectItem>
-                      {contracts.map((contract) => (
-                        <SelectItem key={contract.id} value={contract.id}>
-                          {contract.facility} - {contract.role}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-expense-category">
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {EXPENSE_CATEGORIES.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Description *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      placeholder="Brief description of the expense"
+                      data-testid="input-expense-description"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -198,17 +165,50 @@ export function ExpenseForm({
 
             <FormField
               control={form.control}
-              name="description"
+              name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description *</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      placeholder="Brief description of the expense"
-                      data-testid="input-expense-description"
-                    />
-                  </FormControl>
+                  <FormLabel>Category *</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-expense-category">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {EXPENSE_CATEGORIES.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="contractId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Related Contract</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-expense-contract">
+                        <SelectValue placeholder="Select a contract (optional)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">No contract</SelectItem>
+                      {contracts.map((contract) => (
+                        <SelectItem key={contract.id} value={contract.id}>
+                          {contract.facility} - {contract.role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
