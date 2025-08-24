@@ -118,6 +118,32 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
                 </p>
               </div>
             </div>
+
+            {/* Contract Metrics */}
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="grid grid-cols-5 gap-4 text-xs">
+                <div className="text-center">
+                  <p className="text-gray-500 font-medium">1/06/25 -</p>
+                  <p className="text-gray-500 font-medium">3/05/25</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-500 font-medium"># SHIFTS</p>
+                  <p className="font-semibold text-gray-900">33</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-500 font-medium">BASE</p>
+                  <p className="font-semibold text-gray-900">$40.00</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-500 font-medium">HRS/WK</p>
+                  <p className="font-semibold text-gray-900">32</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-500 font-medium">OT</p>
+                  <p className="font-semibold text-gray-900">$20.00</p>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div className="flex items-center space-x-1 ml-3">
@@ -144,31 +170,24 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
         
         {/* Schedule Preview */}
         <div className="mt-3 pt-3 border-t border-gray-100">
-          <p className="text-sm font-medium text-gray-700 mb-1">Schedule</p>
-          <div className="flex space-x-1">
-            {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => {
-              const isWorkDay = contract.recurrence.byDay.includes(day as any);
-              return (
-                <div
-                  key={day}
-                  className="flex flex-col items-center"
-                  data-testid={`indicator-workday-${day.toLowerCase()}-${contract.id}`}
-                >
-                  <span
-                    className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-                      isWorkDay
-                        ? "bg-gray-100 text-gray-800"
-                        : "bg-gray-300 text-gray-600"
-                    }`}
-                  >
-                    {getDaysOfWeek([day])[0]}
-                  </span>
-                  {isWorkDay && (
-                    <span className="text-xs text-gray-500 mt-1">7A-7P</span>
-                  )}
-                </div>
-              );
-            })}
+          <p className="text-sm font-medium text-gray-700 mb-2">Schedule</p>
+          <div className="grid grid-cols-4 gap-3 text-xs text-center">
+            <div>
+              <p className="font-medium text-gray-700">SUN</p>
+              <p className="text-gray-600">6a-2p</p>
+            </div>
+            <div>
+              <p className="font-medium text-gray-700">TUES</p>
+              <p className="text-gray-600">6a-2p</p>
+            </div>
+            <div>
+              <p className="font-medium text-gray-700">THURS</p>
+              <p className="text-gray-600">6a-2p</p>
+            </div>
+            <div>
+              <p className="font-medium text-gray-700">SAT</p>
+              <p className="text-gray-600">6a-2p</p>
+            </div>
           </div>
         </div>
       </CardContent>
