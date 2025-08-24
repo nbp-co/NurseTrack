@@ -139,23 +139,27 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => {
               const isWorkDay = contract.recurrence.byDay.includes(day as any);
               return (
-                <span
+                <div
                   key={day}
-                  className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
-                    isWorkDay
-                      ? "bg-gray-100 text-gray-800"
-                      : "bg-gray-300 text-gray-600"
-                  }`}
+                  className="flex flex-col items-center"
                   data-testid={`indicator-workday-${day.toLowerCase()}-${contract.id}`}
                 >
-                  {getDaysOfWeek([day])[0]}
-                </span>
+                  <span
+                    className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
+                      isWorkDay
+                        ? "bg-gray-100 text-gray-800"
+                        : "bg-gray-300 text-gray-600"
+                    }`}
+                  >
+                    {getDaysOfWeek([day])[0]}
+                  </span>
+                  {isWorkDay && (
+                    <span className="text-xs text-gray-500 mt-1">7A-7P</span>
+                  )}
+                </div>
               );
             })}
           </div>
-          <p className="text-xs text-gray-500 mt-2" data-testid={`text-work-hours-${contract.id}`}>
-            {contract.recurrence.defaultStart} - {contract.recurrence.defaultEnd}
-          </p>
         </div>
       </CardContent>
     </Card>

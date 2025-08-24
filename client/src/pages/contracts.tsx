@@ -1,18 +1,16 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, BarChart3, DollarSign, Clock, FileText } from "lucide-react";
+import { Plus, FileText } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { StatCard } from "@/components/cards/StatCard";
 import { ContractCard } from "@/components/contracts/ContractCard";
 import { ContractWizard } from "@/components/contracts/ContractWizard";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageLoader } from "@/components/ui/loader";
-import { contractApi, shiftApi } from "@/api/mock";
+import { contractApi } from "@/api/mock";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Contract } from "@/types";
-import { calculateMonthlyEarnings, formatCurrency } from "@/lib/metrics";
 
 export default function ContractsPage() {
   const [showContractWizard, setShowContractWizard] = useState(false);
@@ -21,19 +19,10 @@ export default function ContractsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const currentMonth = new Date().toISOString().slice(0, 7);
-
-  const { data: contracts = [], isLoading: contractsLoading } = useQuery({
+  const { data: contracts = [], isLoading } = useQuery({
     queryKey: ['/api/contracts'],
     queryFn: () => contractApi.listContracts(),
   });
-
-  const { data: shifts = [], isLoading: shiftsLoading } = useQuery({
-    queryKey: ['/api/shifts', currentMonth],
-    queryFn: () => shiftApi.listShifts({ month: currentMonth }),
-  });
-
-  const isLoading = contractsLoading || shiftsLoading;
 
   const createContractMutation = useMutation({
     mutationFn: (contractData: Omit<Contract, 'id'>) => contractApi.createContract(contractData),
@@ -75,21 +64,6 @@ export default function ContractsPage() {
     },
   });
 
-  const stats = {
-    activeContracts: contracts.filter(c => c.status === 'active').length,
-    monthlyEarnings: calculateMonthlyEarnings(contracts, shifts, currentMonth),
-    hoursWorked: shifts.reduce((total, shift) => {
-      if (shift.completed && shift.actualStart && shift.actualEnd) {
-        const start = parseTime(shift.actualStart);
-        const end = parseTime(shift.actualEnd);
-        return total + (end - start) / (1000 * 60 * 60);
-      } else {
-        const start = parseTime(shift.start);
-        const end = parseTime(shift.end);
-        return total + (end - start) / (1000 * 60 * 60);
-      }
-    }, 0)
-  };
 
   const handleCreateContract = (contractData: Omit<Contract, 'id'>) => {
     createContractMutation.mutate(contractData);
@@ -132,36 +106,6 @@ export default function ContractsPage() {
       />
 
       <div className="lg:px-8 px-4 py-6">
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <StatCard
-            label="Active Contracts"
-            value={stats.activeContracts}
-            subtext="12% from last month"
-            icon={<FileText className="w-6 h-6 text-primary" />}
-            trend="up"
-            trendColor="success"
-          />
-          
-          <StatCard
-            label="Monthly Earnings"
-            value={formatCurrency(stats.monthlyEarnings)}
-            subtext="8% from last month"
-            icon={<DollarSign className="w-6 h-6 text-success-500" />}
-            trend="up"
-            trendColor="success"
-          />
-          
-          <StatCard
-            label="Hours This Month"
-            value={Math.round(stats.hoursWorked)}
-            subtext="2 hours under target"
-            icon={<Clock className="w-6 h-6 text-warning-500" />}
-            trend="neutral"
-            trendColor="warning"
-          />
-        </div>
-
         {/* Contracts List */}
         {contracts.length > 0 ? (
           <div className="space-y-4">
@@ -197,9 +141,3 @@ export default function ContractsPage() {
   );
 }
 
-function parseTime(timeStr: string): number {
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  const date = new Date();
-  date.setHours(hours, minutes, 0, 0);
-  return date.getTime();
-}
