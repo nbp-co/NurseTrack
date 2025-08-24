@@ -49,10 +49,10 @@ export function DonutCard({ title, completeCount, remainingCount, percentage }: 
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <p className="text-3xl font-bold text-gray-900" data-testid="text-donut-percentage">
-                {percentage}%
+              <p className="text-3xl font-bold text-gray-900" data-testid="text-donut-hours">
+                {completeCount}
               </p>
-              <p className="text-sm text-gray-500">Complete</p>
+              <p className="text-sm text-gray-500">Hours</p>
             </div>
           </div>
         </div>
@@ -61,18 +61,18 @@ export function DonutCard({ title, completeCount, remainingCount, percentage }: 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 bg-primary rounded-full"></div>
-              <span className="text-sm text-gray-600">Days Complete</span>
+              <span className="text-sm text-gray-600">Hours Worked</span>
             </div>
-            <span className="text-sm font-medium text-gray-900" data-testid="text-days-complete">
+            <span className="text-sm font-medium text-gray-900" data-testid="text-hours-worked">
               {completeCount}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
-              <span className="text-sm text-gray-600">Days Remaining</span>
+              <span className="text-sm text-gray-600">Hours Remaining</span>
             </div>
-            <span className="text-sm font-medium text-gray-900" data-testid="text-days-remaining">
+            <span className="text-sm font-medium text-gray-900" data-testid="text-hours-remaining">
               {remainingCount}
             </span>
           </div>

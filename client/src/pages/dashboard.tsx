@@ -107,15 +107,39 @@ export default function DashboardPage() {
       <AppHeader 
         title="Dashboard"
         subtitle="Overview of your nursing contracts and recent activity"
-        actions={
-          <Button onClick={() => setShowShiftForm(true)} data-testid="button-add-shift">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Shift
-          </Button>
-        }
       />
 
       <div className="lg:px-8 px-4 py-6">
+        {/* Summary Stats Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <StatCard
+            label="Active Contracts"
+            value={dashboardStats.activeContracts}
+            subtext="12% from last month"
+            icon={<BarChart3 className="w-6 h-6 text-primary" />}
+            trend="up"
+            trendColor="success"
+          />
+          
+          <StatCard
+            label="Monthly Earnings"
+            value={formatCurrency(dashboardStats.monthlyEarnings)}
+            subtext="8% from last month"
+            icon={<DollarSign className="w-6 h-6 text-success-500" />}
+            trend="up"
+            trendColor="success"
+          />
+          
+          <StatCard
+            label="Hours This Month"
+            value={dashboardStats.hoursWorked}
+            subtext="2 hours under target"
+            icon={<Clock className="w-6 h-6 text-warning-500" />}
+            trend="neutral"
+            trendColor="warning"
+          />
+        </div>
+
         {/* Dashboard Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           <div className="lg:col-span-2">
@@ -198,44 +222,15 @@ export default function DashboardPage() {
             </Card>
           </div>
           
-          {/* Monthly Progress Donut Chart */}
+          {/* Monthly Hours Worked Chart */}
           <DonutCard
-            title="Monthly Progress"
-            completeCount={dashboardStats.progressMetrics.completeCount}
-            remainingCount={dashboardStats.progressMetrics.remainingCount}
-            percentage={dashboardStats.progressMetrics.percentage}
+            title="Hours Worked"
+            completeCount={dashboardStats.hoursWorked}
+            remainingCount={Math.max(0, 160 - dashboardStats.hoursWorked)}
+            percentage={Math.round((dashboardStats.hoursWorked / 160) * 100)}
           />
         </div>
 
-        {/* Summary Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <StatCard
-            label="Active Contracts"
-            value={dashboardStats.activeContracts}
-            subtext="12% from last month"
-            icon={<BarChart3 className="w-6 h-6 text-primary" />}
-            trend="up"
-            trendColor="success"
-          />
-          
-          <StatCard
-            label="Monthly Earnings"
-            value={formatCurrency(dashboardStats.monthlyEarnings)}
-            subtext="8% from last month"
-            icon={<DollarSign className="w-6 h-6 text-success-500" />}
-            trend="up"
-            trendColor="success"
-          />
-          
-          <StatCard
-            label="Hours This Month"
-            value={dashboardStats.hoursWorked}
-            subtext="2 hours under target"
-            icon={<Clock className="w-6 h-6 text-warning-500" />}
-            trend="neutral"
-            trendColor="warning"
-          />
-        </div>
       </div>
 
       <ShiftForm
