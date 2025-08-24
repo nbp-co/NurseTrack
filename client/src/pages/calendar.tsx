@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Button } from "@/components/ui/button";
 import { CalendarMonth } from "@/components/calendar/CalendarMonth";
-import { CalendarWeek } from "@/components/calendar/CalendarWeek";
+import { CalendarWeekToggle, CalendarWeekView } from "@/components/calendar/CalendarWeek";
 import { DayDetailDrawer } from "@/components/drawers/DayDetailDrawer";
 import { ShiftForm } from "@/components/forms/ShiftForm";
 import { PageLoader } from "@/components/ui/loader";
@@ -118,7 +118,7 @@ export default function CalendarPage() {
         subtitle="View and manage your shift schedule"
         actions={
           <div className="flex items-center space-x-2">
-            <CalendarWeek 
+            <CalendarWeekToggle 
               isWeekView={isWeekView}
               onToggle={setIsWeekView}
             />
@@ -139,10 +139,12 @@ export default function CalendarPage() {
             onDayClick={handleDayClick}
           />
         ) : (
-          <div className="bg-white rounded-xl shadow-sm border p-8 text-center">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Week View</h3>
-            <p className="text-gray-500">Week view coming soon!</p>
-          </div>
+          <CalendarWeekView
+            currentDate={currentDate}
+            events={calendarEvents}
+            onDateChange={setCurrentDate}
+            onDayClick={handleDayClick}
+          />
         )}
       </div>
 
