@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/form";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { WelcomeBackDialog } from "@/components/auth/WelcomeBackDialog";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -28,6 +29,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const [, setLocation] = useLocation();
   const { login, isLoading } = useAuth();
   const { toast } = useToast();
@@ -44,11 +46,8 @@ export default function LoginPage() {
   const handleSubmit = async (data: LoginFormData) => {
     try {
       await login(data.email, data.password);
-      setLocation("/dashboard");
-      toast({
-        title: "Welcome back!",
-        description: "You have been successfully logged in.",
-      });
+      // Show welcome dialog instead of navigating immediately
+      setShowWelcomeDialog(true);
     } catch (error) {
       toast({
         title: "Login failed",
@@ -213,6 +212,11 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+      
+      <WelcomeBackDialog 
+        open={showWelcomeDialog} 
+        onOpenChange={setShowWelcomeDialog}
+      />
     </div>
   );
 }
