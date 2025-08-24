@@ -155,19 +155,26 @@ export function CalendarMonth({ currentDate, events, onDateChange, onDayClick }:
                 </span>
                 {day.events.length > 0 && (
                   <div className="mt-2 space-y-1">
-                    {day.events.slice(0, 2).map((event, eventIndex) => (
-                      <div
-                        key={event.id}
-                        className={`w-2 h-2 rounded-full ${
-                          event.type === 'shift'
-                            ? event.completed
-                              ? "bg-success-500"
-                              : "bg-primary"
-                            : "bg-warning-500"
-                        }`}
-                        data-testid={`indicator-event-${event.type}-${eventIndex}`}
-                      />
-                    ))}
+                    {day.events.slice(0, 2).map((event, eventIndex) => {
+                      let dotColor = "bg-gray-400"; // Default
+                      if (event.type === 'shift') {
+                        if (event.completed) {
+                          dotColor = "bg-blue-500"; // Blue for completed
+                        } else {
+                          dotColor = "bg-green-500"; // Green for scheduled
+                        }
+                      } else {
+                        dotColor = "bg-yellow-500"; // Expenses
+                      }
+                      
+                      return (
+                        <div
+                          key={event.id}
+                          className={`w-2 h-2 rounded-full ${dotColor}`}
+                          data-testid={`indicator-event-${event.type}-${eventIndex}`}
+                        />
+                      );
+                    })}
                     {day.events.length > 2 && (
                       <div className="text-xs text-gray-500">
                         +{day.events.length - 2} more

@@ -184,19 +184,27 @@ export function CalendarWeekView({ currentDate, events, onDateChange, onDayClick
                     </div>
                     
                     <div className="flex-1 space-y-1">
-                      {dayEvents.slice(0, 2).map((event, index) => (
-                        <div key={event.id} className="text-xs">
-                          <Badge 
-                            variant={event.completed ? "default" : "secondary"} 
-                            className="w-full text-center py-0.5 text-[10px]"
-                          >
-                            {event.type === 'shift' ? 'Shift' : 'Expense'}
-                          </Badge>
-                        </div>
-                      ))}
-                      {dayEvents.length > 2 && (
+                      {dayEvents.slice(0, 3).map((event, index) => {
+                        let dotColor = "bg-gray-400"; // Default
+                        if (event.type === 'shift') {
+                          if (event.completed) {
+                            dotColor = "bg-blue-500"; // Blue for completed
+                          } else {
+                            dotColor = "bg-green-500"; // Green for scheduled
+                          }
+                        } else {
+                          dotColor = "bg-yellow-500"; // Expenses
+                        }
+                        
+                        return (
+                          <div key={event.id} className="flex justify-center">
+                            <div className={`w-2 h-2 rounded-full ${dotColor}`} />
+                          </div>
+                        );
+                      })}
+                      {dayEvents.length > 3 && (
                         <div className="text-[10px] text-gray-500 text-center">
-                          +{dayEvents.length - 2} more
+                          +{dayEvents.length - 3} more
                         </div>
                       )}
                     </div>
