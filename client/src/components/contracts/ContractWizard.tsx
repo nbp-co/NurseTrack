@@ -175,25 +175,25 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
             {/* Step 1: Basics */}
             {currentStep === 1 && (
               <div className="space-y-6" data-testid="step-contract-basics">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="facility"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contract Name *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="St. Mary's Hospital Contract" 
-                            {...field} 
-                            data-testid="input-facility"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <FormField
+                  control={form.control}
+                  name="facility"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contract Name *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="St. Mary's Hospital Contract" 
+                          {...field} 
+                          data-testid="input-facility"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
                     name="department"
@@ -207,6 +207,31 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                             data-testid="input-department"
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Role *</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-role">
+                              <SelectValue placeholder="Select a role" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {ROLES.map((role) => (
+                              <SelectItem key={role} value={role}>
+                                {role}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -243,55 +268,6 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                             type="date" 
                             {...field} 
                             data-testid="input-end-date"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="role"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Role *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-role">
-                              <SelectValue placeholder="Select a role" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {ROLES.map((role) => (
-                              <SelectItem key={role} value={role}>
-                                {role}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="weeklyHours"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Weekly Hours *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min="1" 
-                            max="80"
-                            placeholder="40"
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            data-testid="input-weekly-hours"
                           />
                         </FormControl>
                         <FormMessage />
@@ -352,6 +328,28 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="weeklyHours"
+                  render={({ field }) => (
+                    <FormItem className="md:w-1/2">
+                      <FormLabel>Weekly Hours *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="1" 
+                          max="80"
+                          placeholder="40"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          data-testid="input-weekly-hours"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             )}
 
