@@ -1,0 +1,195 @@
+You are setting up a brand-new **NurseTrack** web app. Build ONLY the UI scaffolding and client-side state (no real backend yet). Keep it simple, compile-clean, and closely matching the provided wireframes.
+
+## Tech constraints
+- Frontend: React 18 + TypeScript + Vite + TailwindCSS.
+- Routing: React Router.
+- State: lightweight; you may use simple custom hooks with an in-memory “mock API” (no server changes).
+- Charts: build a small SVG/canvas donut (no chart lib).
+- Accessibility: labeled inputs, aria-*; keyboard-friendly.
+- Animations: none (instant route swaps).
+- Mobile-first; responsive up to desktop.
+
+## Product decisions (final)
+- Navigation is **persistent on ALL screens**.
+- **Mobile & small screens (≤ md): bottom tab bar** with 4 tabs: Dashboard, Calendar, Contracts, Expenses.
+- **Desktop (≥ lg): left sidebar** with the same 4 tabs vertically.
+- Auth v1: **Email/password** only. (Google sign-in deferred; include a disabled “Continue with Google” button.)
+- Post-login landing page: **/contracts**.
+- Add/Edit forms appear as **modals/sheets** over the current page. “Edit” uses the same UI with prefilled values.
+- Recurring shifts: defined at **contract creation**; can be edited later (rules like BYDAY, default start/end, exceptions).
+- Calendar week starts **Sunday**. Tapping a day opens a **day-detail drawer** (not a separate page).
+- Dashboard donut: exactly **two slices** — “Days Complete” vs “Days Remaining” with a large center %.
+- Weekly summaries: show **by active contract** and an **overall total**.
+- **Expenses** has a separate screen.
+- **Compare Contracts does NOT exist** in v1.
+- Notifications v1: **in-app alerts** only. Include a “Confirm shift completed” action and allow quick edit of start/end time in that flow. Push notifications are a placeholder.
+
+## Routes
+- `/auth/login` — email/password login screen (disabled Google btn present).
+- `/` → redirect to `/contracts` (post-login landing).
+- `/dashboard` — summary cards + donut + recent shifts preview.
+- `/calendar` — month/week toggle, month chevrons, day grid; tapping a day opens a drawer of that day’s shifts/totals.
+- `/contracts` — contracts list (status chips + KPIs); “Add Contract” opens modal wizard; “Edit” opens same wizard prefilled.
+- `/expenses` — expenses list & modal add/edit.
+- `/profile` — minimal settings stub (future push-notification toggle disabled).
+
+## Layout & Navigation (responsive)
+Create:
+- `components/layout/AppShell.tsx`
+  - `lg:grid lg:grid-cols-[260px_1fr] min-h-screen`
+  - On desktop (≥ lg): shows `SideNav` at left; on mobile: shows `BottomNav` fixed bottom.
+  - Main content has `AppHeader` slot at the top.
+  - Ensure main content area is scrollable.
+- `components/nav/SideNav.tsx`
+  - Visible on `hidden lg:flex`; vertical list of 4 tabs with icons & labels; highlights active route.
+  - Basic styles: `lg:w-[260px] lg:border-r lg:bg-white lg:flex lg:flex-col`.
+- `components/nav/BottomNav.tsx`
+  - Visible on `block lg:hidden`; fixed bottom bar `fixed bottom-0 inset-x-0 border-t bg-white`.
+  - Safe-area padding: `pb-[env(safe-area-inset-bottom)]`.
+  - 4 tabs with icons & labels; route-aware active state.
+- `components/layout/AppHeader.tsx`
+  - Page title + right-aligned actions slot; sticky at top of content on desktop.
+
+**Tailwind spacing in main:**
+- Add `pb-[64px]` on mobile to avoid content being hidden behind BottomNav; no extra bottom padding on desktop.
+
+## Components
+- `components/cards/StatCard.tsx` — label, value, subtext; loading variant.
+- `components/cards/DonutCard.tsx` — two-slice SVG donut (“Days Complete” vs “Days Remaining”) with large center %.
+- `components/calendar/CalendarMonth.tsx` — Sunday-first month grid; day cells with dot markers for shifts; chevrons to move months. Props: `currentDate`, `events[]`.
+- `components/calendar/CalendarWeek.tsx` — simple week strip toggle UI.
+- `components/drawers/DayDetailDrawer.tsx` — opens from Calendar; lists that day’s shifts, totals, and includes:
+  - “Confirm Completed” action per shift.
+  - Quick edit of start/end time inline (controlled inputs).
+- `components/forms/ShiftForm.tsx` — title, role, facility, date, start/end, pay type, hourly rate; used for add & edit (modal/sheet).
+- `components/contracts/ContractCard.tsx` — compact KPIs; actions: Edit, (optional) View Details panel.
+- `components/contracts/ContractWizard.tsx` — **modal, multi-step**:
+  1) Basics (facility, role, pay type, rate)
+  2) Dates (contract start/end, weekly hours)
+  3) Recurrence Rules (BYDAY Sun–Sat toggles; default start/end times; exceptions list stub)
+  4) Review & Save
+- `components/expenses/ExpenseList.tsx` and `components/expenses/ExpenseForm.tsx` (modal add/edit).
+- `components/ui/*` atoms: Button, Input, Select, Toggle, DatePicker/DateRange (client-only), Modal/Sheet, Badge, EmptyState, Loader.
+
+## Types (client-only)
+Create `src/types.ts`:
+```ts
+export interface Contract {
+  id: string;
+  facility: string;
+  role: string;
+  startDate: string; // ISO
+  endDate: string;   // ISO
+  payType: 'hourly' | 'salary';
+  baseRate: number;
+  weeklyHours: number;
+  recurrence: {
+    byDay: ('SUN'|'MON'|'TUE'|'WED'|'THU'|'FRI'|'SAT')[];
+    defaultStart: string; // "07:00"
+    defaultEnd: string;   // "19:00"
+    exceptions?: { date: string; note?: string }[];
+  };
+  status: 'planned' | 'active' | 'completed';
+}
+export interface Shift {
+  id: string;
+  contractId: string;
+  date: string;   // ISO
+  start: string;  // "07:00"
+  end: string;    // "19:00"
+  role: string;
+  facility: string;
+  completed: boolean;
+}
+export interface Expense {
+  id: string;
+  date: string;       // ISO
+  contractId?: string;
+  category: string;
+  amount: number;
+  note?: string;
+}
+Mock data & API (replace later)
+src/mocks/seed.ts — a couple of contracts (one active), a range of shifts for the current/visible month (mix of completed/pending), some expenses.
+
+src/api/mock.ts — async functions operating on in-memory arrays:
+
+Contracts: listContracts, createContract, updateContract
+
+Shifts: listShifts({ month }), createShift, updateShift, confirmShiftCompleted(id, {start,end})
+
+Expenses: listExpenses, createExpense, updateExpense
+
+Derived helpers in src/lib/metrics.ts:
+
+getDaysCompleteAndRemaining({from,to,completedShiftDates}) → {completeCount, remainingCount, percent}
+
+getWeeklySummaries() → per active contract + overall totals
+
+Pages
+Auth/Login: email/password form; secondary disabled “Continue with Google”.
+
+Contracts (landing):
+
+Header: “Contracts” + “Add Contract” button → opens ContractWizard modal.
+
+List of ContractCards with status chips (planned/active/completed) + Edit (opens wizard prefilled).
+
+Calendar:
+
+Header with month title + chevrons; toggle Month/Week.
+
+Month grid (Sunday-first). Clicking a day opens DayDetailDrawer with that day’s shifts/totals and “Confirm Completed”.
+
+“Add Shift” button → ShiftForm modal.
+
+Dashboard:
+
+Row of StatCards (totals, weekly summaries by active contract + overall).
+
+DonutCard (Days Complete vs Days Remaining) using data from helpers.
+
+Recent shifts preview table.
+
+Expenses:
+
+Filter by contract/date; list; add/edit via modal.
+
+Profile (stub):
+
+Placeholder controls for future features (e.g., disabled “Enable push notifications”).
+
+Validation
+Use zod schemas for Contract, Shift, Expense forms with inline errors.
+
+Controlled forms; accessible labels and keyboard navigation.
+
+Quality gates
+npm run dev and npm run build succeed with zero TypeScript errors.
+
+All routes reachable; exactly ONE nav visible per breakpoint:
+
+BottomNav on mobile/tablet (block lg:hidden)
+
+SideNav on desktop (hidden lg:flex)
+
+Month navigation works; day drawer opens; modals open/close reliably.
+
+Responsive up to ≥1024px; content not hidden behind BottomNav (use bottom padding on mobile).
+
+Basic empty/loading states present.
+
+Deliverables
+Source under /src with pages, components, mocks, and types as described.
+
+A README with:
+
+routes summary
+
+how to run locally
+
+where to replace mock API with real endpoints
+
+note that Google login and push notifications are placeholders
+
+On completion, print a file tree of created files and how to run the dev server.
