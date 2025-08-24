@@ -135,7 +135,7 @@ export default function ExpensesPage() {
 
       <div className="lg:px-8 px-4 py-6">
         {/* Expenses Summary */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="max-w-md mb-6">
           <StatCard
             label="Total This Month"
             value={formatCurrency(stats.totalMonth)}
@@ -143,15 +143,6 @@ export default function ExpensesPage() {
             icon={<DollarSign className="w-6 h-6 text-error-500" />}
             trend="up"
             trendColor="error"
-          />
-          
-          <StatCard
-            label="Tax Deductible"
-            value={formatCurrency(stats.deductible)}
-            subtext={`${stats.deductiblePercent}% of total expenses`}
-            icon={<TrendingUp className="w-6 h-6 text-success-500" />}
-            trend="up"
-            trendColor="success"
           />
         </div>
 
