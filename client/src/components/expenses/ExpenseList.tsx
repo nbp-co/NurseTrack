@@ -1,6 +1,5 @@
 import { Edit2, Car, Utensils, Briefcase, Receipt } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Expense } from "@/types";
 
@@ -96,12 +95,6 @@ export function ExpenseList({ expenses, onEdit }: ExpenseListProps) {
                     <p className="font-medium text-gray-900" data-testid={`text-expense-amount-${expense.id}`}>
                       {formatCurrency(expense.amount)}
                     </p>
-                    <Badge 
-                      variant={expense.deductible ? "default" : "secondary"}
-                      data-testid={`badge-expense-deductible-${expense.id}`}
-                    >
-                      {expense.deductible ? "Deductible" : "Personal"}
-                    </Badge>
                   </div>
                   <Button
                     variant="ghost"

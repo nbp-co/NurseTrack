@@ -110,63 +110,81 @@ export default function DashboardPage() {
       />
 
       <div className="lg:px-8 px-4 py-6">
-        {/* Weekly Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-          <StatCard
-            label="This Week"
-            value={`${dashboardStats.weeklyStats.hours} hours`}
-            subtext={`${Math.max(0, 40 - dashboardStats.weeklyStats.hours)} hours remaining`}
-            icon={<Clock className="w-6 h-6 text-primary" />}
-            trend={dashboardStats.weeklyStats.hours > 32 ? "up" : "neutral"}
-            trendColor="success"
-          />
-          
-          <StatCard
-            label="Weekly Earnings"
-            value={formatCurrency(dashboardStats.weeklyStats.earnings)}
-            subtext="12% vs last week"
-            icon={<DollarSign className="w-6 h-6 text-success-500" />}
-            trend="up"
-            trendColor="success"
-          />
-        </div>
 
-        {/* Summary Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <StatCard
-            label="Active Contracts"
-            value={dashboardStats.activeContracts}
-            subtext="12% from last month"
-            icon={<BarChart3 className="w-6 h-6 text-primary" />}
-            trend="up"
-            trendColor="success"
-          />
+        {/* Weekly and Monthly Stats Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600" data-testid="text-weekly-label">
+                    This Week
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-primary" />
+                      <p className="text-2xl font-bold text-gray-900" data-testid="text-weekly-hours">
+                        {dashboardStats.weeklyStats.hours} hours
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-success-500" />
+                      <p className="text-2xl font-bold text-gray-900" data-testid="text-weekly-earnings">
+                        {formatCurrency(dashboardStats.weeklyStats.earnings)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           
-          <StatCard
-            label="Monthly Earnings"
-            value={formatCurrency(dashboardStats.monthlyEarnings)}
-            subtext="8% from last month"
-            icon={<DollarSign className="w-6 h-6 text-success-500" />}
-            trend="up"
-            trendColor="success"
-          />
-          
-          <StatCard
-            label="Hours This Month"
-            value={dashboardStats.hoursWorked}
-            subtext="2 hours under target"
-            icon={<Clock className="w-6 h-6 text-warning-500" />}
-            trend="neutral"
-            trendColor="warning"
-          />
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600" data-testid="text-monthly-label">
+                    This Month
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-warning-500" />
+                      <p className="text-2xl font-bold text-gray-900" data-testid="text-monthly-hours">
+                        {dashboardStats.hoursWorked} hours
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-success-500" />
+                      <p className="text-2xl font-bold text-gray-900" data-testid="text-monthly-earnings">
+                        {formatCurrency(dashboardStats.monthlyEarnings)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Recent Shifts */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold text-gray-900">
-              Recent Shifts
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Recent Shifts
+              </CardTitle>
+              <div className="text-sm text-gray-600">
+                <span data-testid="text-active-contracts-label">
+                  {dashboardStats.activeContracts} Active Contract{dashboardStats.activeContracts !== 1 ? 's' : ''}
+                </span>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             {recentShifts.length > 0 ? (

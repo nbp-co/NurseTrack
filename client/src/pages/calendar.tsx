@@ -104,6 +104,22 @@ export default function CalendarPage() {
       .slice(0, 5);
   }, [shifts]);
 
+
+  const nextThreeShifts = useMemo(() => {
+    const today = new Date();
+    const nextMonth = new Date(today);
+    nextMonth.setDate(today.getDate() + 30);
+    
+    return shifts
+      .filter(shift => {
+        const shiftDate = new Date(shift.date);
+        return shiftDate >= today && shiftDate <= nextMonth && !shift.completed;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(0, 3);
+  }, [shifts]);
+
+
   const handleDayClick = (date: string) => {
     setSelectedDate(date);
     setShowDayDetail(true);
@@ -231,6 +247,7 @@ export default function CalendarPage() {
             events={calendarEvents}
             onDateChange={setCurrentDate}
             onDayClick={handleDayClick}
+            upcomingShifts={nextThreeShifts}
           />
         ) : (
           <CalendarWeekView

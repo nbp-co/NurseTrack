@@ -40,6 +40,16 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
     }
   };
 
+  const getCardBorderColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'border-l-green-500';
+      case 'completed': return 'border-l-blue-500';
+      case 'planned': return 'border-l-yellow-500';
+      case 'archive': return 'border-l-gray-400';
+      default: return 'border-l-gray-400';
+    }
+  };
+
   const getStatusLabel = (status: string) => {
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
@@ -54,12 +64,12 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
   };
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
+    <Card className={`overflow-hidden hover:shadow-md transition-shadow border-l-4 ${getCardBorderColor(contract.status)}`}>
+      <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <div className="flex items-center space-x-3 mb-3">
-              <h3 className="text-lg font-semibold text-gray-900" data-testid={`text-contract-facility-${contract.id}`}>
+            <div className="flex items-center space-x-2 mb-2">
+              <h3 className="text-base font-semibold text-gray-900" data-testid={`text-contract-facility-${contract.id}`}>
                 {contract.facility}
               </h3>
               <Badge 
@@ -70,7 +80,7 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
               </Badge>
             </div>
             
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
               <div>
                 <p className="text-gray-500 flex items-center">
                   <Calendar className="w-4 h-4 mr-1" />
@@ -110,7 +120,7 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
             </div>
           </div>
           
-          <div className="flex items-center space-x-2 ml-4">
+          <div className="flex items-center space-x-1 ml-3">
             <Button
               variant="ghost"
               size="sm"
@@ -133,29 +143,33 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
         </div>
         
         {/* Schedule Preview */}
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <p className="text-sm font-medium text-gray-700 mb-2">Schedule</p>
-          <div className="flex space-x-2">
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <p className="text-sm font-medium text-gray-700 mb-1">Schedule</p>
+          <div className="flex space-x-1">
             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => {
               const isWorkDay = contract.recurrence.byDay.includes(day as any);
               return (
-                <span
+                <div
                   key={day}
-                  className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
-                    isWorkDay
-                      ? "bg-gray-100 text-gray-800"
-                      : "bg-gray-300 text-gray-600"
-                  }`}
+                  className="flex flex-col items-center"
                   data-testid={`indicator-workday-${day.toLowerCase()}-${contract.id}`}
                 >
-                  {getDaysOfWeek([day])[0]}
-                </span>
+                  <span
+                    className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                      isWorkDay
+                        ? "bg-gray-100 text-gray-800"
+                        : "bg-gray-300 text-gray-600"
+                    }`}
+                  >
+                    {getDaysOfWeek([day])[0]}
+                  </span>
+                  {isWorkDay && (
+                    <span className="text-xs text-gray-500 mt-1">7A-7P</span>
+                  )}
+                </div>
               );
             })}
           </div>
-          <p className="text-xs text-gray-500 mt-2" data-testid={`text-work-hours-${contract.id}`}>
-            {contract.recurrence.defaultStart} - {contract.recurrence.defaultEnd}
-          </p>
         </div>
       </CardContent>
     </Card>
