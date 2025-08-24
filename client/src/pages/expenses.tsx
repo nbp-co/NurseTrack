@@ -146,21 +146,21 @@ export default function ExpensesPage() {
           />
         </div>
 
-        {/* Expenses List */}
+        {/* Recent Transactions */}
         {allExpenses.length > 0 ? (
-          <>
-            <Card className="mb-6">
-              <CardContent className="p-6 border-b border-gray-100">
+          <Card>
+            <CardContent className="p-0">
+              <div className="p-6 border-b border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Recent Expenses ({allExpenses.length})
+                  Recent Transactions ({allExpenses.length})
                 </h3>
-              </CardContent>
-            </Card>
-            <ExpenseList 
-              expenses={allExpenses} 
-              onEdit={handleEditExpense}
-            />
-          </>
+              </div>
+              <ExpenseList 
+                expenses={allExpenses} 
+                onEdit={handleEditExpense}
+              />
+            </CardContent>
+          </Card>
         ) : (
           <EmptyState
             icon={<Receipt className="w-8 h-8 text-gray-400" />}
