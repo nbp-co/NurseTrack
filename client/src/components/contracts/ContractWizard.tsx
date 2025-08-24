@@ -276,7 +276,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <FormField
                     control={form.control}
                     name="baseRate"
@@ -327,29 +327,29 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                       </FormItem>
                     )}
                   />
-                </div>
 
-                <FormField
-                  control={form.control}
-                  name="weeklyHours"
-                  render={({ field }) => (
-                    <FormItem className="md:w-1/2">
-                      <FormLabel>Weekly Hours *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min="1" 
-                          max="80"
-                          placeholder="40"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                          data-testid="input-weekly-hours"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="weeklyHours"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Weekly Hours *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="1" 
+                            max="80"
+                            placeholder="40"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            data-testid="input-weekly-hours"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
             )}
 
