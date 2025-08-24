@@ -161,77 +161,63 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Dashboard Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          <div className="lg:col-span-2">
-            
-            {/* Recent Shifts */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold text-gray-900">
-                  Recent Shifts
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {recentShifts.length > 0 ? (
-                  <div className="divide-y divide-gray-100">
-                    {recentShifts.map((shift) => {
-                      const contract = contracts.find(c => c.id === shift.contractId);
-                      const earnings = contract ? 
-                        ((parseTime(shift.actualEnd || shift.end) - parseTime(shift.actualStart || shift.start)) / (1000 * 60 * 60)) * contract.baseRate
-                        : 0;
-                      
-                      return (
-                        <div key={shift.id} className="p-4 flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                              <BarChart3 className="w-5 h-5 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900" data-testid={`text-recent-facility-${shift.id}`}>
-                                {shift.facility}
-                              </p>
-                              <p className="text-sm text-gray-500" data-testid={`text-recent-schedule-${shift.id}`}>
-                                {formatDate(shift.date)}, {shift.start} - {shift.end}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <Badge 
-                              variant={shift.completed ? "default" : "secondary"}
-                              data-testid={`badge-recent-status-${shift.id}`}
-                            >
-                              {shift.completed ? "Completed" : "Scheduled"}
-                            </Badge>
-                            {shift.completed && (
-                              <p className="text-sm text-gray-500 mt-1" data-testid={`text-recent-earnings-${shift.id}`}>
-                                {formatCurrency(earnings)}
-                              </p>
-                            )}
-                          </div>
+        {/* Recent Shifts */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-gray-900">
+              Recent Shifts
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {recentShifts.length > 0 ? (
+              <div className="divide-y divide-gray-100">
+                {recentShifts.map((shift) => {
+                  const contract = contracts.find(c => c.id === shift.contractId);
+                  const earnings = contract ? 
+                    ((parseTime(shift.actualEnd || shift.end) - parseTime(shift.actualStart || shift.start)) / (1000 * 60 * 60)) * contract.baseRate
+                    : 0;
+                  
+                  return (
+                    <div key={shift.id} className="p-4 flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <BarChart3 className="w-5 h-5 text-primary" />
                         </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="p-8 text-center">
-                    <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No shifts yet</h3>
-                    <p className="text-gray-500">Your recent shifts will appear here.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Monthly Hours Worked Chart */}
-          <DonutCard
-            title="Hours Worked"
-            completeCount={dashboardStats.hoursWorked}
-            remainingCount={Math.max(0, 160 - dashboardStats.hoursWorked)}
-            percentage={Math.round((dashboardStats.hoursWorked / 160) * 100)}
-          />
-        </div>
+                        <div>
+                          <p className="font-medium text-gray-900" data-testid={`text-recent-facility-${shift.id}`}>
+                            {shift.facility}
+                          </p>
+                          <p className="text-sm text-gray-500" data-testid={`text-recent-schedule-${shift.id}`}>
+                            {formatDate(shift.date)}, {shift.start} - {shift.end}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge 
+                          variant={shift.completed ? "default" : "secondary"}
+                          data-testid={`badge-recent-status-${shift.id}`}
+                        >
+                          {shift.completed ? "Completed" : "Scheduled"}
+                        </Badge>
+                        {shift.completed && (
+                          <p className="text-sm text-gray-500 mt-1" data-testid={`text-recent-earnings-${shift.id}`}>
+                            {formatCurrency(earnings)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-8 text-center">
+                <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No shifts yet</h3>
+                <p className="text-gray-500">Your recent shifts will appear here.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
       </div>
 
