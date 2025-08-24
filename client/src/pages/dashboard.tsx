@@ -113,7 +113,7 @@ export default function DashboardPage() {
         {/* Weekly Stats Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           <StatCard
-            label=""
+            label="This Week"
             value={`${dashboardStats.weeklyStats.hours} hours`}
             subtext={`${Math.max(0, 40 - dashboardStats.weeklyStats.hours)} hours remaining`}
             icon={<Clock className="w-6 h-6 text-primary" />}
@@ -122,7 +122,7 @@ export default function DashboardPage() {
           />
           
           <StatCard
-            label=""
+            label="Weekly Earnings"
             value={formatCurrency(dashboardStats.weeklyStats.earnings)}
             subtext="12% vs last week"
             icon={<DollarSign className="w-6 h-6 text-success-500" />}
@@ -134,7 +134,7 @@ export default function DashboardPage() {
         {/* Summary Stats Row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <StatCard
-            label=""
+            label="Active Contracts"
             value={dashboardStats.activeContracts}
             subtext="12% from last month"
             icon={<BarChart3 className="w-6 h-6 text-primary" />}
@@ -143,7 +143,7 @@ export default function DashboardPage() {
           />
           
           <StatCard
-            label=""
+            label="Monthly Earnings"
             value={formatCurrency(dashboardStats.monthlyEarnings)}
             subtext="8% from last month"
             icon={<DollarSign className="w-6 h-6 text-success-500" />}
@@ -152,7 +152,7 @@ export default function DashboardPage() {
           />
           
           <StatCard
-            label=""
+            label="Hours This Month"
             value={dashboardStats.hoursWorked}
             subtext="2 hours under target"
             icon={<Clock className="w-6 h-6 text-warning-500" />}
