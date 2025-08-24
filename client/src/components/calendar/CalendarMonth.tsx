@@ -1,13 +1,14 @@
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CalendarEvent } from "@/types";
+import { CalendarEvent, Shift } from "@/types";
 
 interface CalendarMonthProps {
   currentDate: Date;
   events: CalendarEvent[];
   onDateChange: (date: Date) => void;
   onDayClick: (date: string) => void;
+  upcomingShifts?: Shift[];
 }
 
 const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -16,7 +17,7 @@ const MONTHS = [
   'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
 ];
 
-export function CalendarMonth({ currentDate, events, onDateChange, onDayClick }: CalendarMonthProps) {
+export function CalendarMonth({ currentDate, events, onDateChange, onDayClick, upcomingShifts = [] }: CalendarMonthProps) {
   const [viewDate, setViewDate] = useState(currentDate);
   
   const calendarData = useMemo(() => {
@@ -83,8 +84,63 @@ export function CalendarMonth({ currentDate, events, onDateChange, onDayClick }:
     onDateChange(today);
   };
 
+  const formatShiftDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+      return "Today";
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return "Tomorrow";
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    }
+  };
+
+  // Get next 3 upcoming shifts
+  const nextThreeShifts = upcomingShifts.slice(0, 3);
+
   return (
     <div>
+      {/* Next 3 Upcoming Shifts */}
+      {nextThreeShifts.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3" data-testid="text-upcoming-shifts-title">
+            Next 3 Upcoming Shifts
+          </h3>
+          <div className="space-y-2">
+            {nextThreeShifts.map((shift, index) => (
+              <div 
+                key={shift.id} 
+                className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-3 cursor-pointer hover:bg-blue-100 transition-colors"
+                onClick={() => onDayClick(shift.date)}
+                data-testid={`upcoming-shift-compact-${index}`}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="text-xs font-medium text-blue-800 min-w-[60px]">
+                    {formatShiftDate(shift.date)}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="w-3 h-3 text-blue-600" />
+                    <span className="text-xs font-medium text-gray-700">{shift.facility}</span>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-3 h-3 text-blue-600" />
+                  <span className="text-xs text-gray-600">{shift.start} - {shift.end}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Calendar Header */}
       <div className="flex items-center justify-between mb-6">
         <Button
