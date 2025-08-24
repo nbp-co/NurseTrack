@@ -40,6 +40,16 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
     }
   };
 
+  const getCardBorderColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'border-l-green-500';
+      case 'completed': return 'border-l-blue-500';
+      case 'planned': return 'border-l-yellow-500';
+      case 'archive': return 'border-l-gray-400';
+      default: return 'border-l-gray-400';
+    }
+  };
+
   const getStatusLabel = (status: string) => {
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
@@ -54,7 +64,7 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
   };
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+    <Card className={`overflow-hidden hover:shadow-md transition-shadow border-l-4 ${getCardBorderColor(contract.status)}`}>
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
