@@ -110,6 +110,27 @@ export default function DashboardPage() {
       />
 
       <div className="lg:px-8 px-4 py-6">
+        {/* Weekly Stats Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          <StatCard
+            label="This Week"
+            value={`${dashboardStats.weeklyStats.hours} hours`}
+            subtext={`${Math.max(0, 40 - dashboardStats.weeklyStats.hours)} hours remaining`}
+            icon={<Clock className="w-6 h-6 text-primary" />}
+            trend={dashboardStats.weeklyStats.hours > 32 ? "up" : "neutral"}
+            trendColor="success"
+          />
+          
+          <StatCard
+            label="Weekly Earnings"
+            value={formatCurrency(dashboardStats.weeklyStats.earnings)}
+            subtext="12% vs last week"
+            icon={<DollarSign className="w-6 h-6 text-success-500" />}
+            trend="up"
+            trendColor="success"
+          />
+        </div>
+
         {/* Summary Stats Row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <StatCard
@@ -143,25 +164,6 @@ export default function DashboardPage() {
         {/* Dashboard Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           <div className="lg:col-span-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-              <StatCard
-                label="This Week"
-                value={`${dashboardStats.weeklyStats.hours} hours`}
-                subtext={`${Math.max(0, 40 - dashboardStats.weeklyStats.hours)} hours remaining`}
-                icon={<Clock className="w-6 h-6 text-primary" />}
-                trend={dashboardStats.weeklyStats.hours > 32 ? "up" : "neutral"}
-                trendColor="success"
-              />
-              
-              <StatCard
-                label="Weekly Earnings"
-                value={formatCurrency(dashboardStats.weeklyStats.earnings)}
-                subtext="12% vs last week"
-                icon={<DollarSign className="w-6 h-6 text-success-500" />}
-                trend="up"
-                trendColor="success"
-              />
-            </div>
             
             {/* Recent Shifts */}
             <Card>
