@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CalendarEvent } from "@/types";
 
@@ -10,10 +10,10 @@ interface CalendarMonthProps {
   onDayClick: (date: string) => void;
 }
 
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
+  'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+  'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
 ];
 
 export function CalendarMonth({ currentDate, events, onDateChange, onDayClick }: CalendarMonthProps) {
@@ -77,22 +77,39 @@ export function CalendarMonth({ currentDate, events, onDateChange, onDayClick }:
     onDateChange(newDate);
   };
 
+  const handleToday = () => {
+    const today = new Date();
+    setViewDate(today);
+    onDateChange(today);
+  };
+
   return (
     <div>
       {/* Calendar Header */}
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handlePrevMonth}
+          data-testid="button-prev-month"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        
+        <h2 className="text-xl font-semibold text-gray-900" data-testid="text-current-month">
+          {MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}
+        </h2>
+        
+        <div className="flex items-center space-x-2">
           <Button
             variant="ghost"
             size="sm"
-            onClick={handlePrevMonth}
-            data-testid="button-prev-month"
+            onClick={handleToday}
+            data-testid="button-today"
+            title="Go to today"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <Calendar className="w-4 h-4" />
           </Button>
-          <h2 className="text-xl font-semibold text-gray-900" data-testid="text-current-month">
-            {MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}
-          </h2>
           <Button
             variant="ghost"
             size="sm"

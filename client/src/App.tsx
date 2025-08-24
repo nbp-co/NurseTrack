@@ -19,7 +19,7 @@ function AppRoutes() {
   return (
     <Switch>
       <Route path="/auth/login" component={LoginPage} />
-      <Route path="/" component={() => <Redirect to="/contracts" />} />
+      <Route path="/" component={() => <Redirect to="/dashboard" />} />
       <Route path="/dashboard" component={() => <AppShell><DashboardPage /></AppShell>} />
       <Route path="/calendar" component={() => <AppShell><CalendarPage /></AppShell>} />
       <Route path="/contracts" component={() => <AppShell><ContractsPage /></AppShell>} />

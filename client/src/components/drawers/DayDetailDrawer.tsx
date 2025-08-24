@@ -91,8 +91,14 @@ export function DayDetailDrawer({
   const stats = calculateDailyStats();
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex justify-end">
-      <div className="w-full max-w-md bg-white shadow-xl flex flex-col">
+    <div 
+      className="fixed inset-0 bg-black/50 z-50 flex justify-center items-end"
+      onClick={onClose}
+    >
+      <div 
+        className="w-full max-w-2xl bg-white shadow-xl flex flex-col rounded-t-xl max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
