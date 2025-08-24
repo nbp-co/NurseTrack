@@ -66,8 +66,8 @@ export function WelcomeBackDialog({ open, onOpenChange }: WelcomeBackDialogProps
               {getGreeting()}, {user?.name || "Nurse"}! {getTimeOfDayEmoji()}
             </DialogTitle>
           </div>
-          <DialogDescription className="text-gray-600 text-base" data-testid="text-welcome-description">
-            Welcome back to NurseTrack! You've successfully signed in. Ready to manage your shifts and track your progress?
+          <DialogDescription className="text-gray-600 text-base italic" data-testid="text-welcome-description">
+            "Every shift is an opportunity to make a difference. You've got this! 💪"
           </DialogDescription>
         </DialogHeader>
 
@@ -139,12 +139,6 @@ export function WelcomeBackDialog({ open, onOpenChange }: WelcomeBackDialogProps
             </div>
           </div>
 
-          {/* Motivational Message */}
-          <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg p-4 border border-blue-200">
-            <p className="text-sm text-gray-700 text-center italic" data-testid="text-motivational-message">
-              "Every shift is an opportunity to make a difference. You've got this! 💪"
-            </p>
-          </div>
         </div>
 
         <DialogFooter className="flex justify-between sm:justify-between">
