@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CalendarEvent } from "@/types";
@@ -81,14 +81,19 @@ export function CalendarWeekView({ currentDate, events, onDateChange, onDayClick
     onDateChange(newDate);
   };
 
+  const goToToday = () => {
+    const today = new Date();
+    onDateChange(today);
+  };
+
   const formatWeekRange = () => {
     const firstDate = weekDates[0];
     const lastDate = weekDates[weekDates.length - 1];
     
     if (firstDate.getMonth() === lastDate.getMonth()) {
-      return `${firstDate.toLocaleDateString('en-US', { month: 'long' })} ${firstDate.getDate()}-${lastDate.getDate()}, ${firstDate.getFullYear()}`;
+      return `${firstDate.toLocaleDateString('en-US', { month: 'long' }).toUpperCase()} ${firstDate.getDate()}-${lastDate.getDate()}, ${firstDate.getFullYear()}`;
     } else {
-      return `${firstDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${lastDate.getFullYear()}`;
+      return `${firstDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()} - ${lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}, ${lastDate.getFullYear()}`;
     }
   };
 
@@ -119,20 +124,31 @@ export function CalendarWeekView({ currentDate, events, onDateChange, onDayClick
             {formatWeekRange()}
           </h2>
           
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={goToNextWeeks}
-            data-testid="button-next-weeks"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={goToToday}
+              data-testid="button-today-week"
+              title="Go to today"
+            >
+              <Calendar className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={goToNextWeeks}
+              data-testid="button-next-weeks"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Week Headers */}
       <div className="grid grid-cols-7 border-b border-gray-200">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+        {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day) => (
           <div key={day} className="p-4 text-center text-sm font-medium text-gray-500 border-r border-gray-200 last:border-r-0">
             {day}
           </div>
