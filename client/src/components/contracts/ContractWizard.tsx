@@ -412,6 +412,25 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                   
                   <FormField
                     control={form.control}
+                    name="contactName"
+                    render={({ field }) => (
+                      <FormItem className="mb-4">
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="John Smith" 
+                            {...field} 
+                            data-testid="input-contact-name"
+                            maxLength={50}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="address"
                     render={({ field }) => (
                       <FormItem className="mb-4">
@@ -429,45 +448,29 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                     )}
                   />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="contactName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contact Name</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="John Smith" 
-                              {...field} 
-                              data-testid="input-contact-name"
-                              maxLength={50}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="phoneNumber"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone Number</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="444-444-4444" 
-                              {...field} 
-                              data-testid="input-phone-number"
-                              maxLength={12}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  <FormField
+                    control={form.control}
+                    name="phoneNumber"
+                    render={({ field }) => (
+                      <FormItem className="mb-4">
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="444-444-4444" 
+                            {...field} 
+                            data-testid="input-phone-number"
+                            maxLength={12}
+                            onChange={(e) => {
+                              // Only allow numbers and dashes
+                              const value = e.target.value.replace(/[^0-9-]/g, '');
+                              field.onChange(value);
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                   <FormField
                     control={form.control}
@@ -744,7 +747,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                         )}
                         {form.watch('contactName') && (
                           <div>
-                            <p className="text-gray-500">Contact Name</p>
+                            <p className="text-gray-500">Name</p>
                             <p className="font-medium" data-testid="review-contact-name">{form.watch('contactName')}</p>
                           </div>
                         )}
