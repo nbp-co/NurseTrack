@@ -167,7 +167,7 @@ export function CalendarWeekView({ currentDate, events, onDateChange, onDayClick
                 <div
                   key={date.toISOString()}
                   className={`p-2 border-r border-gray-200 last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors relative ${
-                    isToday(date) ? "border-2 border-blue-500" : ""
+                    isToday(date) ? "border-2 border-blue-500 bg-blue-50" : ""
                   }`}
                   onClick={() => onDayClick(dateStr)}
                   data-testid={`day-${dateStr}`}
