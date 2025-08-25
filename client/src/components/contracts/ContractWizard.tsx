@@ -401,33 +401,35 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                     <FormItem>
                       <FormLabel>Working Days *</FormLabel>
                       <FormControl>
-                        <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                          <div className="grid grid-cols-7 gap-6 justify-items-center">
-                            {DAYS_OF_WEEK.map((day) => {
-                              const isSelected = field.value?.includes(day.value);
-                              return (
-                                <div key={day.value} className="flex flex-col items-center space-y-3">
-                                  <div className={`text-sm font-semibold text-center ${
-                                    isSelected ? 'text-blue-600' : 'text-gray-600'
-                                  }`}>
-                                    {day.value}
+                        <div className="bg-gray-50 rounded-lg p-8 border border-gray-200">
+                          <div className="flex justify-center w-full">
+                            <div className="grid grid-cols-7 gap-8 w-full max-w-2xl">
+                              {DAYS_OF_WEEK.map((day) => {
+                                const isSelected = field.value?.includes(day.value);
+                                return (
+                                  <div key={day.value} className="flex flex-col items-center space-y-4">
+                                    <div className={`text-sm font-semibold text-center ${
+                                      isSelected ? 'text-blue-600' : 'text-gray-600'
+                                    }`}>
+                                      {day.value}
+                                    </div>
+                                    <Checkbox
+                                      checked={isSelected}
+                                      onCheckedChange={(checked) => {
+                                        const currentValue = field.value || [];
+                                        if (checked) {
+                                          field.onChange([...currentValue, day.value]);
+                                        } else {
+                                          field.onChange(currentValue.filter((d) => d !== day.value));
+                                        }
+                                      }}
+                                      className="w-8 h-8 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                                      data-testid={`checkbox-day-${day.value.toLowerCase()}`}
+                                    />
                                   </div>
-                                  <Checkbox
-                                    checked={isSelected}
-                                    onCheckedChange={(checked) => {
-                                      const currentValue = field.value || [];
-                                      if (checked) {
-                                        field.onChange([...currentValue, day.value]);
-                                      } else {
-                                        field.onChange(currentValue.filter((d) => d !== day.value));
-                                      }
-                                    }}
-                                    className="w-7 h-7 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                                    data-testid={`checkbox-day-${day.value.toLowerCase()}`}
-                                  />
-                                </div>
-                              );
-                            })}
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
                       </FormControl>
