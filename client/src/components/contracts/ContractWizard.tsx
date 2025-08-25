@@ -401,31 +401,35 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                     <FormItem>
                       <FormLabel>Working Days *</FormLabel>
                       <FormControl>
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <div className="grid grid-cols-7 gap-2">
-                            {DAYS_OF_WEEK.map((day) => {
-                              const isSelected = field.value?.includes(day.value);
-                              return (
-                                <div key={day.value} className="flex flex-col items-center">
-                                  <label className="text-xs font-medium text-gray-600 mb-2">
-                                    {day.value}
-                                  </label>
-                                  <Checkbox
-                                    checked={isSelected}
-                                    onCheckedChange={(checked) => {
-                                      const currentValue = field.value || [];
-                                      if (checked) {
-                                        field.onChange([...currentValue, day.value]);
-                                      } else {
-                                        field.onChange(currentValue.filter((d) => d !== day.value));
-                                      }
-                                    }}
-                                    className="w-5 h-5"
-                                    data-testid={`checkbox-day-${day.value.toLowerCase()}`}
-                                  />
-                                </div>
-                              );
-                            })}
+                        <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                          <div className="flex justify-center">
+                            <div className="grid grid-cols-7 gap-4 max-w-md">
+                              {DAYS_OF_WEEK.map((day) => {
+                                const isSelected = field.value?.includes(day.value);
+                                return (
+                                  <div key={day.value} className="flex flex-col items-center space-y-2">
+                                    <div className={`text-xs font-semibold text-center w-8 ${
+                                      isSelected ? 'text-blue-600' : 'text-gray-500'
+                                    }`}>
+                                      {day.value}
+                                    </div>
+                                    <Checkbox
+                                      checked={isSelected}
+                                      onCheckedChange={(checked) => {
+                                        const currentValue = field.value || [];
+                                        if (checked) {
+                                          field.onChange([...currentValue, day.value]);
+                                        } else {
+                                          field.onChange(currentValue.filter((d) => d !== day.value));
+                                        }
+                                      }}
+                                      className="w-6 h-6 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                                      data-testid={`checkbox-day-${day.value.toLowerCase()}`}
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
                       </FormControl>
