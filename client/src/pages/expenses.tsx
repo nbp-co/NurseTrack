@@ -179,7 +179,7 @@ export default function ExpensesPage() {
         </div>
 
         {/* Add Expense Button */}
-        <div className="mb-6">
+        <div className="mb-6 text-center">
           <Button onClick={() => setShowExpenseForm(true)} data-testid="button-add-expense" className="px-8">
             <Plus className="w-4 h-4 mr-2" />
             Add Expense

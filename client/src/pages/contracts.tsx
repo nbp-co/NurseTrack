@@ -209,7 +209,7 @@ export default function ContractsPage() {
         </Card>
 
         {/* Add Contract Button */}
-        <div className="mb-6">
+        <div className="mb-6 text-center">
           <Button onClick={() => setShowContractWizard(true)} data-testid="button-add-contract" className="px-8">
             <Plus className="w-4 h-4 mr-2" />
             Add Contract

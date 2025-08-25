@@ -234,7 +234,7 @@ export default function CalendarPage() {
 
       {/* Add Shift Button */}
       <div className="lg:px-8 px-4 pt-6 pb-0">
-        <div className="mb-6">
+        <div className="mb-6 text-center">
           <Button onClick={() => setShowShiftForm(true)} data-testid="button-add-shift" className="px-8">
             <Plus className="w-4 h-4 mr-2" />
             Add Shift
