@@ -34,6 +34,17 @@ export default function ContractsPage() {
     queryFn: () => contractApi.listContracts(),
   });
 
+
+  const { data: allShifts = [] } = useQuery({
+    queryKey: ['/api/shifts'],
+    queryFn: () => shiftApi.listShifts(),
+  });
+
+  const getShiftsCount = (contractId: string) => {
+    return allShifts.filter(shift => shift.contractId === contractId).length;
+  };
+
+
   const contracts = useMemo(() => {
     let filtered = [...allContracts];
     
@@ -211,6 +222,7 @@ export default function ContractsPage() {
                 key={contract.id}
                 contract={contract}
                 onEdit={() => handleEditContract(contract)}
+                shiftsCount={getShiftsCount(contract.id)}
               />
             ))}
           </div>

@@ -8,9 +8,10 @@ interface ContractCardProps {
   contract: Contract;
   onEdit: () => void;
   onViewDetails?: () => void;
+  shiftsCount?: number;
 }
 
-export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardProps) {
+export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 }: ContractCardProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -24,10 +25,12 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
     
     return `${start.toLocaleDateString('en-US', { 
       month: 'short', 
-      day: 'numeric' 
+      day: 'numeric', 
+      year: 'numeric'
     })} - ${end.toLocaleDateString('en-US', { 
       month: 'short', 
-      day: 'numeric' 
+      day: 'numeric', 
+      year: 'numeric' 
     })}`;
   };
 
@@ -80,42 +83,48 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
               </Badge>
             </div>
             
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-              <div>
-                <p className="text-gray-500 flex items-center">
-                  <Calendar className="w-4 h-4 mr-1" />
-                  Role
-                </p>
-                <p className="font-medium text-gray-900" data-testid={`text-contract-role-${contract.id}`}>
-                  {contract.role}
-                </p>
+
+            <div className="grid grid-cols-2 gap-6 text-sm">
+              <div className="space-y-3">
+                <div>
+                  <p className="text-gray-500 flex items-center">
+                    <Calendar className="w-4 h-4 mr-1" />
+                    Duration
+                  </p>
+                  <p className="font-medium text-gray-900" data-testid={`text-contract-duration-${contract.id}`}>
+                    {formatDateRange(contract.startDate, contract.endDate)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 flex items-center">
+                    <Clock className="w-4 h-4 mr-1" />
+                    HRS/WK
+                  </p>
+                  <p className="font-medium text-gray-900" data-testid={`text-contract-hours-${contract.id}`}>
+                    {contract.weeklyHours} hours
+                  </p>
+                </div>
+
               </div>
-              <div>
-                <p className="text-gray-500 flex items-center">
-                  <DollarSign className="w-4 h-4 mr-1" />
-                  Rate
-                </p>
-                <p className="font-medium text-gray-900" data-testid={`text-contract-rate-${contract.id}`}>
-                  {formatCurrency(contract.baseRate)}/{contract.payType === 'hourly' ? 'hour' : 'salary'}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-500 flex items-center">
-                  <Calendar className="w-4 h-4 mr-1" />
-                  Duration
-                </p>
-                <p className="font-medium text-gray-900" data-testid={`text-contract-duration-${contract.id}`}>
-                  {formatDateRange(contract.startDate, contract.endDate)}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-500 flex items-center">
-                  <Clock className="w-4 h-4 mr-1" />
-                  Weekly Hours
-                </p>
-                <p className="font-medium text-gray-900" data-testid={`text-contract-hours-${contract.id}`}>
-                  {contract.weeklyHours} hours
-                </p>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-gray-500 flex items-center">
+                    <DollarSign className="w-4 h-4 mr-1" />
+                    Base Rate
+                  </p>
+                  <p className="font-medium text-gray-900" data-testid={`text-contract-rate-${contract.id}`}>
+                    {formatCurrency(contract.baseRate)}/{contract.payType === 'hourly' ? 'hour' : 'salary'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 flex items-center">
+                    <DollarSign className="w-4 h-4 mr-1" />
+                    OT Rate
+                  </p>
+                  <p className="font-medium text-gray-900" data-testid={`text-contract-ot-rate-${contract.id}`}>
+                    {contract.overtimeRate ? `${formatCurrency(contract.overtimeRate)}/hour` : 'N/A'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -144,7 +153,14 @@ export function ContractCard({ contract, onEdit, onViewDetails }: ContractCardPr
         
         {/* Schedule Preview */}
         <div className="mt-3 pt-3 border-t border-gray-100">
-          <p className="text-sm font-medium text-gray-700 mb-1">Schedule</p>
+
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm font-medium text-gray-700">Schedule</p>
+            <p className="text-xs text-gray-500">
+              <span data-testid={`text-contract-shifts-${contract.id}`}>{shiftsCount}</span> shifts
+            </p>
+          </div>
+
           <div className="flex space-x-1">
             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => {
               const isWorkDay = contract.recurrence.byDay.includes(day as any);

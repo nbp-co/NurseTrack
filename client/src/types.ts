@@ -7,6 +7,7 @@ export interface Contract {
   endDate: string;   // ISO
   payType: 'hourly' | 'salary';
   baseRate: number;
+  overtimeRate?: number;
   weeklyHours: number;
   recurrence: {
     byDay: ('SUN'|'MON'|'TUE'|'WED'|'THU'|'FRI'|'SAT')[];

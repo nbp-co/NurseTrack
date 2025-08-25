@@ -29,11 +29,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Contract } from "@/types";
 
 const contractFormSchema = z.object({
-  facility: z.string().min(1, "Facility name is required"),
+  facility: z.string().min(1, "Contract name is required"),
   role: z.string().min(1, "Role is required"),
   department: z.string().optional(),
-  payType: z.enum(["hourly", "salary"], { required_error: "Pay type is required" }),
   baseRate: z.number().min(0.01, "Base rate must be greater than 0"),
+  overtimeRate: z.number().min(0, "OT rate must be greater than or equal to 0").optional(),
   weeklyHours: z.number().min(1, "Weekly hours must be at least 1").max(80, "Weekly hours cannot exceed 80"),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
@@ -88,12 +88,12 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
       facility: initialData?.facility || "",
       role: initialData?.role || "",
       department: initialData?.department || "",
-      payType: initialData?.payType || "hourly",
       baseRate: initialData?.baseRate || 0,
+      overtimeRate: initialData?.overtimeRate || undefined,
       weeklyHours: initialData?.weeklyHours || 40,
       startDate: initialData?.startDate || "",
       endDate: initialData?.endDate || "",
-      byDay: initialData?.recurrence.byDay || [],
+      byDay: initialData?.recurrence.byDay || ['MON', 'TUE', 'WED', 'THU', 'FRI'],
       defaultStart: initialData?.recurrence.defaultStart || "07:00",
       defaultEnd: initialData?.recurrence.defaultEnd || "19:00",
     },
@@ -118,8 +118,9 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
       department: data.department,
       startDate: data.startDate,
       endDate: data.endDate,
-      payType: data.payType,
+      payType: 'hourly',
       baseRate: data.baseRate,
+      overtimeRate: data.overtimeRate,
       weeklyHours: data.weeklyHours,
       recurrence: {
         byDay: data.byDay as any,
@@ -174,18 +175,36 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
             {/* Step 1: Basics */}
             {currentStep === 1 && (
               <div className="space-y-6" data-testid="step-contract-basics">
+                <FormField
+                  control={form.control}
+                  name="facility"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contract Name *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="St. Mary's Hospital Contract" 
+                          {...field} 
+                          data-testid="input-facility"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
-                    name="facility"
+                    name="department"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Facility Name *</FormLabel>
+                        <FormLabel>Facility/Unit</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="St. Mary's Hospital" 
+                            placeholder="ICU, Emergency, Medical/Surgical" 
                             {...field} 
-                            data-testid="input-facility"
+                            data-testid="input-department"
                           />
                         </FormControl>
                         <FormMessage />
@@ -213,100 +232,6 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                             ))}
                           </SelectContent>
                         </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="department"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Department</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-department">
-                              <SelectValue placeholder="Select department" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {DEPARTMENTS.map((dept) => (
-                              <SelectItem key={dept} value={dept}>
-                                {dept}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="payType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Pay Type *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-pay-type">
-                              <SelectValue placeholder="Select pay type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="hourly">Hourly</SelectItem>
-                            <SelectItem value="salary">Salary</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="baseRate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Base Rate *</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                            <Input 
-                              type="number" 
-                              step="0.01" 
-                              placeholder="45.00"
-                              className="pl-8"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              data-testid="input-base-rate"
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="weeklyHours"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Weekly Hours *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min="1" 
-                            max="80"
-                            placeholder="40"
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            data-testid="input-weekly-hours"
-                          />
-                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -350,44 +275,87 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                     )}
                   />
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="baseRate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Base Rate *</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                            <Input 
+                              type="number" 
+                              step="0.01" 
+                              placeholder="45.00"
+                              className="pl-8"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              data-testid="input-base-rate"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="overtimeRate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>OT Rate</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                            <Input 
+                              type="number" 
+                              step="0.01" 
+                              placeholder="67.50"
+                              className="pl-8"
+                              {...field}
+                              value={field.value || ''}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
+                              data-testid="input-overtime-rate"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="weeklyHours"
+                  render={({ field }) => (
+                    <FormItem className="md:w-1/2">
+                      <FormLabel>Est. Weekly Hours *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="1" 
+                          max="80"
+                          placeholder="40"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          data-testid="input-weekly-hours"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             )}
 
             {/* Step 2: Schedule */}
             {currentStep === 2 && (
               <div className="space-y-6" data-testid="step-contract-schedule">
-                <FormField
-                  control={form.control}
-                  name="byDay"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Working Days *</FormLabel>
-                      <FormControl>
-                        <div className="grid grid-cols-2 gap-4">
-                          {DAYS_OF_WEEK.map((day) => (
-                            <div key={day.value} className="flex items-center space-x-2">
-                              <Checkbox
-                                checked={field.value?.includes(day.value)}
-                                onCheckedChange={(checked) => {
-                                  const currentValue = field.value || [];
-                                  if (checked) {
-                                    field.onChange([...currentValue, day.value]);
-                                  } else {
-                                    field.onChange(currentValue.filter((d) => d !== day.value));
-                                  }
-                                }}
-                                data-testid={`checkbox-day-${day.value.toLowerCase()}`}
-                              />
-                              <label className="text-sm font-medium">{day.label}</label>
-                            </div>
-                          ))}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 <div className="grid grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
@@ -425,6 +393,62 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="byDay"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Working Days *</FormLabel>
+                      <FormControl>
+                        <div className="grid grid-cols-2 gap-6">
+                          <div className="space-y-4">
+                            {DAYS_OF_WEEK.filter(day => ['MON', 'TUE', 'WED', 'THU'].includes(day.value)).map((day) => (
+                              <div key={day.value} className="flex items-center space-x-2">
+                                <Checkbox
+                                  checked={field.value?.includes(day.value)}
+                                  onCheckedChange={(checked) => {
+                                    const currentValue = field.value || [];
+                                    if (checked) {
+                                      field.onChange([...currentValue, day.value]);
+                                    } else {
+                                      field.onChange(currentValue.filter((d) => d !== day.value));
+                                    }
+                                  }}
+                                  data-testid={`checkbox-day-${day.value.toLowerCase()}`}
+                                />
+                                <label className="text-sm font-medium">{day.label}</label>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="space-y-4">
+                            {['FRI', 'SAT', 'SUN'].map((dayValue) => {
+                              const day = DAYS_OF_WEEK.find(d => d.value === dayValue);
+                              return (
+                                <div key={day.value} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    checked={field.value?.includes(day.value)}
+                                    onCheckedChange={(checked) => {
+                                      const currentValue = field.value || [];
+                                      if (checked) {
+                                        field.onChange([...currentValue, day.value]);
+                                      } else {
+                                        field.onChange(currentValue.filter((d) => d !== day.value));
+                                      }
+                                    }}
+                                    data-testid={`checkbox-day-${day.value.toLowerCase()}`}
+                                  />
+                                  <label className="text-sm font-medium">{day.label}</label>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             )}
 
@@ -435,22 +459,32 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Contract Summary</h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-gray-500">Facility</p>
+                      <p className="text-gray-500">Contract Name</p>
                       <p className="font-medium" data-testid="review-facility">{form.watch('facility')}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Facility/Unit</p>
+                      <p className="font-medium" data-testid="review-department">{form.watch('department') || 'Not specified'}</p>
                     </div>
                     <div>
                       <p className="text-gray-500">Role</p>
                       <p className="font-medium" data-testid="review-role">{form.watch('role')}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Pay Rate</p>
+                      <p className="text-gray-500">Weekly Hours</p>
+                      <p className="font-medium" data-testid="review-hours">{form.watch('weeklyHours')} hours</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Base Rate</p>
                       <p className="font-medium" data-testid="review-rate">
-                        ${form.watch('baseRate')}/{form.watch('payType')}
+                        ${form.watch('baseRate')}/hour
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Weekly Hours</p>
-                      <p className="font-medium" data-testid="review-hours">{form.watch('weeklyHours')} hours</p>
+                      <p className="text-gray-500">OT Rate</p>
+                      <p className="font-medium" data-testid="review-overtime-rate">
+                        {form.watch('overtimeRate') ? `$${form.watch('overtimeRate')}/hour` : 'Not specified'}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-500">Duration</p>
