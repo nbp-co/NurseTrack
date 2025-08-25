@@ -360,6 +360,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                   <FormField
                     control={form.control}
                     name="overtimeRate"
+
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>OT Rate</FormLabel>
@@ -492,9 +493,6 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                     )}
                   />
                 </div>
-              </div>
-            )}
-
             {/* Step 2: Schedule */}
             {currentStep === 2 && (
               <div className="space-y-6" data-testid="step-contract-schedule">
@@ -561,10 +559,12 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                                     const currentValue = field.value || [];
                                     if (checked) {
                                       field.onChange([...currentValue, day.value]);
+
                                       // Set default times for newly selected day
                                       const dayName = day.label.toLowerCase();
                                       form.setValue(`${dayName}Start` as keyof ContractFormData, form.watch('defaultStart'));
                                       form.setValue(`${dayName}End` as keyof ContractFormData, form.watch('defaultEnd'));
+
                                     } else {
                                       field.onChange(currentValue.filter((d) => d !== day.value));
                                     }
@@ -578,7 +578,9 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                           <div className="space-y-4">
                             {['FRI', 'SAT', 'SUN'].map((dayValue) => {
                               const day = DAYS_OF_WEEK.find(d => d.value === dayValue);
+
                               if (!day) return null;
+
                               return (
                                 <div key={day.value} className="flex items-center space-x-2">
                                   <Checkbox
@@ -587,10 +589,12 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                                       const currentValue = field.value || [];
                                       if (checked) {
                                         field.onChange([...currentValue, day.value]);
+
                                         // Set default times for newly selected day
                                         const dayName = day.label.toLowerCase();
                                         form.setValue(`${dayName}Start` as keyof ContractFormData, form.watch('defaultStart'));
                                         form.setValue(`${dayName}End` as keyof ContractFormData, form.watch('defaultEnd'));
+
                                       } else {
                                         field.onChange(currentValue.filter((d) => d !== day.value));
                                       }

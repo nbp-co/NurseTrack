@@ -84,14 +84,18 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
             </div>
             
 
+
             <div className="grid grid-cols-2 gap-48 text-sm">
+
               <div className="space-y-3">
                 <div>
                   <p className="text-gray-500 flex items-center">
                     <Calendar className="w-4 h-4 mr-1" />
                     Duration
                   </p>
+
                   <p className="font-medium text-gray-900 whitespace-nowrap" data-testid={`text-contract-duration-${contract.id}`}>
+
                     {formatDateRange(contract.startDate, contract.endDate)}
                   </p>
                 </div>
@@ -152,6 +156,7 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
         </div>
         
         {/* Schedule Preview */}
+
         <div className="mt-3 pt-2 border-t border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-2">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-1.5">
@@ -166,6 +171,7 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
           </div>
 
           <div className="flex space-x-1 justify-between">
+
             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => {
               const isWorkDay = contract.recurrence.byDay.includes(day as any);
               return (
