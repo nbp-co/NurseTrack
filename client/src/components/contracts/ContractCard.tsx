@@ -152,35 +152,48 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
         </div>
         
         {/* Schedule Preview */}
-        <div className="mt-3 pt-3 border-t border-gray-100">
-
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-medium text-gray-700">Schedule</p>
-            <p className="text-xs text-gray-500">
-              <span data-testid={`text-contract-shifts-${contract.id}`}>{shiftsCount}</span> shifts
-            </p>
+        <div className="mt-4 pt-3 border-t border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <p className="text-sm font-semibold text-gray-800">Schedule</p>
+            </div>
+            <div className="bg-white px-2 py-1 rounded-full border border-blue-200">
+              <p className="text-xs font-medium text-blue-700">
+                <span data-testid={`text-contract-shifts-${contract.id}`}>{shiftsCount}</span> shifts
+              </p>
+            </div>
           </div>
 
-          <div className="flex space-x-1">
+          <div className="flex space-x-1.5 justify-between">
             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => {
               const isWorkDay = contract.recurrence.byDay.includes(day as any);
               return (
                 <div
                   key={day}
-                  className="flex flex-col items-center"
+                  className="flex flex-col items-center flex-1"
                   data-testid={`indicator-workday-${day.toLowerCase()}-${contract.id}`}
                 >
-                  <span
-                    className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-                      isWorkDay
-                        ? "bg-gray-100 text-gray-800"
-                        : "bg-gray-300 text-gray-600"
-                    }`}
-                  >
-                    {getDaysOfWeek([day])[0]}
-                  </span>
+                  <div className="relative">
+                    <span
+                      className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-semibold transition-all ${
+                        isWorkDay
+                          ? "bg-blue-500 text-white shadow-md"
+                          : "bg-white text-gray-400 border border-gray-200"
+                      }`}
+                    >
+                      {getDaysOfWeek([day])[0].charAt(0)}
+                    </span>
+                    {isWorkDay && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                    )}
+                  </div>
                   {isWorkDay && (
-                    <span className="text-xs text-gray-500 mt-1">7A-7P</span>
+                    <div className="mt-2 text-center">
+                      <span className="text-xs font-medium text-gray-700 bg-white px-1.5 py-0.5 rounded-full border border-blue-200">
+                        7A-7P
+                      </span>
+                    </div>
                   )}
                 </div>
               );

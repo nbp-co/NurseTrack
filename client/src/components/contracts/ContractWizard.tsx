@@ -424,6 +424,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                           <div className="space-y-4">
                             {['FRI', 'SAT', 'SUN'].map((dayValue) => {
                               const day = DAYS_OF_WEEK.find(d => d.value === dayValue);
+                              if (!day) return null;
                               return (
                                 <div key={day.value} className="flex items-center space-x-2">
                                   <Checkbox
