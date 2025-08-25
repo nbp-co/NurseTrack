@@ -78,13 +78,47 @@ export default function ExpensesPage() {
 
 
   const stats = useMemo(() => {
+    const now = new Date();
     const monthlyExpenses = allExpenses.filter(expense => expense.date.startsWith(currentMonth));
+    
+    // Calculate this week (Monday to Sunday)
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay() + 1); // Monday
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // Sunday
+    endOfWeek.setHours(23, 59, 59, 999);
+    
+    // Calculate next week
+    const startOfNextWeek = new Date(endOfWeek);
+    startOfNextWeek.setDate(endOfWeek.getDate() + 1); // Next Monday
+    startOfNextWeek.setHours(0, 0, 0, 0);
+    
+    const endOfNextWeek = new Date(startOfNextWeek);
+    endOfNextWeek.setDate(startOfNextWeek.getDate() + 6); // Next Sunday
+    endOfNextWeek.setHours(23, 59, 59, 999);
+    
+    const thisWeekExpenses = allExpenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expenseDate >= startOfWeek && expenseDate <= endOfWeek;
+    });
+    
+    const nextWeekExpenses = allExpenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expenseDate >= startOfNextWeek && expenseDate <= endOfNextWeek;
+    });
+    
     const totalMonth = calculateTotalExpenses(monthlyExpenses);
+    const totalThisWeek = calculateTotalExpenses(thisWeekExpenses);
+    const totalNextWeek = calculateTotalExpenses(nextWeekExpenses);
     const deductible = calculateDeductibleExpenses(monthlyExpenses);
     const pendingReceipts = monthlyExpenses.filter(expense => !expense.note).length;
 
     return {
       totalMonth,
+      totalThisWeek,
+      totalNextWeek,
       pendingReceipts,
       deductible,
       deductiblePercent: totalMonth > 0 ? Math.round((deductible / totalMonth) * 100) : 0
@@ -135,14 +169,18 @@ export default function ExpensesPage() {
 
       <div className="lg:px-8 px-4 py-6">
         {/* Expenses Summary */}
-        <div className="max-w-md mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <StatCard
-            label="Total This Month"
+            label="Total Expenses This Month"
             value={formatCurrency(stats.totalMonth)}
-            subtext="15% from last month"
-            icon={<DollarSign className="w-6 h-6 text-error-500" />}
-            trend="up"
-            trendColor="error"
+          />
+          <StatCard
+            label="This Week"
+            value={formatCurrency(stats.totalThisWeek)}
+          />
+          <StatCard
+            label="Next Week"
+            value={formatCurrency(stats.totalNextWeek)}
           />
         </div>
 
