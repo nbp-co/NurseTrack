@@ -157,12 +157,6 @@ export default function ContractsPage() {
       <AppHeader 
         title="Contracts"
         subtitle="Manage your nursing contracts and assignments"
-        actions={
-          <Button onClick={() => setShowContractWizard(true)} data-testid="button-add-contract">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Contract
-          </Button>
-        }
       />
 
       <div className="lg:px-8 px-4 py-6">
@@ -213,6 +207,14 @@ export default function ContractsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Add Contract Button */}
+        <div className="mb-6">
+          <Button onClick={() => setShowContractWizard(true)} data-testid="button-add-contract">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Contract
+          </Button>
+        </div>
 
         {/* Contracts List */}
         {contracts.length > 0 ? (
