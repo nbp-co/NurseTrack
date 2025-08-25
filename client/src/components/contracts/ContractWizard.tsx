@@ -558,6 +558,10 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                                     const currentValue = field.value || [];
                                     if (checked) {
                                       field.onChange([...currentValue, day.value]);
+                                      // Set default times for newly selected day
+                                      const dayName = day.label.toLowerCase();
+                                      form.setValue(`${dayName}Start` as keyof ContractFormData, form.watch('defaultStart'));
+                                      form.setValue(`${dayName}End` as keyof ContractFormData, form.watch('defaultEnd'));
                                     } else {
                                       field.onChange(currentValue.filter((d) => d !== day.value));
                                     }
@@ -580,6 +584,10 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                                       const currentValue = field.value || [];
                                       if (checked) {
                                         field.onChange([...currentValue, day.value]);
+                                        // Set default times for newly selected day
+                                        const dayName = day.label.toLowerCase();
+                                        form.setValue(`${dayName}Start` as keyof ContractFormData, form.watch('defaultStart'));
+                                        form.setValue(`${dayName}End` as keyof ContractFormData, form.watch('defaultEnd'));
                                       } else {
                                         field.onChange(currentValue.filter((d) => d !== day.value));
                                       }
