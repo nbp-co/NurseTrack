@@ -195,8 +195,8 @@ export function CalendarMonth({ currentDate, events, onDateChange, onDayClick, u
               <div
                 key={`${weekIndex}-${dayIndex}`}
                 className={`p-3 min-h-[60px] border-r border-b hover:bg-gray-50 cursor-pointer transition-colors relative ${
-                  !day.isCurrentMonth ? "text-gray-400" : ""
-                }`}
+                  day.isToday ? "border-2 border-blue-500" : ""
+                } ${!day.isCurrentMonth ? "text-gray-400" : ""}`}
                 onClick={() => onDayClick(day.dateString)}
                 data-testid={`cell-calendar-day-${day.dateString}`}
               >
