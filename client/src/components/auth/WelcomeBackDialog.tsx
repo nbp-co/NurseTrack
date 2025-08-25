@@ -27,6 +27,17 @@ export function WelcomeBackDialog({ open, onOpenChange }: WelcomeBackDialogProps
     return () => clearInterval(timer);
   }, []);
 
+  // Auto-close dialog after 3 seconds
+  useEffect(() => {
+    if (open) {
+      const autoCloseTimer = setTimeout(() => {
+        onOpenChange(false);
+        setLocation('/dashboard');
+      }, 3000);
+      return () => clearTimeout(autoCloseTimer);
+    }
+  }, [open, onOpenChange, setLocation]);
+
   const getGreeting = () => {
     const hour = currentTime.getHours();
     if (hour < 12) return "Good morning";
@@ -93,37 +104,6 @@ export function WelcomeBackDialog({ open, onOpenChange }: WelcomeBackDialogProps
         </DialogHeader>
 
         <div className="py-6 space-y-4">
-          {/* Quick Stats Section */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white/70 backdrop-blur-sm rounded-lg p-3 text-center border border-blue-100">
-              <Calendar className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-              <p className="text-xs text-gray-600">Today</p>
-              <p className="text-sm font-semibold text-gray-900" data-testid="text-today-date">
-                {currentTime.toLocaleDateString('en-US', { 
-                  month: 'short', 
-                  day: 'numeric' 
-                })}
-              </p>
-            </div>
-            <div className="bg-white/70 backdrop-blur-sm rounded-lg p-3 text-center border border-blue-100">
-              <Clock className="w-5 h-5 text-green-600 mx-auto mb-1" />
-              <p className="text-xs text-gray-600">Time</p>
-              <p className="text-sm font-semibold text-gray-900" data-testid="text-current-time">
-                {currentTime.toLocaleTimeString('en-US', { 
-                  hour: 'numeric', 
-                  minute: '2-digit' 
-                })}
-              </p>
-            </div>
-            <div className="bg-white/70 backdrop-blur-sm rounded-lg p-3 text-center border border-blue-100">
-              <User2 className="w-5 h-5 text-purple-600 mx-auto mb-1" />
-              <p className="text-xs text-gray-600">Role</p>
-              <p className="text-sm font-semibold text-gray-900 capitalize" data-testid="text-user-role">
-                {user?.role || 'Nurse'}
-              </p>
-            </div>
-          </div>
-
           {/* Quick Actions */}
           <div className="space-y-3" data-quick-actions>
             <h3 className="font-semibold text-gray-900 text-sm">Quick Actions</h3>
