@@ -159,12 +159,6 @@ export default function ExpensesPage() {
       <AppHeader 
         title="Expenses"
         subtitle="Track your work-related expenses and deductions"
-        actions={
-          <Button onClick={() => setShowExpenseForm(true)} data-testid="button-add-expense">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Expense
-          </Button>
-        }
       />
 
       <div className="lg:px-8 px-4 py-6">
@@ -182,6 +176,14 @@ export default function ExpensesPage() {
             label="This Month"
             value={formatCurrency(stats.totalMonth)}
           />
+        </div>
+
+        {/* Add Expense Button */}
+        <div className="mb-6">
+          <Button onClick={() => setShowExpenseForm(true)} data-testid="button-add-expense">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Expense
+          </Button>
         </div>
 
         {/* Recent Transactions */}
