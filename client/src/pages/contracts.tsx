@@ -157,26 +157,20 @@ export default function ContractsPage() {
       <AppHeader 
         title="Contracts"
         subtitle="Manage your nursing contracts and assignments"
-        actions={
-          <Button onClick={() => setShowContractWizard(true)} data-testid="button-add-contract">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Contract
-          </Button>
-        }
       />
 
       <div className="lg:px-8 px-4 py-6">
         {/* Filters */}
         <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-              <div className="flex items-center gap-2">
+          <CardContent className="p-2">
+            <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <Filter className="w-4 h-4 text-gray-500" />
                 <span className="text-sm font-medium text-gray-700">Filters</span>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                <div className="min-w-0 sm:w-48">
+              <div className="flex gap-2 sm:gap-4 flex-1 min-w-0">
+                <div className="flex-1 min-w-[120px] max-w-[200px]">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger data-testid="select-status-filter">
                       <SelectValue placeholder="Filter by status" />
@@ -191,7 +185,7 @@ export default function ContractsPage() {
                   </Select>
                 </div>
                 
-                <div className="min-w-0 sm:w-48">
+                <div className="flex-1 min-w-[120px] max-w-[200px]">
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger data-testid="select-sort-by">
                       <SelectValue placeholder="Sort by" />
@@ -207,12 +201,20 @@ export default function ContractsPage() {
                 </div>
               </div>
               
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-gray-500 flex-shrink-0 hidden sm:block">
                 {contracts.length} contract{contracts.length !== 1 ? 's' : ''}
               </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Add Contract Button */}
+        <div className="mb-6 text-center">
+          <Button onClick={() => setShowContractWizard(true)} data-testid="button-add-contract" className="px-8">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Contract
+          </Button>
+        </div>
 
         {/* Contracts List */}
         {contracts.length > 0 ? (

@@ -84,14 +84,14 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
             </div>
             
 
-            <div className="grid grid-cols-2 gap-6 text-sm">
+            <div className="grid grid-cols-2 gap-48 text-sm">
               <div className="space-y-3">
                 <div>
                   <p className="text-gray-500 flex items-center">
                     <Calendar className="w-4 h-4 mr-1" />
                     Duration
                   </p>
-                  <p className="font-medium text-gray-900" data-testid={`text-contract-duration-${contract.id}`}>
+                  <p className="font-medium text-gray-900 whitespace-nowrap" data-testid={`text-contract-duration-${contract.id}`}>
                     {formatDateRange(contract.startDate, contract.endDate)}
                   </p>
                 </div>
@@ -152,35 +152,43 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
         </div>
         
         {/* Schedule Preview */}
-        <div className="mt-3 pt-3 border-t border-gray-100">
-
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-medium text-gray-700">Schedule</p>
-            <p className="text-xs text-gray-500">
-              <span data-testid={`text-contract-shifts-${contract.id}`}>{shiftsCount}</span> shifts
-            </p>
+        <div className="mt-3 pt-2 border-t border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-1.5">
+              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+              <p className="text-xs font-semibold text-gray-800">Schedule</p>
+            </div>
+            <div className="bg-white px-1.5 py-0.5 rounded-full border border-blue-200">
+              <p className="text-xs font-medium text-blue-700">
+                <span data-testid={`text-contract-shifts-${contract.id}`}>{shiftsCount}</span> shifts
+              </p>
+            </div>
           </div>
 
-          <div className="flex space-x-1">
+          <div className="flex space-x-1 justify-between">
             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => {
               const isWorkDay = contract.recurrence.byDay.includes(day as any);
               return (
                 <div
                   key={day}
-                  className="flex flex-col items-center"
+                  className="flex flex-col items-center flex-1"
                   data-testid={`indicator-workday-${day.toLowerCase()}-${contract.id}`}
                 >
                   <span
-                    className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                    className={`text-xs font-medium ${
                       isWorkDay
-                        ? "bg-gray-100 text-gray-800"
-                        : "bg-gray-300 text-gray-600"
+                        ? "text-blue-700"
+                        : "text-gray-400"
                     }`}
                   >
-                    {getDaysOfWeek([day])[0]}
+                    {day}
                   </span>
                   {isWorkDay && (
-                    <span className="text-xs text-gray-500 mt-1">7A-7P</span>
+                    <div className="mt-1 text-center">
+                      <span className="text-xs font-medium text-gray-700 bg-white px-1 py-0.5 rounded-full border border-blue-200">
+                        7A-7P
+                      </span>
+                    </div>
                   )}
                 </div>
               );

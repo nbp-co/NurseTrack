@@ -26,6 +26,10 @@ export const contracts = pgTable("contracts", {
   weeklyHours: integer("weekly_hours").notNull(),
   recurrence: jsonb("recurrence").notNull(), // RecurrenceRules
   status: text("status").notNull(), // 'planned' | 'active' | 'completed'
+  address: text("address"),
+  contactName: text("contact_name"),
+  phoneNumber: text("phone_number"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -77,6 +81,10 @@ export const insertContractSchema = createInsertSchema(contracts).pick({
   weeklyHours: true,
   recurrence: true,
   status: true,
+  address: true,
+  contactName: true,
+  phoneNumber: true,
+  notes: true,
 });
 
 export const insertShiftSchema = createInsertSchema(shifts).pick({

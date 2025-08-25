@@ -104,7 +104,6 @@ export default function CalendarPage() {
       .slice(0, 5);
   }, [shifts]);
 
-
   const nextThreeShifts = useMemo(() => {
     const today = new Date();
     const nextMonth = new Date(today);
@@ -118,7 +117,6 @@ export default function CalendarPage() {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .slice(0, 3);
   }, [shifts]);
-
 
   const handleDayClick = (date: string) => {
     setSelectedDate(date);
@@ -167,16 +165,10 @@ export default function CalendarPage() {
         title="Calendar"
         subtitle="View and manage your shift schedule"
         actions={
-          <div className="flex items-center space-x-2">
-            <CalendarWeekToggle 
-              isWeekView={isWeekView}
-              onToggle={setIsWeekView}
-            />
-            <Button onClick={() => setShowShiftForm(true)} data-testid="button-add-shift">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Shift
-            </Button>
-          </div>
+          <CalendarWeekToggle 
+            isWeekView={isWeekView}
+            onToggle={setIsWeekView}
+          />
         }
       />
 
@@ -239,6 +231,16 @@ export default function CalendarPage() {
           )}
         </div>
       )}
+
+      {/* Add Shift Button */}
+      <div className="lg:px-8 px-4 pt-6 pb-0">
+        <div className="mb-6 text-center">
+          <Button onClick={() => setShowShiftForm(true)} data-testid="button-add-shift" className="px-8">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Shift
+          </Button>
+        </div>
+      </div>
 
       <div className="lg:px-8 px-4 py-6">
         {!isWeekView ? (

@@ -16,6 +16,10 @@ export interface Contract {
     exceptions?: { date: string; note?: string }[];
   };
   status: 'planned' | 'active' | 'completed';
+  address?: string;
+  contactName?: string;
+  phoneNumber?: string;
+  notes?: string;
 }
 
 export interface Shift {
