@@ -26,11 +26,11 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
     return `${start.toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric', 
-      year: 'numeric'
+      year: '2-digit'
     })} - ${end.toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric', 
-      year: 'numeric' 
+      year: '2-digit' 
     })}`;
   };
 
@@ -91,7 +91,7 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
                     <Calendar className="w-4 h-4 mr-1" />
                     Duration
                   </p>
-                  <p className="font-medium text-gray-900" data-testid={`text-contract-duration-${contract.id}`}>
+                  <p className="font-medium text-gray-900 whitespace-nowrap" data-testid={`text-contract-duration-${contract.id}`}>
                     {formatDateRange(contract.startDate, contract.endDate)}
                   </p>
                 </div>
