@@ -180,7 +180,7 @@ export default function ExpensesPage() {
 
         {/* Add Expense Button */}
         <div className="mb-6">
-          <Button onClick={() => setShowExpenseForm(true)} data-testid="button-add-expense">
+          <Button onClick={() => setShowExpenseForm(true)} data-testid="button-add-expense" className="px-8">
             <Plus className="w-4 h-4 mr-2" />
             Add Expense
           </Button>

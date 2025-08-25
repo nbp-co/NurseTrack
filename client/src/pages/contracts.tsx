@@ -210,7 +210,7 @@ export default function ContractsPage() {
 
         {/* Add Contract Button */}
         <div className="mb-6">
-          <Button onClick={() => setShowContractWizard(true)} data-testid="button-add-contract">
+          <Button onClick={() => setShowContractWizard(true)} data-testid="button-add-contract" className="px-8">
             <Plus className="w-4 h-4 mr-2" />
             Add Contract
           </Button>
