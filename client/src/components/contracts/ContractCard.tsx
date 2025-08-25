@@ -174,20 +174,15 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
                   className="flex flex-col items-center flex-1"
                   data-testid={`indicator-workday-${day.toLowerCase()}-${contract.id}`}
                 >
-                  <div className="relative">
-                    <span
-                      className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-semibold transition-all ${
-                        isWorkDay
-                          ? "bg-blue-500 text-white shadow-md"
-                          : "bg-white text-gray-400 border border-gray-200"
-                      }`}
-                    >
-                      {getDaysOfWeek([day])[0].charAt(0)}
-                    </span>
-                    {isWorkDay && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
-                    )}
-                  </div>
+                  <span
+                    className={`text-xs font-medium ${
+                      isWorkDay
+                        ? "text-blue-700"
+                        : "text-gray-400"
+                    }`}
+                  >
+                    {day}
+                  </span>
                   {isWorkDay && (
                     <div className="mt-2 text-center">
                       <span className="text-xs font-medium text-gray-700 bg-white px-1.5 py-0.5 rounded-full border border-blue-200">
