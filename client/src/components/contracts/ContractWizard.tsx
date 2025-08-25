@@ -57,7 +57,7 @@ const contractFormSchema = z.object({
   sundayEnd: z.string().optional(),
   address: z.string().min(1, "Address must contain at least street and city").optional().or(z.literal("")),
   contactName: z.string().min(2, "Contact name must be at least 2 characters").max(50, "Contact name cannot exceed 50 characters").regex(/^[a-zA-Z\s.-]+$/, "Contact name can only contain letters, spaces, periods, and hyphens").optional().or(z.literal("")),
-  phoneNumber: z.string().regex(/^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/, "Please enter a valid phone number (e.g., (555) 123-4567)").optional().or(z.literal("")),
+  phoneNumber: z.string().regex(/^([0-9]{3})-([0-9]{3})-([0-9]{4})$/, "Please enter a valid phone number (e.g., 444-444-4444)").optional().or(z.literal("")),
   notes: z.string().max(500, "Notes cannot exceed 500 characters").optional(),
 });
 
@@ -457,10 +457,10 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                           <FormLabel>Phone Number</FormLabel>
                           <FormControl>
                             <Input 
-                              placeholder="(555) 123-4567" 
+                              placeholder="444-444-4444" 
                               {...field} 
                               data-testid="input-phone-number"
-                              maxLength={14}
+                              maxLength={12}
                             />
                           </FormControl>
                           <FormMessage />
