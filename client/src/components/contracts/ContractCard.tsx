@@ -152,20 +152,20 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
         </div>
         
         {/* Schedule Preview */}
-        <div className="mt-4 pt-3 border-t border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <p className="text-sm font-semibold text-gray-800">Schedule</p>
+        <div className="mt-3 pt-2 border-t border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-1.5">
+              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+              <p className="text-xs font-semibold text-gray-800">Schedule</p>
             </div>
-            <div className="bg-white px-2 py-1 rounded-full border border-blue-200">
+            <div className="bg-white px-1.5 py-0.5 rounded-full border border-blue-200">
               <p className="text-xs font-medium text-blue-700">
                 <span data-testid={`text-contract-shifts-${contract.id}`}>{shiftsCount}</span> shifts
               </p>
             </div>
           </div>
 
-          <div className="flex space-x-1.5 justify-between">
+          <div className="flex space-x-1 justify-between">
             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => {
               const isWorkDay = contract.recurrence.byDay.includes(day as any);
               return (
@@ -184,8 +184,8 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
                     {day}
                   </span>
                   {isWorkDay && (
-                    <div className="mt-2 text-center">
-                      <span className="text-xs font-medium text-gray-700 bg-white px-1.5 py-0.5 rounded-full border border-blue-200">
+                    <div className="mt-1 text-center">
+                      <span className="text-xs font-medium text-gray-700 bg-white px-1 py-0.5 rounded-full border border-blue-200">
                         7A-7P
                       </span>
                     </div>
