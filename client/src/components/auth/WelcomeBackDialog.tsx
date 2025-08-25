@@ -54,9 +54,30 @@ export function WelcomeBackDialog({ open, onOpenChange }: WelcomeBackDialogProps
     onOpenChange(open);
   };
 
+  const handleDialogContentClick = (e: React.MouseEvent) => {
+    // Check if the click target is within the quick actions area
+    const target = e.target as HTMLElement;
+    const quickActionsArea = target.closest('[data-quick-actions]');
+    
+    if (!quickActionsArea) {
+      // Navigate to dashboard if not clicking on quick actions
+      onOpenChange(false);
+      setLocation('/dashboard');
+    }
+  };
+
+  const handleCloseClick = () => {
+    onOpenChange(false);
+    setLocation('/dashboard');
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
-      <DialogContent className="sm:max-w-[500px] bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200" data-testid="dialog-welcome-back">
+      <DialogContent 
+        className="sm:max-w-[500px] bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200 cursor-pointer" 
+        data-testid="dialog-welcome-back"
+        onClick={handleDialogContentClick}
+      >
         <DialogHeader>
           <div className="flex items-center gap-2 mb-2">
             <div className="p-2 bg-blue-100 rounded-full">
@@ -104,7 +125,7 @@ export function WelcomeBackDialog({ open, onOpenChange }: WelcomeBackDialogProps
           </div>
 
           {/* Quick Actions */}
-          <div className="space-y-3">
+          <div className="space-y-3" data-quick-actions>
             <h3 className="font-semibold text-gray-900 text-sm">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-3">
               <Button 
@@ -144,7 +165,7 @@ export function WelcomeBackDialog({ open, onOpenChange }: WelcomeBackDialogProps
         <DialogFooter className="flex justify-between sm:justify-between">
           <Button 
             variant="outline" 
-            onClick={() => onOpenChange(false)}
+            onClick={handleCloseClick}
             className="bg-white/70 backdrop-blur-sm hover:bg-white/90"
             data-testid="button-close-welcome"
           >
