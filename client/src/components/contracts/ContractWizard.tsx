@@ -611,8 +611,8 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
 
                 {/* Individual Day Schedules */}
                 {form.watch('byDay').length > 0 && (
-                  <div className="mt-6 space-y-4">
-                    <div className="flex items-center justify-between">
+                  <div className="mt-6 bg-gray-50 p-6 rounded-lg">
+                    <div className="flex items-center justify-between mb-4">
                       <div>
                         <h4 className="text-md font-semibold text-gray-900">Individual Day Schedules</h4>
                         <p className="text-sm text-gray-500">Customize times for each working day (defaults to the times above)</p>
@@ -627,7 +627,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                         Apply Default Times to All
                       </Button>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {form.watch('byDay').map((dayCode) => {
                         const day = DAYS_OF_WEEK.find(d => d.value === dayCode);
                         if (!day) return null;
@@ -637,46 +637,44 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                         const endFieldName = `${dayName}End` as keyof ContractFormData;
                         
                         return (
-                          <div key={dayCode} className="bg-gray-50 p-4 rounded-lg">
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="font-medium text-gray-900">{day.label}</span>
+                          <div key={dayCode} className="grid grid-cols-3 gap-4 items-end">
+                            <div className="font-medium text-gray-900 py-2">
+                              {day.label}
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <FormField
-                                control={form.control}
-                                name={startFieldName}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Start Time</FormLabel>
-                                    <FormControl>
-                                      <Input 
-                                        type="time" 
-                                        {...field} 
-                                        data-testid={`input-${dayName}-start`}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={form.control}
-                                name={endFieldName}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>End Time</FormLabel>
-                                    <FormControl>
-                                      <Input 
-                                        type="time" 
-                                        {...field} 
-                                        data-testid={`input-${dayName}-end`}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
+                            <FormField
+                              control={form.control}
+                              name={startFieldName}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs text-gray-500">Start Time</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      type="time" 
+                                      {...field} 
+                                      data-testid={`input-${dayName}-start`}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={endFieldName}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs text-gray-500">End Time</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      type="time" 
+                                      {...field} 
+                                      data-testid={`input-${dayName}-end`}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
                           </div>
                         );
                       })}
