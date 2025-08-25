@@ -121,7 +121,7 @@ export default function DashboardPage() {
 
       <div className="lg:px-8 px-4 py-6">
         {/* Weekly, Next Week, and Monthly Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-3 gap-4 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
