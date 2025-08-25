@@ -40,6 +40,21 @@ const contractFormSchema = z.object({
   byDay: z.array(z.string()).min(1, "Select at least one day of the week"),
   defaultStart: z.string().min(1, "Default start time is required"),
   defaultEnd: z.string().min(1, "Default end time is required"),
+  // Individual day schedules
+  mondayStart: z.string().optional(),
+  mondayEnd: z.string().optional(),
+  tuesdayStart: z.string().optional(),
+  tuesdayEnd: z.string().optional(),
+  wednesdayStart: z.string().optional(),
+  wednesdayEnd: z.string().optional(),
+  thursdayStart: z.string().optional(),
+  thursdayEnd: z.string().optional(),
+  fridayStart: z.string().optional(),
+  fridayEnd: z.string().optional(),
+  saturdayStart: z.string().optional(),
+  saturdayEnd: z.string().optional(),
+  sundayStart: z.string().optional(),
+  sundayEnd: z.string().optional(),
   address: z.string().min(1, "Address must contain at least street and city").optional().or(z.literal("")),
   contactName: z.string().min(2, "Contact name must be at least 2 characters").max(50, "Contact name cannot exceed 50 characters").regex(/^[a-zA-Z\s.-]+$/, "Contact name can only contain letters, spaces, periods, and hyphens").optional().or(z.literal("")),
   phoneNumber: z.string().regex(/^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/, "Please enter a valid phone number (e.g., (555) 123-4567)").optional().or(z.literal("")),
@@ -100,6 +115,21 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
       byDay: initialData?.recurrence.byDay || ['MON', 'TUE', 'WED', 'THU', 'FRI'],
       defaultStart: initialData?.recurrence.defaultStart || "07:00",
       defaultEnd: initialData?.recurrence.defaultEnd || "19:00",
+      // Individual day defaults - use default times initially
+      mondayStart: initialData?.recurrence.defaultStart || "07:00",
+      mondayEnd: initialData?.recurrence.defaultEnd || "19:00",
+      tuesdayStart: initialData?.recurrence.defaultStart || "07:00",
+      tuesdayEnd: initialData?.recurrence.defaultEnd || "19:00",
+      wednesdayStart: initialData?.recurrence.defaultStart || "07:00",
+      wednesdayEnd: initialData?.recurrence.defaultEnd || "19:00",
+      thursdayStart: initialData?.recurrence.defaultStart || "07:00",
+      thursdayEnd: initialData?.recurrence.defaultEnd || "19:00",
+      fridayStart: initialData?.recurrence.defaultStart || "07:00",
+      fridayEnd: initialData?.recurrence.defaultEnd || "19:00",
+      saturdayStart: initialData?.recurrence.defaultStart || "07:00",
+      saturdayEnd: initialData?.recurrence.defaultEnd || "19:00",
+      sundayStart: initialData?.recurrence.defaultStart || "07:00",
+      sundayEnd: initialData?.recurrence.defaultEnd || "19:00",
       address: initialData?.address || "",
       contactName: initialData?.contactName || "",
       phoneNumber: initialData?.phoneNumber || "",
@@ -117,6 +147,19 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
+  };
+
+  // Update all individual day times when default times change
+  const updateAllDayTimes = (startTime: string, endTime: string) => {
+    const selectedDays = form.watch('byDay');
+    selectedDays.forEach(dayCode => {
+      const day = DAYS_OF_WEEK.find(d => d.value === dayCode);
+      if (day) {
+        const dayName = day.label.toLowerCase();
+        form.setValue(`${dayName}Start` as keyof ContractFormData, startTime);
+        form.setValue(`${dayName}End` as keyof ContractFormData, endTime);
+      }
+    });
   };
 
   const handleSubmit = (data: ContractFormData) => {
@@ -463,6 +506,10 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                           <Input 
                             type="time" 
                             {...field} 
+                            onChange={(e) => {
+                              field.onChange(e);
+                              updateAllDayTimes(e.target.value, form.watch('defaultEnd'));
+                            }}
                             data-testid="input-default-start"
                           />
                         </FormControl>
@@ -481,6 +528,10 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                           <Input 
                             type="time" 
                             {...field} 
+                            onChange={(e) => {
+                              field.onChange(e);
+                              updateAllDayTimes(form.watch('defaultStart'), e.target.value);
+                            }}
                             data-testid="input-default-end"
                           />
                         </FormControl>
@@ -546,6 +597,81 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                     </FormItem>
                   )}
                 />
+
+                {/* Individual Day Schedules */}
+                {form.watch('byDay').length > 0 && (
+                  <div className="mt-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-md font-semibold text-gray-900">Individual Day Schedules</h4>
+                        <p className="text-sm text-gray-500">Customize times for each working day (defaults to the times above)</p>
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => updateAllDayTimes(form.watch('defaultStart'), form.watch('defaultEnd'))}
+                        data-testid="button-apply-defaults"
+                      >
+                        Apply Default Times to All
+                      </Button>
+                    </div>
+                    <div className="space-y-4">
+                      {form.watch('byDay').map((dayCode) => {
+                        const day = DAYS_OF_WEEK.find(d => d.value === dayCode);
+                        if (!day) return null;
+                        
+                        const dayName = day.label.toLowerCase();
+                        const startFieldName = `${dayName}Start` as keyof ContractFormData;
+                        const endFieldName = `${dayName}End` as keyof ContractFormData;
+                        
+                        return (
+                          <div key={dayCode} className="bg-gray-50 p-4 rounded-lg">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="font-medium text-gray-900">{day.label}</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <FormField
+                                control={form.control}
+                                name={startFieldName}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Start Time</FormLabel>
+                                    <FormControl>
+                                      <Input 
+                                        type="time" 
+                                        {...field} 
+                                        data-testid={`input-${dayName}-start`}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={endFieldName}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>End Time</FormLabel>
+                                    <FormControl>
+                                      <Input 
+                                        type="time" 
+                                        {...field} 
+                                        data-testid={`input-${dayName}-end`}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
