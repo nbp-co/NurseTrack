@@ -168,15 +168,15 @@ export default function ContractsPage() {
       <div className="lg:px-8 px-4 py-6">
         {/* Filters */}
         <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <CardContent className="p-2">
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-gray-500" />
                 <span className="text-sm font-medium text-gray-700">Filters</span>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                <div className="min-w-0 sm:w-48">
+              <div className="flex gap-4 flex-1">
+                <div className="min-w-0 w-48">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger data-testid="select-status-filter">
                       <SelectValue placeholder="Filter by status" />
@@ -191,7 +191,7 @@ export default function ContractsPage() {
                   </Select>
                 </div>
                 
-                <div className="min-w-0 sm:w-48">
+                <div className="min-w-0 w-48">
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger data-testid="select-sort-by">
                       <SelectValue placeholder="Sort by" />
