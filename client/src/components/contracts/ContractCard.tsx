@@ -26,11 +26,11 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
     return `${start.toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric', 
-      year: '2-digit'
+      year: 'numeric'
     })} - ${end.toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric', 
-      year: '2-digit' 
+      year: 'numeric' 
     })}`;
   };
 
@@ -84,7 +84,7 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
             </div>
             
 
-            <div className="grid grid-cols-2 gap-6 text-sm">
+            <div className="grid grid-cols-2 gap-8 text-sm">
               <div className="space-y-3">
                 <div>
                   <p className="text-gray-500 flex items-center">
