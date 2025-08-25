@@ -1,10 +1,10 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, ChevronUp, Clock, MapPin } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Button } from "@/components/ui/button";
 import { CalendarMonth } from "@/components/calendar/CalendarMonth";
-import { CalendarWeek } from "@/components/calendar/CalendarWeek";
+import { CalendarWeekToggle, CalendarWeekView } from "@/components/calendar/CalendarWeek";
 import { DayDetailDrawer } from "@/components/drawers/DayDetailDrawer";
 import { ShiftForm } from "@/components/forms/ShiftForm";
 import { PageLoader } from "@/components/ui/loader";
@@ -19,6 +19,7 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [showDayDetail, setShowDayDetail] = useState(false);
   const [showShiftForm, setShowShiftForm] = useState(false);
+  const [showUpcoming, setShowUpcoming] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -89,6 +90,34 @@ export default function CalendarPage() {
     return shifts.filter(shift => shift.date === selectedDate);
   }, [shifts, selectedDate]);
 
+  const upcomingShifts = useMemo(() => {
+    const today = new Date();
+    const next7Days = new Date(today);
+    next7Days.setDate(today.getDate() + 7);
+    
+    return shifts
+      .filter(shift => {
+        const shiftDate = new Date(shift.date);
+        return shiftDate >= today && shiftDate <= next7Days && !shift.completed;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(0, 5);
+  }, [shifts]);
+
+  const nextThreeShifts = useMemo(() => {
+    const today = new Date();
+    const nextMonth = new Date(today);
+    nextMonth.setDate(today.getDate() + 30);
+    
+    return shifts
+      .filter(shift => {
+        const shiftDate = new Date(shift.date);
+        return shiftDate >= today && shiftDate <= nextMonth && !shift.completed;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(0, 3);
+  }, [shifts]);
+
   const handleDayClick = (date: string) => {
     setSelectedDate(date);
     setShowDayDetail(true);
@@ -107,6 +136,25 @@ export default function CalendarPage() {
     setShowShiftForm(true);
   };
 
+  const formatShiftDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+      return "Today";
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return "Tomorrow";
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    }
+  };
+
   if (isLoading) {
     return <PageLoader text="Loading calendar..." />;
   }
@@ -117,18 +165,82 @@ export default function CalendarPage() {
         title="Calendar"
         subtitle="View and manage your shift schedule"
         actions={
-          <div className="flex items-center space-x-2">
-            <CalendarWeek 
-              isWeekView={isWeekView}
-              onToggle={setIsWeekView}
-            />
-            <Button onClick={() => setShowShiftForm(true)} data-testid="button-add-shift">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Shift
-            </Button>
-          </div>
+          <CalendarWeekToggle 
+            isWeekView={isWeekView}
+            onToggle={setIsWeekView}
+          />
         }
       />
+
+      {/* Upcoming Shifts Section */}
+      {upcomingShifts.length > 0 && (
+        <div className="lg:px-8 px-4 pt-6 pb-0">
+          <div 
+            className="flex items-center justify-between cursor-pointer mb-4"
+            onClick={() => setShowUpcoming(!showUpcoming)}
+            data-testid="button-toggle-upcoming"
+          >
+            <h2 className="text-xl font-semibold text-gray-900">Upcoming Shifts</h2>
+            <ChevronUp 
+              className={`w-5 h-5 text-gray-500 transition-transform ${
+                showUpcoming ? 'rotate-0' : 'rotate-180'
+              }`}
+            />
+          </div>
+          
+          {showUpcoming && (
+            <div className="space-y-3 mb-6">
+              {upcomingShifts.map((shift) => {
+                const contract = contracts.find(c => c.id === shift.contractId);
+                
+                return (
+                  <div 
+                    key={shift.id} 
+                    className="bg-rose-50 border border-rose-200 rounded-lg p-4 cursor-pointer hover:bg-rose-100 transition-colors"
+                    onClick={() => handleDayClick(shift.date)}
+                    data-testid={`upcoming-shift-${shift.id}`}
+                  >
+                    <div className="grid grid-cols-3 items-center">
+                      <div className="flex items-center space-x-3">
+                        <div className="text-sm font-medium text-gray-900">
+                          {formatShiftDate(shift.date)}
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col items-center">
+                        <div className="flex items-center space-x-2 text-sm text-gray-700">
+                          <MapPin className="w-4 h-4" />
+                          <span className="font-medium">{shift.facility}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-sm text-gray-500">
+                          <Clock className="w-4 h-4" />
+                          <span>{shift.start} - {shift.end}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-end">
+                        <span className="text-sm font-medium text-gray-600 bg-white px-3 py-1 rounded-full border">
+                          {shift.role}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Add Shift Button */}
+      <div className="lg:px-8 px-4 pt-6 pb-0">
+        <div className="mb-6 text-center">
+          <Button onClick={() => setShowShiftForm(true)} data-testid="button-add-shift" className="px-8">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Shift
+          </Button>
+        </div>
+      </div>
 
       <div className="lg:px-8 px-4 py-6">
         {!isWeekView ? (
@@ -137,12 +249,15 @@ export default function CalendarPage() {
             events={calendarEvents}
             onDateChange={setCurrentDate}
             onDayClick={handleDayClick}
+            upcomingShifts={nextThreeShifts}
           />
         ) : (
-          <div className="bg-white rounded-xl shadow-sm border p-8 text-center">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Week View</h3>
-            <p className="text-gray-500">Week view coming soon!</p>
-          </div>
+          <CalendarWeekView
+            currentDate={currentDate}
+            events={calendarEvents}
+            onDateChange={setCurrentDate}
+            onDayClick={handleDayClick}
+          />
         )}
       </div>
 

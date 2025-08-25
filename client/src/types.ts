@@ -7,6 +7,7 @@ export interface Contract {
   endDate: string;   // ISO
   payType: 'hourly' | 'salary';
   baseRate: number;
+  overtimeRate?: number;
   weeklyHours: number;
   recurrence: {
     byDay: ('SUN'|'MON'|'TUE'|'WED'|'THU'|'FRI'|'SAT')[];
@@ -15,6 +16,10 @@ export interface Contract {
     exceptions?: { date: string; note?: string }[];
   };
   status: 'planned' | 'active' | 'completed';
+  address?: string;
+  contactName?: string;
+  phoneNumber?: string;
+  notes?: string;
 }
 
 export interface Shift {

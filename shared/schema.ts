@@ -22,9 +22,14 @@ export const contracts = pgTable("contracts", {
   endDate: text("end_date").notNull(),     // ISO string
   payType: text("pay_type").notNull(), // 'hourly' | 'salary'
   baseRate: decimal("base_rate", { precision: 10, scale: 2 }).notNull(),
+  overtimeRate: decimal("overtime_rate", { precision: 10, scale: 2 }),
   weeklyHours: integer("weekly_hours").notNull(),
   recurrence: jsonb("recurrence").notNull(), // RecurrenceRules
   status: text("status").notNull(), // 'planned' | 'active' | 'completed'
+  address: text("address"),
+  contactName: text("contact_name"),
+  phoneNumber: text("phone_number"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -72,9 +77,14 @@ export const insertContractSchema = createInsertSchema(contracts).pick({
   endDate: true,
   payType: true,
   baseRate: true,
+  overtimeRate: true,
   weeklyHours: true,
   recurrence: true,
   status: true,
+  address: true,
+  contactName: true,
+  phoneNumber: true,
+  notes: true,
 });
 
 export const insertShiftSchema = createInsertSchema(shifts).pick({

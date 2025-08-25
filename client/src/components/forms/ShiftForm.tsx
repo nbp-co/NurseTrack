@@ -88,6 +88,9 @@ export function ShiftForm({
       end: data.end,
       role: data.role,
       facility: data.facility,
+      completed: false,
+      actualStart: undefined,
+      actualEnd: undefined,
     });
     onClose();
   };

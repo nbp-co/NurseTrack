@@ -78,3 +78,12 @@ Preferred communication style: Simple, everyday language.
 - **Express.js**: Node.js web server framework
 - **CORS & Security**: Cross-origin resource sharing and basic security headers
 - **Session Management**: Stateful authentication with database session storage
+
+## Recent Updates
+
+### Contact Information Enhancement (August 2025)
+- Added comprehensive contact information section to contract basics step
+- New fields include: address, contact name, phone number, and notes
+- Contact information appears at bottom of basics page with clear visual separation
+- Updated schema and types to support new fields
+- Enhanced review step to display contact information in summary

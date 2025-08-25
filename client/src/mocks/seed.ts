@@ -10,6 +10,7 @@ export const mockContracts: Contract[] = [
     endDate: '2024-03-31',
     payType: 'hourly',
     baseRate: 45.00,
+    overtimeRate: 67.50,
     weeklyHours: 36,
     recurrence: {
       byDay: ['MON', 'TUE', 'WED'],
@@ -28,6 +29,7 @@ export const mockContracts: Contract[] = [
     endDate: '2024-06-30',
     payType: 'hourly',
     baseRate: 52.00,
+    overtimeRate: 78.00,
     weeklyHours: 40,
     recurrence: {
       byDay: ['TUE', 'WED', 'THU', 'FRI'],

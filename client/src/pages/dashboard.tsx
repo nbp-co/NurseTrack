@@ -107,135 +107,135 @@ export default function DashboardPage() {
       <AppHeader 
         title="Dashboard"
         subtitle="Overview of your nursing contracts and recent activity"
-        actions={
-          <Button onClick={() => setShowShiftForm(true)} data-testid="button-add-shift">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Shift
-          </Button>
-        }
       />
 
       <div className="lg:px-8 px-4 py-6">
-        {/* Dashboard Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          <div className="lg:col-span-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-              <StatCard
-                label="This Week"
-                value={`${dashboardStats.weeklyStats.hours} hours`}
-                subtext={`${Math.max(0, 40 - dashboardStats.weeklyStats.hours)} hours remaining`}
-                icon={<Clock className="w-6 h-6 text-primary" />}
-                trend={dashboardStats.weeklyStats.hours > 32 ? "up" : "neutral"}
-                trendColor="success"
-              />
-              
-              <StatCard
-                label="Weekly Earnings"
-                value={formatCurrency(dashboardStats.weeklyStats.earnings)}
-                subtext="12% vs last week"
-                icon={<DollarSign className="w-6 h-6 text-success-500" />}
-                trend="up"
-                trendColor="success"
-              />
-            </div>
-            
-            {/* Recent Shifts */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold text-gray-900">
-                  Recent Shifts
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {recentShifts.length > 0 ? (
-                  <div className="divide-y divide-gray-100">
-                    {recentShifts.map((shift) => {
-                      const contract = contracts.find(c => c.id === shift.contractId);
-                      const earnings = contract ? 
-                        ((parseTime(shift.actualEnd || shift.end) - parseTime(shift.actualStart || shift.start)) / (1000 * 60 * 60)) * contract.baseRate
-                        : 0;
-                      
-                      return (
-                        <div key={shift.id} className="p-4 flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                              <BarChart3 className="w-5 h-5 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900" data-testid={`text-recent-facility-${shift.id}`}>
-                                {shift.facility}
-                              </p>
-                              <p className="text-sm text-gray-500" data-testid={`text-recent-schedule-${shift.id}`}>
-                                {formatDate(shift.date)}, {shift.start} - {shift.end}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <Badge 
-                              variant={shift.completed ? "default" : "secondary"}
-                              data-testid={`badge-recent-status-${shift.id}`}
-                            >
-                              {shift.completed ? "Completed" : "Scheduled"}
-                            </Badge>
-                            {shift.completed && (
-                              <p className="text-sm text-gray-500 mt-1" data-testid={`text-recent-earnings-${shift.id}`}>
-                                {formatCurrency(earnings)}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+        {/* Weekly and Monthly Stats Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600" data-testid="text-weekly-label">
+                    This Week
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-primary" />
+                      <p className="text-2xl font-bold text-gray-900" data-testid="text-weekly-hours">
+                        {dashboardStats.weeklyStats.hours} hours
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-success-500" />
+                      <p className="text-2xl font-bold text-gray-900" data-testid="text-weekly-earnings">
+                        {formatCurrency(dashboardStats.weeklyStats.earnings)}
+                      </p>
+                    </div>
                   </div>
-                ) : (
-                  <div className="p-8 text-center">
-                    <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No shifts yet</h3>
-                    <p className="text-gray-500">Your recent shifts will appear here.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                </div>
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           
-          {/* Monthly Progress Donut Chart */}
-          <DonutCard
-            title="Monthly Progress"
-            completeCount={dashboardStats.progressMetrics.completeCount}
-            remainingCount={dashboardStats.progressMetrics.remainingCount}
-            percentage={dashboardStats.progressMetrics.percentage}
-          />
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600" data-testid="text-monthly-label">
+                    This Month
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-warning-500" />
+                      <p className="text-2xl font-bold text-gray-900" data-testid="text-monthly-hours">
+                        {dashboardStats.hoursWorked} hours
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-success-500" />
+                      <p className="text-2xl font-bold text-gray-900" data-testid="text-monthly-earnings">
+                        {formatCurrency(dashboardStats.monthlyEarnings)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Summary Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <StatCard
-            label="Active Contracts"
-            value={dashboardStats.activeContracts}
-            subtext="12% from last month"
-            icon={<BarChart3 className="w-6 h-6 text-primary" />}
-            trend="up"
-            trendColor="success"
-          />
-          
-          <StatCard
-            label="Monthly Earnings"
-            value={formatCurrency(dashboardStats.monthlyEarnings)}
-            subtext="8% from last month"
-            icon={<DollarSign className="w-6 h-6 text-success-500" />}
-            trend="up"
-            trendColor="success"
-          />
-          
-          <StatCard
-            label="Hours This Month"
-            value={dashboardStats.hoursWorked}
-            subtext="2 hours under target"
-            icon={<Clock className="w-6 h-6 text-warning-500" />}
-            trend="neutral"
-            trendColor="warning"
-          />
-        </div>
+        {/* Recent Shifts */}
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Recent Shifts
+              </CardTitle>
+              <div className="text-sm text-gray-600">
+                <span data-testid="text-active-contracts-label">
+                  {dashboardStats.activeContracts} Active Contract{dashboardStats.activeContracts !== 1 ? 's' : ''}
+                </span>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {recentShifts.length > 0 ? (
+              <div className="divide-y divide-gray-100">
+                {recentShifts.map((shift) => {
+                  const contract = contracts.find(c => c.id === shift.contractId);
+                  const earnings = contract ? 
+                    ((parseTime(shift.actualEnd || shift.end) - parseTime(shift.actualStart || shift.start)) / (1000 * 60 * 60)) * contract.baseRate
+                    : 0;
+                  
+                  return (
+                    <div key={shift.id} className="p-4 flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <BarChart3 className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900" data-testid={`text-recent-facility-${shift.id}`}>
+                            {shift.facility}
+                          </p>
+                          <p className="text-sm text-gray-500" data-testid={`text-recent-schedule-${shift.id}`}>
+                            {formatDate(shift.date)}, {shift.start} - {shift.end}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge 
+                          variant={shift.completed ? "default" : "secondary"}
+                          data-testid={`badge-recent-status-${shift.id}`}
+                        >
+                          {shift.completed ? "Completed" : "Scheduled"}
+                        </Badge>
+                        {shift.completed && (
+                          <p className="text-sm text-gray-500 mt-1" data-testid={`text-recent-earnings-${shift.id}`}>
+                            {formatCurrency(earnings)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-8 text-center">
+                <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No shifts yet</h3>
+                <p className="text-gray-500">Your recent shifts will appear here.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
       </div>
 
       <ShiftForm
