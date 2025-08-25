@@ -194,7 +194,7 @@ export function CalendarMonth({ currentDate, events, onDateChange, onDayClick, u
             week.map((day, dayIndex) => (
               <div
                 key={`${weekIndex}-${dayIndex}`}
-                className={`p-3 min-h-[100px] border-r border-b hover:bg-gray-50 cursor-pointer transition-colors relative ${
+                className={`p-3 min-h-[60px] border-r border-b hover:bg-gray-50 cursor-pointer transition-colors relative ${
                   day.isToday ? "bg-blue-100 border-2 border-blue-500" : ""
                 } ${!day.isCurrentMonth ? "text-gray-400" : ""}`}
                 onClick={() => onDayClick(day.dateString)}
