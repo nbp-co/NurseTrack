@@ -630,7 +630,12 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                       <div className="text-xs font-medium text-gray-500">End Time</div>
                     </div>
                     <div className="space-y-3">
-                      {form.watch('byDay').map((dayCode) => {
+                      {form.watch('byDay')
+                        .sort((a, b) => {
+                          const dayOrder = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+                          return dayOrder.indexOf(a) - dayOrder.indexOf(b);
+                        })
+                        .map((dayCode) => {
                         const day = DAYS_OF_WEEK.find(d => d.value === dayCode);
                         if (!day) return null;
                         
