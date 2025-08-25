@@ -112,7 +112,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
       weeklyHours: initialData?.weeklyHours || 40,
       startDate: initialData?.startDate || "",
       endDate: initialData?.endDate || "",
-      byDay: initialData?.recurrence.byDay || ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+      byDay: initialData?.recurrence.byDay || [],
       defaultStart: initialData?.recurrence.defaultStart || "07:00",
       defaultEnd: initialData?.recurrence.defaultEnd || "19:00",
       // Individual day defaults - use default times initially
