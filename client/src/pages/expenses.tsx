@@ -169,11 +169,7 @@ export default function ExpensesPage() {
 
       <div className="lg:px-8 px-4 py-6">
         {/* Expenses Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <StatCard
-            label="Total Expenses This Month"
-            value={formatCurrency(stats.totalMonth)}
-          />
+        <div className="grid grid-cols-3 gap-6 mb-6">
           <StatCard
             label="This Week"
             value={formatCurrency(stats.totalThisWeek)}
@@ -181,6 +177,10 @@ export default function ExpensesPage() {
           <StatCard
             label="Next Week"
             value={formatCurrency(stats.totalNextWeek)}
+          />
+          <StatCard
+            label="Total Expenses This Month"
+            value={formatCurrency(stats.totalMonth)}
           />
         </div>
 
