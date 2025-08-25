@@ -194,18 +194,16 @@ export function CalendarMonth({ currentDate, events, onDateChange, onDayClick, u
             week.map((day, dayIndex) => (
               <div
                 key={`${weekIndex}-${dayIndex}`}
-                className={`p-3 min-h-[100px] border-r border-b hover:bg-gray-50 cursor-pointer transition-colors relative ${
-                  day.isToday ? "bg-blue-100 border-2 border-blue-500" : ""
+                className={`p-3 min-h-[60px] border-r border-b hover:bg-gray-50 cursor-pointer transition-colors relative ${
+                  day.isToday ? "border-2 border-blue-500" : ""
                 } ${!day.isCurrentMonth ? "text-gray-400" : ""}`}
                 onClick={() => onDayClick(day.dateString)}
                 data-testid={`cell-calendar-day-${day.dateString}`}
               >
                 <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-semibold ${
-                  day.isToday 
-                    ? "bg-blue-500 text-white shadow-md" 
-                    : day.isCurrentMonth 
-                      ? "text-gray-900" 
-                      : "text-gray-400"
+                  day.isCurrentMonth 
+                    ? "text-gray-900" 
+                    : "text-gray-400"
                 }`}>
                   {day.date.getDate()}
                 </span>

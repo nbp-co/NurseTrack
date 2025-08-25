@@ -13,15 +13,6 @@ export function CalendarWeekToggle({ isWeekView, onToggle }: CalendarWeekToggleP
   return (
     <div className="bg-gray-100 p-1 rounded-lg">
       <Button
-        variant={!isWeekView ? "default" : "ghost"}
-        size="sm"
-        onClick={() => onToggle(false)}
-        className={!isWeekView ? "bg-white text-gray-900 shadow-sm" : "text-gray-600"}
-        data-testid="button-month-view"
-      >
-        Month
-      </Button>
-      <Button
         variant={isWeekView ? "default" : "ghost"}
         size="sm"
         onClick={() => onToggle(true)}
@@ -29,6 +20,15 @@ export function CalendarWeekToggle({ isWeekView, onToggle }: CalendarWeekToggleP
         data-testid="button-week-view"
       >
         Week
+      </Button>
+      <Button
+        variant={!isWeekView ? "default" : "ghost"}
+        size="sm"
+        onClick={() => onToggle(false)}
+        className={!isWeekView ? "bg-white text-gray-900 shadow-sm" : "text-gray-600"}
+        data-testid="button-month-view"
+      >
+        Month
       </Button>
     </div>
   );
@@ -167,7 +167,7 @@ export function CalendarWeekView({ currentDate, events, onDateChange, onDayClick
                 <div
                   key={date.toISOString()}
                   className={`p-2 border-r border-gray-200 last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors relative ${
-                    isToday(date) ? "bg-blue-100 border-2 border-blue-500" : ""
+                    isToday(date) ? "border-2 border-blue-500 bg-blue-50" : ""
                   }`}
                   onClick={() => onDayClick(dateStr)}
                   data-testid={`day-${dateStr}`}
@@ -175,11 +175,9 @@ export function CalendarWeekView({ currentDate, events, onDateChange, onDayClick
                   <div className="flex flex-col h-full">
                     <div className="flex items-center justify-between mb-1">
                       <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-semibold ${
-                        isToday(date) 
-                          ? 'bg-blue-500 text-white shadow-md' 
-                          : isCurrentMonth(date) 
-                            ? 'text-gray-900' 
-                            : 'text-gray-400'
+                        isCurrentMonth(date) 
+                          ? 'text-gray-900' 
+                          : 'text-gray-400'
                       }`}>
                         {date.getDate()}
                       </span>
