@@ -613,10 +613,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                 {form.watch('byDay').length > 0 && (
                   <div className="mt-6 bg-gray-50 p-6 rounded-lg">
                     <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h4 className="text-md font-semibold text-gray-900">Individual Day Schedules</h4>
-                        <p className="text-sm text-gray-500">Customize times for each working day (defaults to the times above)</p>
-                      </div>
+                      <h4 className="text-md font-semibold text-gray-900">Individual Day Schedules</h4>
                       <Button 
                         type="button" 
                         variant="outline" 
@@ -626,6 +623,11 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                       >
                         Apply Default Times to All
                       </Button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 mb-3">
+                      <div></div>
+                      <div className="text-xs font-medium text-gray-500">Start Time</div>
+                      <div className="text-xs font-medium text-gray-500">End Time</div>
                     </div>
                     <div className="space-y-3">
                       {form.watch('byDay').map((dayCode) => {
@@ -646,7 +648,6 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                               name={startFieldName}
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel className="text-xs text-gray-500">Start Time</FormLabel>
                                   <FormControl>
                                     <Input 
                                       type="time" 
@@ -663,7 +664,6 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                               name={endFieldName}
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel className="text-xs text-gray-500">End Time</FormLabel>
                                   <FormControl>
                                     <Input 
                                       type="time" 
