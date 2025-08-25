@@ -126,7 +126,7 @@ export default function DashboardPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600" data-testid="text-weekly-label">
+                  <p className="text-sm font-medium text-gray-600 whitespace-nowrap" data-testid="text-weekly-label">
                     This Week
                   </p>
                   <div className="mt-2 space-y-1">
@@ -152,7 +152,7 @@ export default function DashboardPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600" data-testid="text-next-weekly-label">
+                  <p className="text-sm font-medium text-gray-600 whitespace-nowrap" data-testid="text-next-weekly-label">
                     Next Week
                   </p>
                   <div className="mt-2 space-y-1">
@@ -178,7 +178,7 @@ export default function DashboardPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600" data-testid="text-monthly-label">
+                  <p className="text-sm font-medium text-gray-600 whitespace-nowrap" data-testid="text-monthly-label">
                     This Month
                   </p>
                   <div className="mt-2 space-y-1">
