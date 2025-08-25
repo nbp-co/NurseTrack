@@ -83,6 +83,7 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
               </Badge>
             </div>
             
+
             <div className="grid grid-cols-2 gap-6 text-sm">
               <div className="space-y-3">
                 <div>
@@ -103,6 +104,7 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
                     {contract.weeklyHours} hours
                   </p>
                 </div>
+
               </div>
               <div className="space-y-3">
                 <div>
@@ -151,12 +153,14 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
         
         {/* Schedule Preview */}
         <div className="mt-3 pt-3 border-t border-gray-100">
+
           <div className="flex items-center justify-between mb-1">
             <p className="text-sm font-medium text-gray-700">Schedule</p>
             <p className="text-xs text-gray-500">
               <span data-testid={`text-contract-shifts-${contract.id}`}>{shiftsCount}</span> shifts
             </p>
           </div>
+
           <div className="flex space-x-1">
             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => {
               const isWorkDay = contract.recurrence.byDay.includes(day as any);

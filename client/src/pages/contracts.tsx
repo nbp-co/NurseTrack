@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageLoader } from "@/components/ui/loader";
-import { contractApi, shiftApi } from "@/api/mock";
+import { contractApi } from "@/api/mock";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Contract } from "@/types";
@@ -34,6 +34,7 @@ export default function ContractsPage() {
     queryFn: () => contractApi.listContracts(),
   });
 
+
   const { data: allShifts = [] } = useQuery({
     queryKey: ['/api/shifts'],
     queryFn: () => shiftApi.listShifts(),
@@ -42,6 +43,7 @@ export default function ContractsPage() {
   const getShiftsCount = (contractId: string) => {
     return allShifts.filter(shift => shift.contractId === contractId).length;
   };
+
 
   const contracts = useMemo(() => {
     let filtered = [...allContracts];
