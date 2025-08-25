@@ -15,10 +15,10 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageLoader } from "@/components/ui/loader";
-import { contractApi } from "@/api/mock";
+import { contractApi, shiftApi } from "@/api/mock";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { Contract } from "@/types";
+import { Contract, Shift } from "@/types";
 
 export default function ContractsPage() {
   const [showContractWizard, setShowContractWizard] = useState(false);
@@ -41,7 +41,7 @@ export default function ContractsPage() {
   });
 
   const getShiftsCount = (contractId: string) => {
-    return allShifts.filter(shift => shift.contractId === contractId).length;
+    return allShifts.filter((shift: Shift) => shift.contractId === contractId).length;
   };
 
 
