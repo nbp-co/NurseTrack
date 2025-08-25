@@ -40,10 +40,10 @@ const contractFormSchema = z.object({
   byDay: z.array(z.string()).min(1, "Select at least one day of the week"),
   defaultStart: z.string().min(1, "Default start time is required"),
   defaultEnd: z.string().min(1, "Default end time is required"),
-  address: z.string().optional(),
-  contactName: z.string().optional(),
-  phoneNumber: z.string().optional(),
-  notes: z.string().optional(),
+  address: z.string().min(1, "Address must contain at least street and city").optional().or(z.literal("")),
+  contactName: z.string().min(2, "Contact name must be at least 2 characters").max(50, "Contact name cannot exceed 50 characters").regex(/^[a-zA-Z\s.-]+$/, "Contact name can only contain letters, spaces, periods, and hyphens").optional().or(z.literal("")),
+  phoneNumber: z.string().regex(/^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/, "Please enter a valid phone number (e.g., (555) 123-4567)").optional().or(z.literal("")),
+  notes: z.string().max(500, "Notes cannot exceed 500 characters").optional(),
 });
 
 type ContractFormData = z.infer<typeof contractFormSchema>;
@@ -378,6 +378,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                             placeholder="123 Main St, City, State 12345" 
                             {...field} 
                             data-testid="input-address"
+                            maxLength={100}
                           />
                         </FormControl>
                         <FormMessage />
@@ -397,6 +398,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                               placeholder="John Smith" 
                               {...field} 
                               data-testid="input-contact-name"
+                              maxLength={50}
                             />
                           </FormControl>
                           <FormMessage />
@@ -415,6 +417,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                               placeholder="(555) 123-4567" 
                               {...field} 
                               data-testid="input-phone-number"
+                              maxLength={14}
                             />
                           </FormControl>
                           <FormMessage />
@@ -435,6 +438,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                             placeholder="Additional notes about this contract..."
                             {...field}
                             data-testid="textarea-notes"
+                            maxLength={500}
                           />
                         </FormControl>
                         <FormMessage />
