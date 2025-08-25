@@ -40,6 +40,10 @@ const contractFormSchema = z.object({
   byDay: z.array(z.string()).min(1, "Select at least one day of the week"),
   defaultStart: z.string().min(1, "Default start time is required"),
   defaultEnd: z.string().min(1, "Default end time is required"),
+  address: z.string().optional(),
+  contactName: z.string().optional(),
+  phoneNumber: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 type ContractFormData = z.infer<typeof contractFormSchema>;
@@ -96,6 +100,10 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
       byDay: initialData?.recurrence.byDay || ['MON', 'TUE', 'WED', 'THU', 'FRI'],
       defaultStart: initialData?.recurrence.defaultStart || "07:00",
       defaultEnd: initialData?.recurrence.defaultEnd || "19:00",
+      address: initialData?.address || "",
+      contactName: initialData?.contactName || "",
+      phoneNumber: initialData?.phoneNumber || "",
+      notes: initialData?.notes || "",
     },
   });
 
@@ -128,7 +136,11 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
         defaultEnd: data.defaultEnd,
         exceptions: initialData?.recurrence.exceptions || []
       },
-      status: initialData?.status || 'planned'
+      status: initialData?.status || 'planned',
+      address: data.address,
+      contactName: data.contactName,
+      phoneNumber: data.phoneNumber,
+      notes: data.notes
     };
     
     onSubmit(contract);
@@ -350,6 +362,86 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                     </FormItem>
                   )}
                 />
+
+                {/* Contact Information Section */}
+                <div className="border-t border-gray-200 pt-6 mt-6">
+                  <h4 className="text-md font-semibold text-gray-900 mb-4">Contact Information</h4>
+                  
+                  <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem className="mb-4">
+                        <FormLabel>Address</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="123 Main St, City, State 12345" 
+                            {...field} 
+                            data-testid="input-address"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="contactName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Contact Name</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="John Smith" 
+                              {...field} 
+                              data-testid="input-contact-name"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="phoneNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="(555) 123-4567" 
+                              {...field} 
+                              data-testid="input-phone-number"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Notes</FormLabel>
+                        <FormControl>
+                          <textarea
+                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            placeholder="Additional notes about this contract..."
+                            {...field}
+                            data-testid="textarea-notes"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
             )}
 
@@ -500,6 +592,39 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                       </p>
                     </div>
                   </div>
+
+                  {/* Contact Information in Review */}
+                  {(form.watch('address') || form.watch('contactName') || form.watch('phoneNumber') || form.watch('notes')) && (
+                    <div className="bg-gray-50 p-4 rounded-lg mt-6">
+                      <h4 className="font-semibold text-gray-900 mb-4">Contact Information</h4>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        {form.watch('address') && (
+                          <div>
+                            <p className="text-gray-500">Address</p>
+                            <p className="font-medium" data-testid="review-address">{form.watch('address')}</p>
+                          </div>
+                        )}
+                        {form.watch('contactName') && (
+                          <div>
+                            <p className="text-gray-500">Contact Name</p>
+                            <p className="font-medium" data-testid="review-contact-name">{form.watch('contactName')}</p>
+                          </div>
+                        )}
+                        {form.watch('phoneNumber') && (
+                          <div>
+                            <p className="text-gray-500">Phone Number</p>
+                            <p className="font-medium" data-testid="review-phone-number">{form.watch('phoneNumber')}</p>
+                          </div>
+                        )}
+                      </div>
+                      {form.watch('notes') && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <p className="text-gray-500">Notes</p>
+                          <p className="font-medium text-sm mt-1" data-testid="review-notes">{form.watch('notes')}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
