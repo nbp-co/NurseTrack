@@ -422,23 +422,26 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                             ))}
                           </div>
                           <div className="space-y-4">
-                            {DAYS_OF_WEEK.filter(day => ['FRI', 'SAT', 'SUN'].includes(day.value)).map((day) => (
-                              <div key={day.value} className="flex items-center space-x-2">
-                                <Checkbox
-                                  checked={field.value?.includes(day.value)}
-                                  onCheckedChange={(checked) => {
-                                    const currentValue = field.value || [];
-                                    if (checked) {
-                                      field.onChange([...currentValue, day.value]);
-                                    } else {
-                                      field.onChange(currentValue.filter((d) => d !== day.value));
-                                    }
-                                  }}
-                                  data-testid={`checkbox-day-${day.value.toLowerCase()}`}
-                                />
-                                <label className="text-sm font-medium">{day.label}</label>
-                              </div>
-                            ))}
+                            {['FRI', 'SAT', 'SUN'].map((dayValue) => {
+                              const day = DAYS_OF_WEEK.find(d => d.value === dayValue);
+                              return (
+                                <div key={day.value} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    checked={field.value?.includes(day.value)}
+                                    onCheckedChange={(checked) => {
+                                      const currentValue = field.value || [];
+                                      if (checked) {
+                                        field.onChange([...currentValue, day.value]);
+                                      } else {
+                                        field.onChange(currentValue.filter((d) => d !== day.value));
+                                      }
+                                    }}
+                                    data-testid={`checkbox-day-${day.value.toLowerCase()}`}
+                                  />
+                                  <label className="text-sm font-medium">{day.label}</label>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       </FormControl>
