@@ -334,7 +334,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                   name="weeklyHours"
                   render={({ field }) => (
                     <FormItem className="md:w-1/2">
-                      <FormLabel>Weekly Hours *</FormLabel>
+                      <FormLabel>Est. Weekly Hours *</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
