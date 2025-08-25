@@ -84,7 +84,7 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
             </div>
             
 
-            <div className="grid grid-cols-2 gap-16 text-sm">
+            <div className="grid grid-cols-2 gap-48 text-sm">
               <div className="space-y-3">
                 <div>
                   <p className="text-gray-500 flex items-center">
