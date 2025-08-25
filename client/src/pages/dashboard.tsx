@@ -132,13 +132,13 @@ export default function DashboardPage() {
                   <div className="mt-2 space-y-1">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-primary" />
-                      <p className="text-2xl font-bold text-gray-900" data-testid="text-weekly-hours">
+                      <p className="text-xl font-bold text-gray-900" data-testid="text-weekly-hours">
                         {dashboardStats.weeklyStats.hours} hours
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-4 h-4 text-success-500" />
-                      <p className="text-2xl font-bold text-gray-900" data-testid="text-weekly-earnings">
+                      <p className="text-xl font-bold text-gray-900" data-testid="text-weekly-earnings">
                         {formatCurrency(dashboardStats.weeklyStats.earnings)}
                       </p>
                     </div>
@@ -158,13 +158,13 @@ export default function DashboardPage() {
                   <div className="mt-2 space-y-1">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-primary" />
-                      <p className="text-2xl font-bold text-gray-900" data-testid="text-next-weekly-hours">
+                      <p className="text-xl font-bold text-gray-900" data-testid="text-next-weekly-hours">
                         {dashboardStats.nextWeekStats.hours} hours
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-4 h-4 text-success-500" />
-                      <p className="text-2xl font-bold text-gray-900" data-testid="text-next-weekly-earnings">
+                      <p className="text-xl font-bold text-gray-900" data-testid="text-next-weekly-earnings">
                         {formatCurrency(dashboardStats.nextWeekStats.earnings)}
                       </p>
                     </div>
@@ -184,13 +184,13 @@ export default function DashboardPage() {
                   <div className="mt-2 space-y-1">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-warning-500" />
-                      <p className="text-2xl font-bold text-gray-900" data-testid="text-monthly-hours">
+                      <p className="text-xl font-bold text-gray-900" data-testid="text-monthly-hours">
                         {dashboardStats.hoursWorked} hours
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-4 h-4 text-success-500" />
-                      <p className="text-2xl font-bold text-gray-900" data-testid="text-monthly-earnings">
+                      <p className="text-xl font-bold text-gray-900" data-testid="text-monthly-earnings">
                         {formatCurrency(dashboardStats.monthlyEarnings)}
                       </p>
                     </div>
