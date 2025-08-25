@@ -179,7 +179,7 @@ export default function ExpensesPage() {
             value={formatCurrency(stats.totalNextWeek)}
           />
           <StatCard
-            label="Total Expenses This Month"
+            label="This Month"
             value={formatCurrency(stats.totalMonth)}
           />
         </div>
