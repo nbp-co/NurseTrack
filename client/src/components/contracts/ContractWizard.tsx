@@ -348,13 +348,23 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
             <FormItem>
               <FormLabel>Base Rate ($/hour)</FormLabel>
               <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="45.00"
-                  {...field}
-                  data-testid="input-base-rate"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="45.00"
+                    className="pl-8"
+                    {...field}
+                    onKeyPress={(e) => {
+                      if (!/[0-9.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab') {
+                        e.preventDefault();
+                      }
+                    }}
+                    data-testid="input-base-rate"
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -368,13 +378,23 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
             <FormItem>
               <FormLabel>Overtime Rate ($/hour)</FormLabel>
               <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="67.50"
-                  {...field}
-                  data-testid="input-ot-rate"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="67.50"
+                    className="pl-8"
+                    {...field}
+                    onKeyPress={(e) => {
+                      if (!/[0-9.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab') {
+                        e.preventDefault();
+                      }
+                    }}
+                    data-testid="input-ot-rate"
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
