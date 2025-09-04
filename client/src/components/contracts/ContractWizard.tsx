@@ -146,7 +146,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
     const defaults = {
       name: initialData?.name || "",
       facility: initialData?.facility || "",
-      status: initialData?.status || "active",
+      status: initialData?.status || "unconfirmed",
       startDate: initialData?.startDate || "",
       endDate: initialData?.endDate || "",
       baseRate: initialData?.baseRate?.toString() || "",
@@ -266,6 +266,8 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
   };
 
   const handleSubmit = (data: ContractWizardFormData) => {
+    console.log('Form submission started', { data, initialData });
+    
     // Convert form data to API format
     const schedule: any = {
       defaultStart: data.defaultStart,
@@ -296,6 +298,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
       seedShifts: true,
     };
 
+    console.log('Calling onSubmit with data:', apiData);
     onSubmit(apiData);
   };
 
@@ -876,7 +879,10 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                     disabled={form.formState.isSubmitting}
                     data-testid="button-create-contract"
                   >
-                    {form.formState.isSubmitting ? "Creating..." : "Create Contract"}
+                    {form.formState.isSubmitting 
+                      ? (initialData ? "Updating..." : "Creating...") 
+                      : (initialData ? "Update Contract" : "Create Contract")
+                    }
                   </Button>
                 )}
               </div>
