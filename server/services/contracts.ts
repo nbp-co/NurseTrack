@@ -370,6 +370,27 @@ export async function applySeedActions(
   let updated = 0;
   let deleted = 0;
 
+  // Safety checks
+  if (!actions || typeof actions !== 'object') {
+    console.error('applySeedActions: actions is not a valid object:', actions);
+    return { created: 0, updated: 0, deleted: 0 };
+  }
+
+  if (!Array.isArray(actions.addDates)) {
+    console.error('applySeedActions: actions.addDates is not an array:', actions.addDates);
+    actions.addDates = [];
+  }
+
+  if (!Array.isArray(actions.removeDates)) {
+    console.error('applySeedActions: actions.removeDates is not an array:', actions.removeDates);
+    actions.removeDates = [];
+  }
+
+  if (!Array.isArray(actions.updateDates)) {
+    console.error('applySeedActions: actions.updateDates is not an array:', actions.updateDates);
+    actions.updateDates = [];
+  }
+
   // Add new shifts
   for (const dateStr of actions.addDates) {
     const date = DateTime.fromISO(dateStr, { zone: timezone });
