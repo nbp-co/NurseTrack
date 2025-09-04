@@ -81,6 +81,8 @@ export const feedback = pgTable("feedback", {
   page: text("page").notNull(),
   message: text("message").notNull(),
   type: text("type").notNull(), // 'bug' | 'feature' | 'general'
+  version: text("version"),
+  timestamp: text("timestamp"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -192,6 +194,8 @@ export const insertFeedbackSchema = createInsertSchema(feedback).pick({
   page: true,
   message: true,
   type: true,
+  version: true,
+  timestamp: true,
 });
 
 // API-specific schemas for contract management

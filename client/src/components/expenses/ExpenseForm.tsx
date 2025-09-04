@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -97,6 +98,9 @@ export function ExpenseForm({
           <DialogTitle data-testid="text-expense-form-title">
             {initialData ? "Edit Expense" : "Add Expense"}
           </DialogTitle>
+          <DialogDescription>
+            {initialData ? "Edit the details of your expense" : "Add a new expense to track your costs"}
+          </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
