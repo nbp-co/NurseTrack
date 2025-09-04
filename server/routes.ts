@@ -126,6 +126,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: userId
       });
       
+      // Always save the schedule days to the database
+      await contractsService.upsertScheduleDays(contract.id, contractData.schedule);
+      
       // Seed shifts if requested
       let seedResult = null;
       if (contractData.seedShifts) {
