@@ -14,6 +14,8 @@ interface Shift {
   contractId?: number | null;
   status: string;
   source: string;
+  baseRate?: string;
+  otRate?: string;
 }
 
 interface Contract {
@@ -261,8 +263,13 @@ export function CalendarMonthView({
                         )}
                       </div>
                       {shift.facility && (
-                        <div className="truncate text-gray-600">
+                        <div className="truncate text-gray-600 text-xs">
                           {shift.facility}
+                        </div>
+                      )}
+                      {shift.baseRate && (
+                        <div className="truncate text-gray-600 text-xs">
+                          ${shift.baseRate}/hr
                         </div>
                       )}
                       {!shift.contractId && (
@@ -328,6 +335,7 @@ export function CalendarMonthView({
                         </div>
                         <div className="text-sm text-gray-600">
                           {shift.facility || 'No facility'}
+                          {shift.baseRate && ` • $${shift.baseRate}/hr`}
                           {shift.contractId ? ' • Contract' : ' • No contract'}
                         </div>
                       </div>
