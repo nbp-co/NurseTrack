@@ -63,7 +63,9 @@ const shiftSchema = z.object({
   end: z.string(),
   facility: z.string().optional(),
   status: z.enum(['scheduled', 'unconfirmed', 'completed', 'cancelled']).default('scheduled'),
-  timezone: z.string().default('America/Chicago')
+  timezone: z.string().default('America/Chicago'),
+  baseRate: z.string().optional().default(""),
+  otRate: z.string().optional().default("")
 });
 
 type ShiftFormData = z.infer<typeof shiftSchema>;
@@ -104,7 +106,9 @@ export function AddEditShiftModal({
       end: "19:00",
       facility: "",
       status: "scheduled",
-      timezone: "America/Chicago"
+      timezone: "America/Chicago",
+      baseRate: "",
+      otRate: ""
     }
   });
 
@@ -207,6 +211,13 @@ export function AddEditShiftModal({
         form.setValue('timezone', schedulePreview.timezone || contract.timezone);
         if (!form.getValues('facility')) {
           form.setValue('facility', contract.facility);
+        }
+        // Pre-fill rates from contract
+        if (contract.baseRate && !form.getValues('baseRate')) {
+          form.setValue('baseRate', contract.baseRate);
+        }
+        if (contract.otRate && !form.getValues('otRate')) {
+          form.setValue('otRate', contract.otRate);
         }
       }
       setOutOfRangeError(""); // Clear error if preview loads successfully
@@ -439,6 +450,51 @@ export function AddEditShiftModal({
                 </FormItem>
               )}
             />
+
+            {/* Rates */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="baseRate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Base Rate ($/hr)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder={selectedContract ? selectedContract.baseRate : "Enter rate"}
+                        {...field} 
+                        data-testid="input-base-rate"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="otRate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>OT Rate ($/hr)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder={selectedContract?.otRate ? selectedContract.otRate : "Enter OT rate"}
+                        {...field} 
+                        data-testid="input-ot-rate"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {/* Facility */}
             <FormField

@@ -49,6 +49,8 @@ export const shifts = pgTable("shifts", {
   endTime: time("end_time").notNull(),
   source: text("source").notNull().default("contract_seed"),
   status: text("status").notNull().default("In Process"),
+  baseRate: decimal("base_rate", { precision: 10, scale: 2 }),
+  otRate: decimal("ot_rate", { precision: 10, scale: 2 }),
 }, (table) => ({
   contractDateIdx: index("shifts_contract_date_idx").on(table.contractId, table.shiftDate),
 }));
@@ -110,6 +112,8 @@ export const insertShiftSchema = createInsertSchema(shifts).pick({
   endTime: true,
   source: true,
   status: true,
+  baseRate: true,
+  otRate: true,
 });
 
 // Calendar-specific schemas
