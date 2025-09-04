@@ -889,7 +889,8 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                   </Button>
                 ) : (
                   <Button
-                    type="submit"
+                    type="button"
+                    onClick={form.handleSubmit(handleSubmit)}
                     disabled={form.formState.isSubmitting}
                     data-testid="button-create-contract"
                   >
