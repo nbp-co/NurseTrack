@@ -172,8 +172,10 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
 
           <div className="flex space-x-1 justify-between">
             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day, index) => {
-              // For now, show all days as active since we don't have the schedule data
-              const isWorkDay = true; 
+              // For now, show typical working days as active (Mon-Fri with 7A-7P schedule)
+              const isWorkDay = index >= 1 && index <= 5; // Mon through Fri
+              const timeRange = isWorkDay ? "7A-7P" : "";
+              
               return (
                 <div
                   key={day}
@@ -189,13 +191,17 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
                   >
                     {day}
                   </span>
-                  {isWorkDay && (
-                    <div className="mt-1 text-center">
-                      <span className="text-xs font-medium text-gray-700 bg-white px-1 py-0.5 rounded-full border border-blue-200">
-                        Active
-                      </span>
-                    </div>
-                  )}
+                  <div className="mt-1 text-center">
+                    <span 
+                      className={`text-xs font-medium px-1 py-0.5 rounded-full border ${
+                        isWorkDay 
+                          ? "text-gray-700 bg-white border-blue-200" 
+                          : "text-gray-400 bg-gray-50 border-gray-200"
+                      }`}
+                    >
+                      {isWorkDay ? timeRange : "Inactive"}
+                    </span>
+                  </div>
                 </div>
               );
             })}
