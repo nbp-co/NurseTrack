@@ -73,6 +73,11 @@ export const contractsApi = {
   ): Promise<Contract> {
     const response = await apiRequest('PATCH', `/api/contracts/${id}/status`, { status });
     return response.json();
+  },
+
+  async deleteContract(id: string): Promise<{ message: string }> {
+    const response = await apiRequest('DELETE', `/api/contracts/${id}`);
+    return response.json();
   }
 };
 

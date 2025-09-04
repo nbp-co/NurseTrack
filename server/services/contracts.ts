@@ -476,3 +476,11 @@ export async function applySeedActions(
 
   return { created, updated, deleted };
 }
+
+export async function deleteContractSchedule(contractId: number): Promise<number> {
+  const result = await db
+    .delete(contractScheduleDay)
+    .where(eq(contractScheduleDay.contractId, contractId));
+  
+  return result.rowCount || 0;
+}

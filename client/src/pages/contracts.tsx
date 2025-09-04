@@ -133,6 +133,23 @@ export default function ContractsPage() {
     },
   });
 
+  const deleteContractMutation = useMutation({
+    mutationFn: (contractId: string) => contractsApi.deleteContract(contractId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/contracts'] });
+      toast({
+        title: "Contract deleted",
+        description: "The contract has been deleted successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to delete contract. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleCreateContract = (contractData: any) => {
     createContractMutation.mutate(contractData);
@@ -150,6 +167,12 @@ export default function ContractsPage() {
   const handleEditContract = (contract: Contract) => {
     setEditingContract(contract);
     setShowContractWizard(true);
+  };
+
+  const handleDeleteContract = (contract: Contract) => {
+    if (confirm(`Are you sure you want to delete the contract "${contract.name}"? This action cannot be undone.`)) {
+      deleteContractMutation.mutate(contract.id.toString());
+    }
   };
 
   const handleCloseWizard = () => {
@@ -239,6 +262,7 @@ export default function ContractsPage() {
                 key={contract.id}
                 contract={contract as any}
                 onEdit={() => handleEditContract(contract)}
+                onDelete={() => handleDeleteContract(contract)}
                 shiftsCount={0}
               />
             ))}

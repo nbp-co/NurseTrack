@@ -301,6 +301,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/contracts/:id", async (req, res) => {
+    try {
+      const contractId = parseInt(req.params.id);
+      
+      // Check if contract exists
+      const existing = await contractsService.getContractWithSchedule(contractId);
+      if (!existing) {
+        return res.status(404).json({ message: "Contract not found" });
+      }
+      
+      // Delete associated shifts first
+      await storage.deleteShiftsByContract(contractId.toString());
+      
+      // Delete contract schedule days
+      await contractsService.deleteContractSchedule(contractId);
+      
+      // Delete the contract
+      const deleted = await storage.deleteContract(contractId.toString());
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Contract not found" });
+      }
+      
+      res.json({ message: "Contract deleted successfully" });
+    } catch (error) {
+      console.error('Failed to delete contract:', error);
+      res.status(400).json({ message: "Failed to delete contract", error: error.message });
+    }
+  });
+
   // Shift routes
   app.get("/api/shifts", async (req, res) => {
     try {

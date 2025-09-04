@@ -14,6 +14,7 @@ export interface IStorage {
   getContract(id: string): Promise<Contract | undefined>;
   createContract(contract: InsertContract & { userId: string }): Promise<Contract>;
   updateContract(id: string, contract: Partial<InsertContract>): Promise<Contract | undefined>;
+  deleteContract(id: string): Promise<boolean>;
 
   // Shifts
   listShifts(userId: string, filters?: { month?: string; contractId?: string }): Promise<Shift[]>;
@@ -21,6 +22,7 @@ export interface IStorage {
   createShift(shift: InsertShift & { userId: string }): Promise<Shift>;
   updateShift(id: string, shift: Partial<InsertShift>): Promise<Shift | undefined>;
   confirmShiftCompleted(id: string, updates: { actualStart?: string; actualEnd?: string }): Promise<Shift | undefined>;
+  deleteShiftsByContract(contractId: string): Promise<number>;
 
   // Expenses
   listExpenses(userId: string, filters?: { contractId?: string; category?: string; startDate?: string; endDate?: string }): Promise<Expense[]>;
@@ -91,6 +93,17 @@ export class DatabaseStorage implements IStorage {
       .where(eq(contracts.id, contractId))
       .returning();
     return contract || undefined;
+  }
+
+  async deleteContract(id: string): Promise<boolean> {
+    const contractId = parseInt(id);
+    if (isNaN(contractId)) return false;
+    
+    const result = await db
+      .delete(contracts)
+      .where(eq(contracts.id, contractId));
+    
+    return result.rowCount > 0;
   }
 
   // Shifts
@@ -169,6 +182,17 @@ export class DatabaseStorage implements IStorage {
       .where(eq(shifts.id, shiftId))
       .returning();
     return shift || undefined;
+  }
+
+  async deleteShiftsByContract(contractId: string): Promise<number> {
+    const contractIdNum = parseInt(contractId);
+    if (isNaN(contractIdNum)) return 0;
+    
+    const result = await db
+      .delete(shifts)
+      .where(eq(shifts.contractId, contractIdNum));
+    
+    return result.rowCount || 0;
   }
 
   // Expenses

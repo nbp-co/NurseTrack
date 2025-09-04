@@ -1,4 +1,4 @@
-import { Edit2, ChevronRight, DollarSign, Clock, Calendar } from "lucide-react";
+import { Edit2, ChevronRight, DollarSign, Clock, Calendar, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 interface ContractCardProps {
   contract: any; // Using any temporarily for API compatibility
   onEdit: () => void;
+  onDelete?: () => void;
   onViewDetails?: () => void;
   shiftsCount?: number;
 }
 
-export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 }: ContractCardProps) {
+export function ContractCard({ contract, onEdit, onDelete, onViewDetails, shiftsCount = 0 }: ContractCardProps) {
   const formatCurrency = (amount: string | number) => {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     if (isNaN(numAmount)) return 'N/A';
@@ -143,6 +144,17 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
             >
               <Edit2 className="w-4 h-4" />
             </Button>
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onDelete}
+                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                data-testid={`button-delete-contract-${contract.id}`}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
             {onViewDetails && (
               <Button
                 variant="ghost"
