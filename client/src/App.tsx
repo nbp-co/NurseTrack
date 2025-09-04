@@ -9,6 +9,7 @@ import { FeedbackButton } from "@/components/feedback/FeedbackButton";
 
 // Pages
 import LoginPage from "@/pages/auth/login";
+import SignupPage from "@/pages/auth/signup";
 import DashboardPage from "@/pages/dashboard";
 import CalendarPage from "@/pages/calendar";
 import ContractsPage from "@/pages/contracts";
@@ -22,6 +23,12 @@ function AppRoutes() {
       <Route path="/auth/login" component={() => (
         <>
           <LoginPage />
+          <FeedbackButton />
+        </>
+      )} />
+      <Route path="/auth/signup" component={() => (
+        <>
+          <SignupPage />
           <FeedbackButton />
         </>
       )} />

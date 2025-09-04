@@ -567,10 +567,6 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                 <p className="font-medium">{formData.facility}</p>
               </div>
               <div>
-                <span className="text-gray-600">Timezone:</span>
-                <p className="font-medium">{formData.timezone}</p>
-              </div>
-              <div>
                 <span className="text-gray-600">Duration:</span>
                 <p className="font-medium flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
