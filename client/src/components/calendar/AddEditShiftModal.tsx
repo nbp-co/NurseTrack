@@ -175,12 +175,13 @@ export function AddEditShiftModal({
       return true;
     }
     
-    if (!Array.isArray(contracts)) {
+    const contractsArray = contracts?.contracts || contracts || [];
+    if (!Array.isArray(contractsArray)) {
       setContractValidationError("Contracts not loaded");
       return false;
     }
     
-    const contract = contracts.find(c => c.id === contractId);
+    const contract = contractsArray.find((c: any) => c.id === contractId);
     if (!contract) {
       setContractValidationError("Contract not found");
       return false;
@@ -197,8 +198,9 @@ export function AddEditShiftModal({
 
   // Handle contract selection change
   useEffect(() => {
-    if (selectedContractId && schedulePreview && Array.isArray(contracts)) {
-      const contract = contracts.find(c => c.id === selectedContractId);
+    const contractsArray = contracts?.contracts || contracts || [];
+    if (selectedContractId && schedulePreview && Array.isArray(contractsArray)) {
+      const contract = contractsArray.find((c: any) => c.id === selectedContractId);
       if (contract && schedulePreview.enabled) {
         form.setValue('start', schedulePreview.start);
         form.setValue('end', schedulePreview.end);
@@ -288,7 +290,8 @@ export function AddEditShiftModal({
     return start && end && start > end;
   };
 
-  const selectedContract = selectedContractId && Array.isArray(contracts) ? contracts.find(c => c.id === selectedContractId) : null;
+  const contractsArray = contracts?.contracts || contracts || [];
+  const selectedContract = selectedContractId && Array.isArray(contractsArray) ? contractsArray.find((c: any) => c.id === selectedContractId) : null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -319,22 +322,23 @@ export function AddEditShiftModal({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="null">No contract</SelectItem>
-                      {Array.isArray(contracts) && contracts.map((contract) => (
-                        <SelectItem key={contract.id} value={contract.id.toString()}>
-                          <div className="flex flex-col w-full">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium">{contract.name}</span>
-                              <div className="flex items-center gap-2 text-sm text-gray-500">
-                                <span>Base: ${contract.baseRate}/hr</span>
-                                {contract.otRate && (
-                                  <span>OT: ${contract.otRate}/hr</span>
-                                )}
+                      {contracts && Array.isArray(contracts.contracts || contracts) ? 
+                        (contracts.contracts || contracts).map((contract: any) => (
+                          <SelectItem key={contract.id} value={contract.id.toString()}>
+                            <div className="flex flex-col w-full">
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium">{contract.name}</span>
+                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                  <span>Base: ${contract.baseRate}/hr</span>
+                                  {contract.otRate && (
+                                    <span>OT: ${contract.otRate}/hr</span>
+                                  )}
+                                </div>
                               </div>
+                              <span className="text-sm text-gray-500">{contract.facility}</span>
                             </div>
-                            <span className="text-sm text-gray-500">{contract.facility}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
+                          </SelectItem>
+                        )) : null}
                     </SelectContent>
                   </Select>
                   <FormMessage />
