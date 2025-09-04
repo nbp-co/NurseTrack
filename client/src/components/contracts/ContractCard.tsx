@@ -137,14 +137,6 @@ export function ContractCard({ contract, onEdit, onDelete, onViewDetails, shifts
           </div>
           
           <div className="flex items-center space-x-1 ml-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onEdit}
-              data-testid={`button-edit-contract-${contract.id}`}
-            >
-              <Edit2 className="w-4 h-4" />
-            </Button>
             {onDelete && (
               <Button
                 variant="ghost"
@@ -156,6 +148,14 @@ export function ContractCard({ contract, onEdit, onDelete, onViewDetails, shifts
                 <Trash2 className="w-4 h-4" />
               </Button>
             )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onEdit}
+              data-testid={`button-edit-contract-${contract.id}`}
+            >
+              <Edit2 className="w-4 h-4" />
+            </Button>
             {onViewDetails && (
               <Button
                 variant="ghost"
@@ -205,15 +205,11 @@ export function ContractCard({ contract, onEdit, onDelete, onViewDetails, shifts
                     {day}
                   </span>
                   <div className="mt-1 text-center">
-                    <span 
-                      className={`text-xs font-medium px-1 py-0.5 rounded-full border ${
-                        isWorkDay 
-                          ? "text-gray-700 bg-white border-blue-200" 
-                          : "text-gray-400 bg-gray-50 border-gray-200"
-                      }`}
-                    >
-                      {isWorkDay ? timeRange : "Inactive"}
-                    </span>
+                    {isWorkDay && (
+                      <span className="text-xs font-medium px-1 py-0.5 rounded-full border text-gray-700 bg-white border-blue-200">
+                        {timeRange}
+                      </span>
+                    )}
                   </div>
                 </div>
               );

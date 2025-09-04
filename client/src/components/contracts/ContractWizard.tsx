@@ -730,9 +730,11 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                 return (
                   <div key={day.key} className="flex flex-col items-center">
                     <div className="text-xs font-medium text-gray-600 mb-1">{day.short.toUpperCase()}</div>
-                    <div className={`text-xs px-2 py-1 rounded ${isEnabled ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
-                      {timeDisplay || 'Inactive'}
-                    </div>
+                    {isEnabled && (
+                      <div className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">
+                        {timeDisplay}
+                      </div>
+                    )}
                   </div>
                 );
               })}
