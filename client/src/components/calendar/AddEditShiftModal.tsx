@@ -479,7 +479,7 @@ export function AddEditShiftModal({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="unconfirmed">Awaiting Confirmation</SelectItem>
+                      <SelectItem value="unconfirmed">Unconfirmed</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="cancelled">Canceled</SelectItem>
                     </SelectContent>
