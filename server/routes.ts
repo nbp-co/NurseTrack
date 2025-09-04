@@ -197,8 +197,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         startDate: updateData.startDate,
         endDate: updateData.endDate,
         baseRate: updateData.baseRate,
-        otRate: updateData.otRate && updateData.otRate.trim() !== '' ? updateData.otRate : null,
-        hoursPerWeek: updateData.hoursPerWeek && updateData.hoursPerWeek.trim() !== '' ? updateData.hoursPerWeek : null,
+        otRate: updateData.otRate || null,
+        hoursPerWeek: updateData.hoursPerWeek || null,
         timezone: updateData.timezone,
       });
       
