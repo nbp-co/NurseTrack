@@ -13,6 +13,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
+import VersionBadge, { versionStringLong } from "@/components/system/VersionBadge";
+import { BUILD_INFO } from "../../build-info";
 
 const feedbackSchema = z.object({
   type: z.enum(["bug", "feature", "general"]),
@@ -45,6 +47,7 @@ export function FeedbackButton() {
           page: location,
           version: "1.0.0",
           timestamp: new Date().toISOString(),
+
         }
       );
     },
@@ -140,6 +143,10 @@ export function FeedbackButton() {
                   </FormItem>
                 )}
               />
+
+              <div className="mt-2">
+                <VersionBadge inline />
+              </div>
 
               <div className="flex justify-end space-x-2">
                 <Button
