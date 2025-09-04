@@ -638,21 +638,16 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="wizard-description">
-        <DialogHeader className="flex flex-row items-center justify-between">
-          <div>
-            <DialogTitle className="flex items-center gap-2">
-              {getStepTitle()}
-              <Badge variant="outline">Step {currentStep} of 3</Badge>
-            </DialogTitle>
-            <DialogDescription id="wizard-description">
-              {currentStep === 1 && "Enter basic contract information including rates and duration."}
-              {currentStep === 2 && "Set up your weekly schedule and working hours."}
-              {currentStep === 3 && "Review your contract details before creating."}
-            </DialogDescription>
-          </div>
-          <Button variant="ghost" size="icon" onClick={onClose} data-testid="button-close-wizard">
-            <X className="w-4 h-4" />
-          </Button>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {getStepTitle()}
+            <Badge variant="outline">Step {currentStep} of 3</Badge>
+          </DialogTitle>
+          <DialogDescription id="wizard-description">
+            {currentStep === 1 && "Enter basic contract information including rates and duration."}
+            {currentStep === 2 && "Set up your weekly schedule and working hours."}
+            {currentStep === 3 && "Review your contract details before creating."}
+          </DialogDescription>
         </DialogHeader>
 
         {/* Progress indicator */}
