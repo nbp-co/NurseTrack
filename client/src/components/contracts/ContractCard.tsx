@@ -39,8 +39,9 @@ export function ContractCard({ contract, onEdit, onDelete, onViewDetails, shifts
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'default';
-      case 'planned': return 'secondary';
+      case 'unconfirmed': return 'secondary';
       case 'completed': return 'outline';
+      case 'archive': return 'secondary';
       default: return 'secondary';
     }
   };
@@ -49,7 +50,7 @@ export function ContractCard({ contract, onEdit, onDelete, onViewDetails, shifts
     switch (status) {
       case 'active': return 'border-l-green-500';
       case 'completed': return 'border-l-blue-500';
-      case 'planned': return 'border-l-yellow-500';
+      case 'unconfirmed': return 'border-l-yellow-500';
       case 'archive': return 'border-l-gray-400';
       default: return 'border-l-gray-400';
     }

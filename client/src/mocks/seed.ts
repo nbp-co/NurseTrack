@@ -37,7 +37,7 @@ export const mockContracts: Contract[] = [
       defaultEnd: '18:00',
       exceptions: []
     },
-    status: 'planned'
+    status: 'unconfirmed'
   }
 ];
 

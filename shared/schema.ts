@@ -23,7 +23,7 @@ export const contracts = pgTable("contracts", {
   baseRate: decimal("base_rate", { precision: 10, scale: 2 }).notNull(),
   otRate: decimal("ot_rate", { precision: 10, scale: 2 }),
   hoursPerWeek: decimal("hours_per_week", { precision: 5, scale: 2 }),
-  status: text("status").notNull().default("planned"),
+  status: text("status").notNull().default("unconfirmed"),
   timezone: text("timezone").notNull().default("America/Chicago"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 }, (table) => ({

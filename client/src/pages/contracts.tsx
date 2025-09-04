@@ -218,8 +218,8 @@ export default function ContractsPage() {
                     <SelectContent>
                       <SelectItem value="all">All Status</SelectItem>
                       <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="planned">Planned</SelectItem>
-                      <SelectItem value="archived">Archived</SelectItem>
+                      <SelectItem value="unconfirmed">Unconfirmed</SelectItem>
+                      <SelectItem value="archive">Archive</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

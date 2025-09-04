@@ -111,7 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         otRate: contractData.otRate || null,
         hoursPerWeek: contractData.hoursPerWeek || null,
         timezone: contractData.timezone || 'America/Chicago',
-        status: 'planned',
+        status: 'unconfirmed',
         userId: userId
       });
       
@@ -277,9 +277,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const currentStatus = existing.contract.status;
       const validTransitions = {
-        'planned': ['active', 'archived'],
-        'active': ['archived'],
-        'archived': []
+        'unconfirmed': ['active', 'archive'],
+        'active': ['archive'],
+        'archive': []
       };
       
       if (!validTransitions[currentStatus]?.includes(status)) {
