@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -48,6 +50,7 @@ export function FeedbackButton() {
           version: "1.0.0",
           timestamp: new Date().toISOString(),
 
+
         }
       );
     },
@@ -74,6 +77,7 @@ export function FeedbackButton() {
 
   return (
     <>
+
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-1">
         <Button
           onClick={() => setIsOpen(true)}
@@ -88,6 +92,7 @@ export function FeedbackButton() {
         </span>
       </div>
 
+
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-md" data-testid="dialog-feedback">
           <DialogHeader>
@@ -95,9 +100,11 @@ export function FeedbackButton() {
               <MessageCircle className="w-5 h-5" />
               Send Feedback
             </DialogTitle>
+
             <DialogDescription>
               Help us improve the app by sharing your thoughts, reporting bugs, or suggesting features.
             </DialogDescription>
+
           </DialogHeader>
 
           <Form {...form}>
