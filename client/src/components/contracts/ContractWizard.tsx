@@ -138,6 +138,7 @@ const TIMEZONES = [
 export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: ContractWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [seedEstimate, setSeedEstimate] = useState(0);
+  const [selectedDay, setSelectedDay] = useState<string>("enableMonday");
 
   const form = useForm<ContractWizardFormData>({
     resolver: zodResolver(contractWizardSchema),
@@ -424,117 +425,156 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
     </div>
   );
 
-  const renderScheduleStep = () => (
-    <div className="space-y-6">
-      <div className="bg-blue-50 p-4 rounded-lg border">
-        <h4 className="font-medium text-blue-900 mb-2">Default Schedule Times</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-          <FormField
-            control={form.control}
-            name="defaultStart"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Default Start Time</FormLabel>
-                <FormControl>
-                  <Input type="time" {...field} data-testid="input-default-start" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+  const renderScheduleStep = () => {
+    const selectedDayInfo = WEEKDAYS.find(day => day.key === selectedDay);
+    
+    return (
+      <div className="space-y-6">
+        <div className="bg-blue-50 p-4 rounded-lg border">
+          <h4 className="font-medium text-blue-900 mb-2">Default Schedule Times</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <FormField
+              control={form.control}
+              name="defaultStart"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Default Start Time</FormLabel>
+                  <FormControl>
+                    <Input type="time" {...field} data-testid="input-default-start" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name="defaultEnd"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Default End Time</FormLabel>
-                <FormControl>
-                  <Input type="time" {...field} data-testid="input-default-end" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <FormField
+              control={form.control}
+              name="defaultEnd"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Default End Time</FormLabel>
+                  <FormControl>
+                    <Input type="time" {...field} data-testid="input-default-end" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={applyDefaultTimes}
-            data-testid="button-apply-defaults"
-          >
-            Apply Default Times to All
-          </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={applyDefaultTimes}
+              data-testid="button-apply-defaults"
+            >
+              Apply Default Times to All
+            </Button>
+          </div>
         </div>
-      </div>
 
-      <div>
-        <h4 className="font-medium mb-4">Weekly Schedule</h4>
-        <div className="space-y-3">
-          {WEEKDAYS.map((day) => (
-            <div key={day.key} className="flex items-center gap-4 p-3 border rounded-lg">
-              <FormField
-                control={form.control}
-                name={day.key as any}
-                render={({ field }) => (
-                  <FormItem className="flex items-center gap-2 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        data-testid={`checkbox-${day.key}`}
-                      />
-                    </FormControl>
-                    <FormLabel className="min-w-[100px] text-sm font-medium">
-                      {day.label}
-                    </FormLabel>
-                  </FormItem>
-                )}
-              />
+        <div>
+          <h4 className="font-medium mb-4">Weekly Schedule</h4>
+          
+          {/* Day selector */}
+          <div className="grid grid-cols-7 gap-2 mb-6">
+            {WEEKDAYS.map((day) => {
+              const isEnabled = form.watch(day.key as any);
+              const isSelected = selectedDay === day.key;
+              
+              return (
+                <button
+                  key={day.key}
+                  type="button"
+                  onClick={() => setSelectedDay(day.key)}
+                  className={`
+                    p-3 rounded-lg border-2 text-center transition-colors
+                    ${isSelected 
+                      ? 'border-blue-500 bg-blue-50 text-blue-700' 
+                      : 'border-gray-200 hover:border-gray-300'
+                    }
+                    ${isEnabled ? 'bg-green-50 border-green-200' : ''}
+                  `}
+                  data-testid={`day-selector-${day.key}`}
+                >
+                  <div className="text-xs font-medium">{day.short}</div>
+                  <div className="text-lg font-bold">{day.label.slice(0, 3)}</div>
+                  {isEnabled && (
+                    <div className="text-xs text-green-600 mt-1">✓</div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
 
-              {form.watch(day.key as any) && (
-                <div className="flex items-center gap-2 ml-auto">
+          {/* Selected day editor */}
+          {selectedDayInfo && (
+            <div className="bg-gray-50 p-4 rounded-lg border">
+              <div className="flex items-center gap-4 mb-4">
+                <h5 className="font-medium text-lg">{selectedDayInfo.label}</h5>
+                <FormField
+                  control={form.control}
+                  name={selectedDay as any}
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid={`checkbox-${selectedDay}`}
+                        />
+                      </FormControl>
+                      <FormLabel className="text-sm">
+                        Enable this day
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              {form.watch(selectedDay as any) && (
+                <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name={day.startField as any}
+                    name={selectedDayInfo.startField as any}
                     render={({ field }) => (
                       <FormItem>
+                        <FormLabel>Start Time</FormLabel>
                         <FormControl>
                           <Input
                             type="time"
                             {...field}
-                            className="w-24"
-                            data-testid={`input-${day.startField}`}
+                            data-testid={`input-${selectedDayInfo.startField}`}
                           />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <span className="text-gray-500">to</span>
                   <FormField
                     control={form.control}
-                    name={day.endField as any}
+                    name={selectedDayInfo.endField as any}
                     render={({ field }) => (
                       <FormItem>
+                        <FormLabel>End Time</FormLabel>
                         <FormControl>
                           <Input
                             type="time"
                             {...field}
-                            className="w-24"
-                            data-testid={`input-${day.endField}`}
+                            data-testid={`input-${selectedDayInfo.endField}`}
                           />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
               )}
             </div>
-          ))}
+          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderReviewStep = () => {
     const formData = form.getValues();
