@@ -25,7 +25,7 @@ export function SideNav({ user }: SideNavProps) {
 
   return (
     <nav className="hidden lg:flex lg:flex-col lg:fixed lg:left-0 lg:top-0 lg:h-screen lg:w-[260px] lg:border-r lg:bg-white lg:shadow-sm lg:z-40">
-      <div className="p-6 border-b">
+      <div className="px-6 py-4 border-b h-[73px] flex items-center">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <User2 className="w-4 h-4 text-primary-foreground" />
