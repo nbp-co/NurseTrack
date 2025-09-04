@@ -39,6 +39,7 @@ const contractWizardSchema = z.object({
   // Step 1: Basics
   name: z.string().min(1, "Contract name is required"),
   facility: z.string().optional(),
+  status: z.enum(["active", "unconfirmed", "completed", "archive"]),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
   baseRate: z.string().min(1, "Base rate is required"),
@@ -145,6 +146,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
     const defaults = {
       name: initialData?.name || "",
       facility: initialData?.facility || "",
+      status: initialData?.status || "active",
       startDate: initialData?.startDate || "",
       endDate: initialData?.endDate || "",
       baseRate: initialData?.baseRate?.toString() || "",
@@ -361,7 +363,31 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
       </div>
 
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                <FormControl>
+                  <SelectTrigger data-testid="select-status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="unconfirmed">Unconfirmed</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="archive">Archive</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="startDate"
@@ -632,6 +658,10 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
               <div>
                 <span className="text-gray-600">Facility:</span>
                 <p className="font-medium">{formData.facility}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Status:</span>
+                <p className="font-medium capitalize">{formData.status}</p>
               </div>
               <div>
                 <span className="text-gray-600">Duration:</span>
