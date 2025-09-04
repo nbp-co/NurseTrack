@@ -257,7 +257,7 @@ export default function ContractsPage() {
                 contract={contract as any}
                 onEdit={() => handleEditContract(contract)}
                 onDelete={() => handleDeleteContract(contract)}
-                shiftsCount={0}
+                shiftsCount={(contract as any).shiftsCount || 0}
               />
             ))}
           </div>

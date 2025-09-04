@@ -1,7 +1,7 @@
 import { type User, type InsertUser, type Contract, type InsertContract, type Shift, type InsertShift, type Expense, type InsertExpense, type Feedback, type InsertFeedback } from "@shared/schema";
 import { db } from "./db";
 import { users, contracts, shifts, expenses, feedback } from "@shared/schema";
-import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -23,6 +23,7 @@ export interface IStorage {
   updateShift(id: string, shift: Partial<InsertShift>): Promise<Shift | undefined>;
   confirmShiftCompleted(id: string, updates: { actualStart?: string; actualEnd?: string }): Promise<Shift | undefined>;
   deleteShiftsByContract(contractId: string): Promise<number>;
+  getShiftCountByContract(contractId: number): Promise<number>;
 
   // Expenses
   listExpenses(userId: string, filters?: { contractId?: string; category?: string; startDate?: string; endDate?: string }): Promise<Expense[]>;
@@ -193,6 +194,15 @@ export class DatabaseStorage implements IStorage {
       .where(eq(shifts.contractId, contractIdNum));
     
     return result.rowCount || 0;
+  }
+
+  async getShiftCountByContract(contractId: number): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(shifts)
+      .where(eq(shifts.contractId, contractId));
+    
+    return result[0]?.count || 0;
   }
 
   // Expenses

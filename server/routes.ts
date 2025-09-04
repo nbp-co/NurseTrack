@@ -50,10 +50,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const contracts = await storage.listContracts(userId);
       
+      // Add shift counts to each contract
+      const contractsWithShiftCounts = await Promise.all(
+        contracts.map(async (contract) => {
+          const shiftsCount = await storage.getShiftCountByContract(contract.id);
+          return {
+            ...contract,
+            shiftsCount
+          };
+        })
+      );
+      
       // Apply status filter if provided
       const filteredContracts = status ? 
-        contracts.filter(contract => contract.status === status) : 
-        contracts;
+        contractsWithShiftCounts.filter(contract => contract.status === status) : 
+        contractsWithShiftCounts;
       
       // Apply pagination
       const startIndex = (page - 1) * limit;
