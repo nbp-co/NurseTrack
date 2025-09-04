@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
 import { SideNav } from "@/components/nav/SideNav";
 import { BottomNav } from "@/components/nav/BottomNav";
-import { FeedbackButton } from "@/components/feedback/FeedbackButton";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { useEffect } from "react";
@@ -31,7 +30,6 @@ export function AppShell({ children }: AppShellProps) {
         {children}
       </main>
       <BottomNav />
-      <FeedbackButton />
     </div>
   );
 }
