@@ -78,6 +78,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const contractData = createContractRequestSchema.parse(req.body);
       
+      // Get userId from query params
+      const userId = req.query.userId as string;
+      if (!userId) return res.status(400).json({ message: "User ID required" });
+      
       // Validate schedule if seedShifts is true
       const scheduleErrors = contractsService.validateSchedule(contractData.schedule, contractData.seedShifts);
       if (scheduleErrors.length > 0) {
@@ -108,7 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hoursPerWeek: contractData.hoursPerWeek,
         timezone: contractData.timezone || 'America/Chicago',
         status: 'planned',
-        userId: 'mock-user-id' // TODO: Get from session
+        userId: userId
       });
       
       // Seed shifts if requested
@@ -136,7 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 localDate: shift.localDate,
                 source: 'contract_seed',
                 status: 'In Process',
-                userId: 'mock-user-id'
+                userId: userId
               });
               created++;
             } catch (error) {
