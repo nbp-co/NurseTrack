@@ -836,7 +836,16 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          <form 
+            onSubmit={form.handleSubmit(handleSubmit)} 
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && currentStep < 3) {
+                e.preventDefault();
+                handleNext();
+              }
+            }}
+            className="space-y-6"
+          >
             {currentStep === 1 && renderBasicsStep()}
             {currentStep === 2 && renderScheduleStep()}
             {currentStep === 3 && renderReviewStep()}
