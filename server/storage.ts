@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Contract, type InsertContract, type Shift, type InsertShift, type Expense, type InsertExpense } from "@shared/schema";
+import { type User, type InsertUser, type Contract, type InsertContract, type Shift, type InsertShift, type Expense, type InsertExpense, type Feedback, type InsertFeedback } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -25,6 +25,10 @@ export interface IStorage {
   getExpense(id: string): Promise<Expense | undefined>;
   createExpense(expense: InsertExpense & { userId: string }): Promise<Expense>;
   updateExpense(id: string, expense: Partial<InsertExpense>): Promise<Expense | undefined>;
+
+  // Feedback
+  listFeedback(): Promise<Feedback[]>;
+  createFeedback(feedback: InsertFeedback & { userId?: string }): Promise<Feedback>;
 }
 
 export class MemStorage implements IStorage {
@@ -32,6 +36,7 @@ export class MemStorage implements IStorage {
   private contracts: Map<string, Contract> = new Map();
   private shifts: Map<string, Shift> = new Map();
   private expenses: Map<string, Expense> = new Map();
+  private feedbacks: Map<string, Feedback> = new Map();
 
   // Users
   async getUser(id: string): Promise<User | undefined> {
@@ -187,6 +192,23 @@ export class MemStorage implements IStorage {
     const updatedExpense = { ...expense, ...updates };
     this.expenses.set(id, updatedExpense);
     return updatedExpense;
+  }
+
+  // Feedback
+  async listFeedback(): Promise<Feedback[]> {
+    return Array.from(this.feedbacks.values()).sort((a, b) => b.createdAt!.getTime() - a.createdAt!.getTime());
+  }
+
+  async createFeedback(feedbackData: InsertFeedback & { userId?: string }): Promise<Feedback> {
+    const id = randomUUID();
+    const feedback: Feedback = { 
+      ...feedbackData, 
+      id,
+      userId: feedbackData.userId || null,
+      createdAt: new Date() 
+    };
+    this.feedbacks.set(id, feedback);
+    return feedback;
   }
 }
 

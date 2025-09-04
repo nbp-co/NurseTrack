@@ -61,6 +61,15 @@ export const expenses = pgTable("expenses", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const feedback = pgTable("feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  page: text("page").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull(), // 'bug' | 'feature' | 'general'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Zod schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -109,6 +118,12 @@ export const insertExpenseSchema = createInsertSchema(expenses).pick({
   deductible: true,
 });
 
+export const insertFeedbackSchema = createInsertSchema(feedback).pick({
+  page: true,
+  message: true,
+  type: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertContract = z.infer<typeof insertContractSchema>;
@@ -117,3 +132,5 @@ export type InsertShift = z.infer<typeof insertShiftSchema>;
 export type Shift = typeof shifts.$inferSelect;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 export type Expense = typeof expenses.$inferSelect;
+export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+export type Feedback = typeof feedback.$inferSelect;
