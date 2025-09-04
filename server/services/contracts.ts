@@ -390,25 +390,17 @@ export async function applySeedActions(
 
   // Add new shifts
   for (const dateStr of actions.addDates) {
-    const date = DateTime.fromISO(dateStr, { zone: timezone });
-    const dayOfWeek = date.weekday % 7;
+    const dayOfWeek = DateTime.fromISO(dateStr).weekday % 7;
     const startTime = getEffectiveShiftTime(dayOfWeek, schedule, true);
     const endTime = getEffectiveShiftTime(dayOfWeek, schedule, false);
-
-    let endDateTime = DateTime.fromISO(`${dateStr}T${endTime}`, { zone: timezone });
-    const startDateTime = DateTime.fromISO(`${dateStr}T${startTime}`, { zone: timezone });
-    
-    if (endDateTime <= startDateTime) {
-      endDateTime = endDateTime.plus({ days: 1 });
-    }
 
     try {
       await db.insert(shifts).values({
         userId,
         contractId,
-        startUtc: startDateTime.toUTC().toJSDate(),
-        endUtc: endDateTime.toUTC().toJSDate(),
-        localDate: dateStr,
+        shiftDate: dateStr,
+        startTime: startTime,
+        endTime: endTime,
         source: 'contract_seed',
         status: 'In Process',
       });
@@ -425,33 +417,25 @@ export async function applySeedActions(
         eq(shifts.contractId, contractId),
         eq(shifts.source, 'contract_seed'),
         inArray(shifts.status, ['Planned', 'In Process']),
-        inArray(shifts.localDate, actions.removeDates)
+        inArray(shifts.shiftDate, actions.removeDates)
       ));
     deleted = deleteResult.rowCount || 0;
   }
 
   // Update shift times (only pending ones)
   for (const dateStr of actions.updateDates) {
-    const date = DateTime.fromISO(dateStr, { zone: timezone });
-    const dayOfWeek = date.weekday % 7;
+    const dayOfWeek = DateTime.fromISO(dateStr).weekday % 7;
     const startTime = getEffectiveShiftTime(dayOfWeek, schedule, true);
     const endTime = getEffectiveShiftTime(dayOfWeek, schedule, false);
 
-    let endDateTime = DateTime.fromISO(`${dateStr}T${endTime}`, { zone: timezone });
-    const startDateTime = DateTime.fromISO(`${dateStr}T${startTime}`, { zone: timezone });
-    
-    if (endDateTime <= startDateTime) {
-      endDateTime = endDateTime.plus({ days: 1 });
-    }
-
     const updateResult = await db.update(shifts)
       .set({
-        startUtc: startDateTime.toUTC().toJSDate(),
-        endUtc: endDateTime.toUTC().toJSDate(),
+        startTime: startTime,
+        endTime: endTime,
       })
       .where(and(
         eq(shifts.contractId, contractId),
-        eq(shifts.localDate, dateStr),
+        eq(shifts.shiftDate, dateStr),
         eq(shifts.source, 'contract_seed'),
         inArray(shifts.status, ['Planned', 'In Process'])
       ));
