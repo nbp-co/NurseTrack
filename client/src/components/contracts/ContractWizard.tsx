@@ -38,14 +38,13 @@ import type { CreateContractRequest } from "@shared/schema";
 const contractWizardSchema = z.object({
   // Step 1: Basics
   name: z.string().min(1, "Contract name is required"),
-  facility: z.string().min(1, "Facility is required"),
-  role: z.string().min(1, "Role is required"),
+  facility: z.string().optional(),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
   baseRate: z.string().min(1, "Base rate is required"),
   otRate: z.string().optional(),
   hoursPerWeek: z.string().optional(),
-  timezone: z.string().min(1, "Timezone is required"),
+  timezone: z.string().optional(),
   
   // Step 2: Schedule
   defaultStart: z.string().min(1, "Default start time is required"),
@@ -145,7 +144,6 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
     defaultValues: {
       name: initialData?.name || "",
       facility: initialData?.facility || "",
-      role: initialData?.role || "",
       startDate: initialData?.startDate || "",
       endDate: initialData?.endDate || "",
       baseRate: initialData?.baseRate || "",
@@ -198,7 +196,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
     let fieldsToValidate: (keyof ContractWizardFormData)[] = [];
     
     if (currentStep === 1) {
-      fieldsToValidate = ["name", "facility", "role", "startDate", "endDate", "baseRate", "timezone"];
+      fieldsToValidate = ["name", "startDate", "endDate", "baseRate"];
     } else if (currentStep === 2) {
       fieldsToValidate = ["defaultStart", "defaultEnd"];
       // Also validate that at least one day is enabled
@@ -249,7 +247,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
     const apiData: CreateContractRequest = {
       name: data.name,
       facility: data.facility,
-      role: data.role,
+      // role field removed per user requirements
       startDate: data.startDate,
       endDate: data.endDate,
       baseRate: data.baseRate,
@@ -312,31 +310,8 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Role</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger data-testid="select-role">
-                    <SelectValue placeholder="Select your role" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {ROLES.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {role}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
+        {/* Role field removed per user requirements */}
+        
         <FormField
           control={form.control}
           name="timezone"
@@ -591,10 +566,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                 <span className="text-gray-600">Facility:</span>
                 <p className="font-medium">{formData.facility}</p>
               </div>
-              <div>
-                <span className="text-gray-600">Role:</span>
-                <p className="font-medium">{formData.role}</p>
-              </div>
+              {/* Role field removed per user requirements */
               <div>
                 <span className="text-gray-600">Timezone:</span>
                 <p className="font-medium">{formData.timezone}</p>
@@ -686,7 +658,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
 
   const canProceed = () => {
     if (currentStep === 1) {
-      const requiredFields = ["name", "facility", "role", "startDate", "endDate", "baseRate", "timezone"];
+      const requiredFields = ["name", "startDate", "endDate", "baseRate"];
       return requiredFields.every(field => form.getValues(field as any));
     }
     if (currentStep === 2) {

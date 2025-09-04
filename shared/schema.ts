@@ -144,14 +144,13 @@ export const scheduleConfigSchema = z.object({
 
 export const createContractRequestSchema = z.object({
   name: z.string().min(1),
-  facility: z.string().min(1),
-  role: z.string().min(1),
+  facility: z.string().optional(),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),   // YYYY-MM-DD
-  baseRate: z.string(),
+  baseRate: z.string().min(1),
   otRate: z.string().optional(),
   hoursPerWeek: z.string().optional(),
-  timezone: z.string().min(1),
+  timezone: z.string().optional(),
   schedule: scheduleConfigSchema,
   seedShifts: z.boolean(),
 }).refine((data) => {
@@ -165,14 +164,13 @@ export const createContractRequestSchema = z.object({
 
 export const updateContractRequestSchema = z.object({
   name: z.string().min(1).optional(),
-  facility: z.string().min(1).optional(),
-  role: z.string().min(1).optional(),
+  facility: z.string().optional(),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // YYYY-MM-DD
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),   // YYYY-MM-DD
   baseRate: z.string().optional(),
   otRate: z.string().optional(),
   hoursPerWeek: z.string().optional(),
-  timezone: z.string().min(1).optional(),
+  timezone: z.string().optional(),
   schedule: scheduleConfigSchema.optional(),
   seedShifts: z.boolean().optional(),
 }).refine((data) => {

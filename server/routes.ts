@@ -99,14 +99,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Start transaction - create contract
       const contract = await storage.createContract({
         name: contractData.name,
-        facility: contractData.facility,
-        role: contractData.role,
+        facility: contractData.facility || '',
+        role: '', // Default empty role since removed from requirements
         startDate: contractData.startDate,
         endDate: contractData.endDate,
         baseRate: contractData.baseRate,
         otRate: contractData.otRate,
         hoursPerWeek: contractData.hoursPerWeek,
-        timezone: contractData.timezone,
+        timezone: contractData.timezone || 'America/Chicago',
         status: 'planned',
         userId: 'mock-user-id' // TODO: Get from session
       });
