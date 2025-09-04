@@ -1,508 +1,332 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, ChevronUp, Clock, MapPin, Calendar, CheckCircle2, Edit3 } from "lucide-react";
+import { useLocation } from "wouter";
+import { Plus, Calendar as CalendarIcon, Clock } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { CalendarMonth } from "@/components/calendar/CalendarMonth";
-import { CalendarWeekToggle, CalendarWeekView } from "@/components/calendar/CalendarWeek";
-import { ShiftForm } from "@/components/forms/ShiftForm";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CalendarMonthView } from "@/components/calendar/CalendarMonthView";
+import { CalendarWeekView } from "@/components/calendar/CalendarWeekView";
+import { UpcomingShiftsList } from "@/components/calendar/UpcomingShiftsList";
+import { AddEditShiftModal } from "@/components/calendar/AddEditShiftModal";
 import { PageLoader } from "@/components/ui/loader";
-import { contractApi, shiftApi } from "@/api/mock";
-import { contractsApi, shiftsApi } from "@/lib/contracts-api";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarEvent, Shift } from "@/types";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function CalendarPage() {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [isWeekView, setIsWeekView] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<string>("");
-  const [showShiftForm, setShowShiftForm] = useState(false);
-  const [showUpcoming, setShowUpcoming] = useState(true);
-  const [editingShift, setEditingShift] = useState<string | null>(null);
-  const [timeUpdates, setTimeUpdates] = useState<{ actualStart: string; actualEnd: string }>({
-    actualStart: '',
-    actualEnd: ''
-  });
+  const [location, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // URL state management
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const selectedDateFromUrl = urlParams.get('d');
+  const viewFromUrl = urlParams.get('view') || 'month';
+  
+  const [selectedDate, setSelectedDate] = useState<string>(selectedDateFromUrl || new Date().toISOString().split('T')[0]);
+  const [currentView, setCurrentView] = useState<'month' | 'week'>(viewFromUrl as 'month' | 'week');
+  const [showAddEditModal, setShowAddEditModal] = useState(false);
+  const [editingShift, setEditingShift] = useState<any>(null);
+  
+  // Update URL when state changes
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedDate !== new Date().toISOString().split('T')[0]) {
+      params.set('d', selectedDate);
+    }
+    if (currentView !== 'month') {
+      params.set('view', currentView);
+    }
+    const newUrl = params.toString() ? `${location.split('?')[0]}?${params.toString()}` : location.split('?')[0];
+    if (newUrl !== location) {
+      setLocation(newUrl, { replace: true });
+    }
+  }, [selectedDate, currentView, location, setLocation]);
 
-  const currentMonth = currentDate.toISOString().slice(0, 7);
-
+  // Calculate visible date range based on current view
+  const getVisibleRange = () => {
+    const date = new Date(selectedDate);
+    if (currentView === 'month') {
+      const start = new Date(date.getFullYear(), date.getMonth(), 1);
+      const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      return {
+        from: start.toISOString().split('T')[0],
+        to: end.toISOString().split('T')[0]
+      };
+    } else {
+      // Week view - get Sunday to Saturday
+      const sunday = new Date(date);
+      sunday.setDate(date.getDate() - date.getDay());
+      const saturday = new Date(sunday);
+      saturday.setDate(sunday.getDate() + 6);
+      return {
+        from: sunday.toISOString().split('T')[0],
+        to: saturday.toISOString().split('T')[0]
+      };
+    }
+  };
+  
+  const visibleRange = getVisibleRange();
+  
+  // Fetch active contracts
   const { data: contracts = [], isLoading: contractsLoading } = useQuery({
-    queryKey: ['/api/contracts'],
-    queryFn: () => contractApi.listContracts(),
+    queryKey: ['/api/contracts', user?.id],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/contracts?userId=${user?.id}&status=active`);
+      return res.json();
+    },
+    enabled: !!user,
   });
-
+  
+  // Fetch shifts for visible range
   const { data: shifts = [], isLoading: shiftsLoading } = useQuery({
-    queryKey: ['/api/shifts', currentMonth],
-    queryFn: () => shiftApi.listShifts({ month: currentMonth }),
+    queryKey: ['/api/shifts', visibleRange.from, visibleRange.to, user?.id],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/shifts?userId=${user?.id}&from=${visibleRange.from}&to=${visibleRange.to}`);
+      return res.json();
+    },
+    enabled: !!user,
   });
-
-  // Fetch real upcoming shifts
-  const { data: upcomingShiftsReal = [] } = useQuery({
-    queryKey: ['/api/shifts', user?.id],
-    queryFn: () => shiftsApi.listShifts({ userId: user?.id }),
+  
+  // Get upcoming shifts (next 7 days)
+  const upcomingRange = {
+    from: new Date().toISOString().split('T')[0],
+    to: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  };
+  
+  const { data: upcomingShifts = [] } = useQuery({
+    queryKey: ['/api/shifts', 'upcoming', upcomingRange.from, upcomingRange.to, user?.id],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/shifts?userId=${user?.id}&from=${upcomingRange.from}&to=${upcomingRange.to}`);
+      return res.json();
+    },
     enabled: !!user,
   });
 
 
   const isLoading = contractsLoading || shiftsLoading;
-
-  const confirmShiftMutation = useMutation({
-    mutationFn: ({ shiftId, updates }: { shiftId: string, updates: { actualStart: string; actualEnd: string } }) =>
-      shiftApi.confirmShiftCompleted(shiftId, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
-      toast({
-        title: "Shift confirmed",
-        description: "Shift has been marked as completed.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to confirm shift. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
+  
+  // Create shift mutation
   const createShiftMutation = useMutation({
-    mutationFn: (shiftData: Omit<Shift, 'id'>) =>
-      shiftApi.createShift(shiftData),
+    mutationFn: async (shiftData: any) => {
+      const res = await apiRequest('POST', `/api/shifts?userId=${user?.id}`, shiftData);
+      return res.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
       toast({
         title: "Shift created",
         description: "Your shift has been added successfully.",
       });
-      setShowShiftForm(false);
+      setShowAddEditModal(false);
+      setEditingShift(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create shift. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Update shift mutation
+  const updateShiftMutation = useMutation({
+    mutationFn: async ({ id, ...shiftData }: any) => {
+      const res = await apiRequest('PUT', `/api/shifts/${id}`, shiftData);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      toast({
+        title: "Shift updated",
+        description: "Your shift has been updated successfully.",
+      });
+      setShowAddEditModal(false);
+      setEditingShift(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update shift. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Delete shift mutation
+  const deleteShiftMutation = useMutation({
+    mutationFn: async (shiftId: string) => {
+      const res = await apiRequest('DELETE', `/api/shifts/${shiftId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      toast({
+        title: "Shift deleted",
+        description: "Shift has been deleted successfully.",
+      });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to create shift. Please try again.",
+        description: "Failed to delete shift. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  const calendarEvents: CalendarEvent[] = useMemo(() => {
-    return shifts.map(shift => ({
-      id: shift.id,
-      date: shift.date,
-      type: 'shift' as const,
-      completed: shift.completed
-    }));
-  }, [shifts]);
-
-  const dayShifts = useMemo(() => {
-    return shifts.filter(shift => shift.date === selectedDate);
-  }, [shifts, selectedDate]);
-
-  const upcomingShifts = useMemo(() => {
-    const today = new Date();
-    const next7Days = new Date(today);
-    next7Days.setDate(today.getDate() + 7);
-    
-    return shifts
-      .filter(shift => {
-        const shiftDate = new Date(shift.date);
-        return shiftDate >= today && shiftDate <= next7Days && !shift.completed;
-      })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .slice(0, 5);
-  }, [shifts]);
-
-  const nextThreeShifts = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return upcomingShiftsReal
-      .filter(shift => shift.localDate >= today)
-      .sort((a, b) => new Date(a.localDate).getTime() - new Date(b.localDate).getTime())
-      .slice(0, 3);
-  }, [upcomingShiftsReal]);
-
-  const handleDayClick = (date: string) => {
+  // Event handlers
+  const handleDateSelect = (date: string) => {
     setSelectedDate(date);
   };
-
-  const handleConfirmShift = (shiftId: string, updates: { actualStart: string; actualEnd: string }) => {
-    confirmShiftMutation.mutate({ shiftId, updates });
+  
+  const handleViewChange = (view: string) => {
+    setCurrentView(view as 'month' | 'week');
   };
-
-  const handleCreateShift = (shiftData: Omit<Shift, 'id'>) => {
-    createShiftMutation.mutate(shiftData);
+  
+  const handleAddShift = (date?: string) => {
+    setEditingShift(null);
+    if (date) {
+      setSelectedDate(date);
+    }
+    setShowAddEditModal(true);
   };
-
-  const handleAddShiftToDay = () => {
-    setShowShiftForm(true);
+  
+  const handleEditShift = (shift: any) => {
+    setEditingShift(shift);
+    setShowAddEditModal(true);
   };
-
-  // Helper functions for inline day details
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const date = new Date(year, month - 1, day);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
+  
+  const handleShiftSubmit = (shiftData: any) => {
+    if (editingShift) {
+      updateShiftMutation.mutate({ id: editingShift.id, ...shiftData });
+    } else {
+      createShiftMutation.mutate(shiftData);
+    }
   };
+  
+  const handleShiftDelete = (shiftId: string) => {
+    if (confirm('Are you sure you want to delete this shift?')) {
+      deleteShiftMutation.mutate(shiftId);
+    }
+  };
+  
+  const dayShifts = useMemo(() => {
+    return shifts.filter(shift => shift.localDate === selectedDate);
+  }, [shifts, selectedDate]);
 
-  const calculateDailyStats = (dayShifts: Shift[]) => {
-    const totalHours = dayShifts.reduce((sum, shift) => {
-      if (shift.completed && shift.actualStart && shift.actualEnd) {
-        const start = parseTime(shift.actualStart);
-        const end = parseTime(shift.actualEnd);
-        return sum + (end - start) / (1000 * 60 * 60);
-      } else {
-        const start = parseTime(shift.start);
-        const end = parseTime(shift.end);
-        return sum + (end - start) / (1000 * 60 * 60);
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return; // Don't interfere with form inputs
       }
-    }, 0);
-
-    const earnings = dayShifts.reduce((sum, shift) => {
-      const rate = 45; // Mock rate
-      const hours = shift.completed && shift.actualStart && shift.actualEnd
-        ? (parseTime(shift.actualEnd) - parseTime(shift.actualStart)) / (1000 * 60 * 60)
-        : (parseTime(shift.end) - parseTime(shift.start)) / (1000 * 60 * 60);
-      return sum + (hours * rate);
-    }, 0);
-
-    return {
-      hours: Math.round(totalHours * 10) / 10,
-      earnings: Math.round(earnings * 100) / 100
+      
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          const prevDate = new Date(selectedDate);
+          prevDate.setDate(prevDate.getDate() - 1);
+          setSelectedDate(prevDate.toISOString().split('T')[0]);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          const nextDate = new Date(selectedDate);
+          nextDate.setDate(nextDate.getDate() + 1);
+          setSelectedDate(nextDate.toISOString().split('T')[0]);
+          break;
+        case 'Enter':
+          e.preventDefault();
+          handleAddShift(selectedDate);
+          break;
+        case 'Escape':
+          if (showAddEditModal) {
+            setShowAddEditModal(false);
+            setEditingShift(null);
+          }
+          break;
+      }
     };
-  };
-
-  const parseTime = (timeStr: string): number => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const date = new Date();
-    date.setHours(hours, minutes, 0, 0);
-    return date.getTime();
-  };
-
-  const handleConfirmShiftInline = (shift: Shift) => {
-    if (editingShift === shift.id) {
-      handleConfirmShift(shift.id, timeUpdates);
-      setEditingShift(null);
-    } else {
-      setEditingShift(shift.id);
-      setTimeUpdates({
-        actualStart: shift.actualStart || shift.start,
-        actualEnd: shift.actualEnd || shift.end
-      });
-    }
-  };
-
-  const formatShiftDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
     
-    if (date.toDateString() === today.toDateString()) {
-      return "Today";
-    } else if (date.toDateString() === tomorrow.toDateString()) {
-      return "Tomorrow";
-    } else {
-      return date.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        month: 'short', 
-        day: 'numeric' 
-      });
-    }
-  };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selectedDate, showAddEditModal]);
 
   if (isLoading) {
     return <PageLoader text="Loading calendar..." />;
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-gray-50">
       <AppHeader 
         title="Calendar"
         subtitle="View and manage your shift schedule"
         actions={
-          <CalendarWeekToggle 
-            isWeekView={isWeekView}
-            onToggle={setIsWeekView}
-          />
-        }
-      />
-
-      {/* Upcoming Shifts Section */}
-      {nextThreeShifts.length > 0 && (
-        <div className="lg:px-8 px-4 pt-6 pb-0">
-          <Card className="mb-6" data-testid="upcoming-shifts-section">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-lg font-semibold">
-                  <Clock className="w-5 h-5 text-blue-500" />
-                  Upcoming Shifts
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowUpcoming(!showUpcoming)}
-                  data-testid="button-toggle-upcoming-shifts"
-                >
-                  <ChevronUp className={`w-4 h-4 transition-transform ${showUpcoming ? 'rotate-180' : ''}`} />
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            {showUpcoming && (
-              <CardContent>
-                <div className="space-y-2">
-                {nextThreeShifts.map((shift) => {
-                  const formatDate = (dateStr: string) => {
-                    const date = new Date(dateStr);
-                    const today = new Date();
-                    const tomorrow = new Date();
-                    tomorrow.setDate(today.getDate() + 1);
-                    
-                    if (date.toDateString() === today.toDateString()) {
-                      return 'Today';
-                    } else if (date.toDateString() === tomorrow.toDateString()) {
-                      return 'Tomorrow';
-                    } else {
-                      return date.toLocaleDateString('en-US', { 
-                        weekday: 'short', 
-                        month: 'short', 
-                        day: 'numeric' 
-                      });
-                    }
-                  };
-
-                  const formatTime = (utcDate: string) => {
-                    return new Date(utcDate).toLocaleTimeString('en-US', {
-                      hour: 'numeric',
-                      minute: '2-digit',
-                      hour12: true
-                    });
-                  };
-
-                  return (
-                    <div key={shift.id} className="bg-blue-50 border border-blue-200 rounded-lg p-3" data-testid={`shift-item-${shift.id}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="text-sm font-medium text-gray-900">
-                            {formatDate(shift.localDate)}
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-gray-600">
-                            <MapPin className="w-3 h-3" />
-                            {shift.facility}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-sm text-gray-600 mt-1">
-                        {formatTime(shift.startUtc)} - {formatTime(shift.endUtc)}
-                      </div>
-                    </div>
-                  );
-                })}
-                </div>
-              </CardContent>
-            )}
-          </Card>
-        </div>
-      )}
-
-      {/* Add Shift Button */}
-      <div className="lg:px-8 px-4 pt-6 pb-0">
-        <div className="mb-6 text-center">
-          <Button onClick={() => setShowShiftForm(true)} data-testid="button-add-shift" className="px-8">
+          <Button 
+            onClick={() => handleAddShift()}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            data-testid="button-add-shift"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add Shift
           </Button>
-        </div>
-      </div>
-
-      <div className="lg:px-8 px-4 py-6">
-        {!isWeekView ? (
-          <CalendarMonth
-            currentDate={currentDate}
-            events={calendarEvents}
-            onDateChange={setCurrentDate}
-            onDayClick={handleDayClick}
-            upcomingShifts={nextThreeShifts}
-          />
-        ) : (
-          <CalendarWeekView
-            currentDate={currentDate}
-            events={calendarEvents}
-            onDateChange={setCurrentDate}
-            onDayClick={handleDayClick}
-          />
-        )}
-      </div>
-
-      {/* Inline Day Details Section - below calendar */}
-      {selectedDate && (
-        <div className="lg:px-8 px-4 py-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-blue-500" />
-                {formatDate(selectedDate)}
-                <span className="text-sm font-normal text-gray-500 ml-2">
-                  {selectedDate === new Date().toISOString().split('T')[0] ? 'Today • ' : ''}
-                  {dayShifts.length} shift{dayShifts.length !== 1 ? 's' : ''}
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {dayShifts.length > 0 ? (
-                <>
-                  {/* Daily Summary */}
-                  <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">Daily Summary</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-500">Total Hours</p>
-                        <p className="font-medium text-gray-900" data-testid="text-daily-hours">
-                          {calculateDailyStats(dayShifts).hours} hours
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">Earnings</p>
-                        <p className="font-medium text-gray-900" data-testid="text-daily-earnings">
-                          ${calculateDailyStats(dayShifts).earnings}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Shifts List */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-gray-700">Shifts</h3>
-                    
-                    {dayShifts.map((shift) => (
-                      <div key={shift.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <h4 className="font-medium text-gray-900" data-testid={`text-shift-facility-${shift.id}`}>
-                              {shift.facility}
-                            </h4>
-                            <p className="text-sm text-gray-500" data-testid={`text-shift-role-${shift.id}`}>
-                              {shift.role}
-                            </p>
-                          </div>
-                          <Badge 
-                            variant={shift.completed ? "default" : "secondary"}
-                            data-testid={`badge-shift-status-${shift.id}`}
-                          >
-                            {shift.completed ? "Completed" : "Scheduled"}
-                          </Badge>
-                        </div>
-                        
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">Scheduled:</span>
-                            <span className="text-gray-900" data-testid={`text-shift-scheduled-${shift.id}`}>
-                              {shift.start} - {shift.end}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">Actual:</span>
-                            <div className="flex items-center space-x-2">
-                              {editingShift === shift.id ? (
-                                <>
-                                  <Input
-                                    type="time"
-                                    value={timeUpdates.actualStart}
-                                    onChange={(e) => setTimeUpdates(prev => ({ ...prev, actualStart: e.target.value }))}
-                                    className="w-20 h-6 text-xs p-1"
-                                    data-testid={`input-actual-start-${shift.id}`}
-                                  />
-                                  <span className="text-gray-500">-</span>
-                                  <Input
-                                    type="time"
-                                    value={timeUpdates.actualEnd}
-                                    onChange={(e) => setTimeUpdates(prev => ({ ...prev, actualEnd: e.target.value }))}
-                                    className="w-20 h-6 text-xs p-1"
-                                    data-testid={`input-actual-end-${shift.id}`}
-                                  />
-                                </>
-                              ) : (
-                                <span className="text-gray-900" data-testid={`text-shift-actual-${shift.id}`}>
-                                  {shift.actualStart && shift.actualEnd 
-                                    ? `${shift.actualStart} - ${shift.actualEnd}`
-                                    : 'Not recorded'
-                                  }
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex justify-end mt-3">
-                          <Button
-                            variant={editingShift === shift.id ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handleConfirmShiftInline(shift)}
-                            data-testid={`button-confirm-shift-${shift.id}`}
-                          >
-                            {editingShift === shift.id ? (
-                              <>
-                                <CheckCircle2 className="w-4 h-4 mr-1" />
-                                Save
-                              </>
-                            ) : (
-                              <>
-                                <Edit3 className="w-4 h-4 mr-1" />
-                                {shift.completed ? "Edit" : "Mark Complete"}
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Add Shift Button */}
-                    <Button 
-                      onClick={handleAddShiftToDay} 
-                      className="w-full"
-                      variant="outline"
-                      data-testid="button-add-shift-to-day"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Shift
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 mb-4">No shifts scheduled for this day</p>
-                  <Button 
-                    onClick={handleAddShiftToDay} 
-                    data-testid="button-add-shift-empty"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Shift
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      <ShiftForm
-        isOpen={showShiftForm}
-        onClose={() => setShowShiftForm(false)}
-        onSubmit={handleCreateShift}
-        contracts={contracts}
-        defaultDate={selectedDate || undefined}
+        }
       />
-    </>
+
+      <div className="container mx-auto px-4 py-6">
+        {/* Upcoming Shifts */}
+        <UpcomingShiftsList 
+          shifts={upcomingShifts}
+          onShiftClick={handleEditShift}
+        />
+
+        {/* Calendar Tabs */}
+        <Tabs value={currentView} onValueChange={handleViewChange} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="month" data-testid="tab-month">Month</TabsTrigger>
+            <TabsTrigger value="week" data-testid="tab-week">Week</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="month" className="mt-0">
+            <CalendarMonthView
+              selectedDate={selectedDate}
+              shifts={shifts}
+              onDateSelect={handleDateSelect}
+              onAddShift={handleAddShift}
+              onEditShift={handleEditShift}
+              dayShifts={dayShifts}
+            />
+          </TabsContent>
+          
+          <TabsContent value="week" className="mt-0">
+            <CalendarWeekView
+              selectedDate={selectedDate}
+              shifts={shifts}
+              onDateSelect={handleDateSelect}
+              onAddShift={handleAddShift}
+              onEditShift={handleEditShift}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Add/Edit Shift Modal */}
+      <AddEditShiftModal
+        isOpen={showAddEditModal}
+        onClose={() => {
+          setShowAddEditModal(false);
+          setEditingShift(null);
+        }}
+        onSubmit={handleShiftSubmit}
+        onDelete={handleShiftDelete}
+        editingShift={editingShift}
+        contracts={contracts}
+        selectedDate={selectedDate}
+        isSubmitting={createShiftMutation.isPending || updateShiftMutation.isPending}
+      />
+    </div>
   );
 }
