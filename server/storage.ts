@@ -258,11 +258,12 @@ export class DatabaseStorage implements IStorage {
     return result.map(row => ({
       id: row.id,
       contractId: row.contractId,
-      date: row.shiftDate,
-      start: row.startTime,
-      end: row.endTime,
+      localDate: row.shiftDate,
+      startUtc: row.startTime,
+      endUtc: row.endTime,
       status: row.status,
       source: row.source,
+      facility: row.contractFacility,
       contract: row.contractId ? {
         id: row.contractId,
         name: row.contractName,
