@@ -269,9 +269,8 @@ export function CalendarMonthView({
                           {(() => {
                             if (shift.contractId) {
                               const contract = contracts?.find(c => c.id === shift.contractId);
-                              const facilityDisplay = shift.facility?.trim() || contract?.facility || 'No facility';
                               const contractName = contract?.name || 'Contract';
-                              return `${contractName} - ${facilityDisplay}`;
+                              return contractName;
                             }
                             return shift.facility;
                           })()}
@@ -346,9 +345,8 @@ export function CalendarMonthView({
                         <div className="text-sm text-gray-600">
                           {shift.contractId && (() => {
                             const contract = contracts?.find(c => c.id === shift.contractId);
-                            const facilityDisplay = shift.facility?.trim() || contract?.facility || 'No facility';
                             const contractName = contract?.name || 'Unknown Contract';
-                            return `${contractName} - ${facilityDisplay}`;
+                            return contractName;
                           })()}
                           {!shift.contractId && 'No contract'}
                           {shift.baseRate && ` • $${shift.baseRate}/hr`}
