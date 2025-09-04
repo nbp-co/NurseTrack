@@ -627,18 +627,37 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
               <Clock className="w-5 h-5" />
               Schedule
             </h4>
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                {enabledDays.map(day => {
-                  const startTime = formData[day.startField as keyof ContractWizardFormData] as string;
-                  const endTime = formData[day.endField as keyof ContractWizardFormData] as string;
-                  return (
-                    <Badge key={day.key} variant="secondary" className="px-3 py-1">
-                      {day.short}: {startTime} - {endTime}
-                    </Badge>
-                  );
-                })}
-              </div>
+            <div className="grid grid-cols-7 gap-2 text-center">
+              {WEEKDAYS.map(day => {
+                const isEnabled = enabledDays.some(enabledDay => enabledDay.key === day.key);
+                const startTime = formData[day.startField as keyof ContractWizardFormData] as string;
+                const endTime = formData[day.endField as keyof ContractWizardFormData] as string;
+                
+                const formatTime = (time: string) => {
+                  if (!time) return '';
+                  const [hours, minutes] = time.split(':');
+                  const hour = parseInt(hours);
+                  const ampm = hour >= 12 ? 'P' : 'A';
+                  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+                  return `${displayHour}${ampm}`;
+                };
+                
+                const timeDisplay = isEnabled && startTime && endTime 
+                  ? `${formatTime(startTime)}-${formatTime(endTime)}`
+                  : '';
+                
+                return (
+                  <div key={day.key} className="flex flex-col items-center">
+                    <div className="text-xs font-medium text-gray-600 mb-1">{day.short.toUpperCase()}</div>
+                    <div className={`text-xs px-2 py-1 rounded ${isEnabled ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
+                      {timeDisplay || 'Inactive'}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="text-xs text-gray-500 mt-2 text-center">
+              {enabledDays.length} {enabledDays.length === 1 ? 'shift' : 'shifts'}
             </div>
           </CardContent>
         </Card>
