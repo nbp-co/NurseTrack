@@ -210,6 +210,11 @@ export default function ContractsPage() {
                 Add Contract
               </Button>
               
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Filter className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Filters</span>
+              </div>
+              
               <div className="flex gap-2 sm:gap-4 flex-1 min-w-0">
                 <div className="flex-1 min-w-[120px] max-w-[200px]">
                   <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
@@ -238,11 +243,6 @@ export default function ContractsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Filter className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Filters</span>
               </div>
             </div>
           </CardContent>
