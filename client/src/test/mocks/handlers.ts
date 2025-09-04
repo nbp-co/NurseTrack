@@ -174,7 +174,19 @@ export const handlers = [
     }
     
     if (!date) {
-      return HttpResponse.json({ error: 'Date parameter required' }, { status: 400 });
+      return HttpResponse.json({ error: 'Date parameter is required' }, { status: 400 });
+    }
+
+    // Check if date is within contract range (mock out-of-range scenario)
+    const contractStart = new Date(contract.startDate);
+    const contractEnd = new Date(contract.endDate);
+    const requestDate = new Date(date);
+    
+    if (requestDate < contractStart || requestDate > contractEnd) {
+      return HttpResponse.json(
+        { error: 'OUT_OF_RANGE', message: 'Date is outside contract range' }, 
+        { status: 409 }
+      );
     }
     
     // Get day of week from date
