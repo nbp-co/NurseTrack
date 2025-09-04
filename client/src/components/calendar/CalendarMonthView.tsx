@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -130,15 +130,40 @@ export function CalendarMonthView({
   return (
     <div className="space-y-6">
       {/* Month Navigation */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" size="sm" onClick={handlePrevMonth} data-testid="button-prev-month">
-            <ChevronLeft className="w-4 h-4" />
+      <div className="flex items-center justify-center relative">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handlePrevMonth} 
+          data-testid="button-prev-month"
+          className="absolute left-0"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        
+        <h2 className="text-xl font-semibold">
+          {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+        </h2>
+        
+        <div className="flex items-center space-x-2 absolute right-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const today = new Date();
+              setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+            }}
+            data-testid="button-today"
+            title="Go to today"
+          >
+            <Calendar className="w-4 h-4" />
           </Button>
-          <h2 className="text-xl font-semibold">
-            {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </h2>
-          <Button variant="outline" size="sm" onClick={handleNextMonth} data-testid="button-next-month">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleNextMonth} 
+            data-testid="button-next-month"
+          >
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
