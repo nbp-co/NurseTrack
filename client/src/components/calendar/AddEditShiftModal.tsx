@@ -179,7 +179,7 @@ export function AddEditShiftModal({
       return true;
     }
     
-    const contractsArray = contracts?.contracts || contracts || [];
+    const contractsArray = contracts || [];
     if (!Array.isArray(contractsArray)) {
       setContractValidationError("Contracts not loaded");
       return false;
@@ -202,7 +202,7 @@ export function AddEditShiftModal({
 
   // Handle contract selection change
   useEffect(() => {
-    const contractsArray = contracts?.contracts || contracts || [];
+    const contractsArray = contracts || [];
     if (selectedContractId && schedulePreview && Array.isArray(contractsArray)) {
       const contract = contractsArray.find((c: any) => c.id === selectedContractId);
       if (contract && schedulePreview.enabled) {
@@ -269,7 +269,7 @@ export function AddEditShiftModal({
       form.setValue('start', startTime);
       form.setValue('end', endTime);
       form.setValue('facility', editingShift.facility || '');
-      form.setValue('status', editingShift.status || 'scheduled');
+      form.setValue('status', (editingShift.status as 'scheduled' | 'unconfirmed' | 'completed' | 'cancelled') || 'scheduled');
       setSelectedContractId(editingShift.contractId || null);
     } else {
       form.setValue('date', selectedDate);
@@ -339,7 +339,7 @@ export function AddEditShiftModal({
     return start && end && start > end;
   };
 
-  const contractsArray = contracts?.contracts || contracts || [];
+  const contractsArray = contracts || [];
   const selectedContract = selectedContractId && Array.isArray(contractsArray) ? contractsArray.find((c: any) => c.id === selectedContractId) : null;
 
   return (
@@ -371,8 +371,8 @@ export function AddEditShiftModal({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="null">No contract</SelectItem>
-                      {contracts && Array.isArray(contracts.contracts || contracts) ? 
-                        (contracts.contracts || contracts).map((contract: any) => (
+                      {contracts && Array.isArray(contracts) ? 
+                        contracts.map((contract: any) => (
                           <SelectItem key={contract.id} value={contract.id.toString()}>
                             <div className="flex flex-col w-full">
                               <div className="flex items-center justify-between">
