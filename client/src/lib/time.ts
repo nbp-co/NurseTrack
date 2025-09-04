@@ -56,3 +56,27 @@ export function isOvernight(startHHmm: string, endHHmm: string): boolean {
   
   return endMinutes < startMinutes;
 }
+
+/**
+ * Checks if two time ranges overlap
+ * @param aStart - Start time of first range (Date or ISO string)
+ * @param aEnd - End time of first range (Date or ISO string)  
+ * @param bStart - Start time of second range (Date or ISO string)
+ * @param bEnd - End time of second range (Date or ISO string)
+ * @returns True if the time ranges overlap
+ */
+export function overlaps(
+  aStart: Date | string, 
+  aEnd: Date | string, 
+  bStart: Date | string, 
+  bEnd: Date | string
+): boolean {
+  const a1 = typeof aStart === 'string' ? new Date(aStart) : aStart;
+  const a2 = typeof aEnd === 'string' ? new Date(aEnd) : aEnd;
+  const b1 = typeof bStart === 'string' ? new Date(bStart) : bStart;
+  const b2 = typeof bEnd === 'string' ? new Date(bEnd) : bEnd;
+  
+  // Two ranges overlap if: a1 < b2 && b1 < a2
+  // This handles all overlap cases but excludes touching ranges
+  return a1 < b2 && b1 < a2;
+}

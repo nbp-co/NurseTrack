@@ -31,6 +31,8 @@ import {
 import { Trash2, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
+import { toUtcFromLocal, isOvernight, overlaps } from '@/lib/time';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Shift {
   id: number;
@@ -127,24 +129,39 @@ export function AddEditShiftModal({
       const res = await apiRequest('GET', `/api/shifts?userId=${user.id}&from=${shiftDate}&to=${shiftDate}`);
       const existingShifts = await res.json();
       
-      const overlaps = existingShifts.filter((shift: Shift) => {
+      // Convert form data to UTC timestamps
+      const newStartUtc = toUtcFromLocal(data.date, data.start, data.timezone);
+      let newEndUtc = toUtcFromLocal(data.date, data.end, data.timezone);
+      
+      // Handle overnight shifts - end time is next day
+      if (isOvernight(data.start, data.end)) {
+        const nextDay = new Date(data.date);
+        nextDay.setDate(nextDay.getDate() + 1);
+        newEndUtc = toUtcFromLocal(nextDay.toISOString().split('T')[0], data.end, data.timezone);
+      }
+      
+      const overlappingShifts = existingShifts.filter((shift: Shift) => {
         if (editingShift && shift.id === editingShift.id) return false;
         
-        const newStart = new Date(`${data.date}T${data.start}`);
-        const newEnd = new Date(`${data.date}T${data.end}`);
-        const existingStart = new Date(shift.startUtc);
-        const existingEnd = new Date(shift.endUtc);
-        
-        return (newStart < existingEnd && newEnd > existingStart);
+        return overlaps(
+          newStartUtc,
+          newEndUtc,
+          new Date(shift.startUtc),
+          new Date(shift.endUtc)
+        );
       });
       
-      if (overlaps.length > 0) {
-        setOverlapWarning(`Warning: This shift overlaps with ${overlaps.length} existing shift(s) on this date.`);
+      if (overlappingShifts.length > 0) {
+        const shiftNames = overlappingShifts.map((s: Shift) => 
+          s.facility || 'Unnamed shift'
+        ).join(', ');
+        setOverlapWarning(`Time overlaps with existing shift(s): ${shiftNames}`);
       } else {
         setOverlapWarning("");
       }
     } catch (error) {
       // Handle error silently
+      setOverlapWarning("");
     }
   };
 

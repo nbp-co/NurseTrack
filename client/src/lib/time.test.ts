@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { toUtcFromLocal, toLocalDisplay, isOvernight } from './time';
+import { toUtcFromLocal, toLocalDisplay, isOvernight, overlaps } from './time';
 
 describe('Time Utilities', () => {
   describe('toUtcFromLocal', () => {
@@ -158,6 +158,178 @@ describe('Time Utilities', () => {
       expect(isOvernight('10:30', '10:29')).toBe(true);
       expect(isOvernight('10:29', '10:30')).toBe(false);
       expect(isOvernight('23:30', '00:30')).toBe(true);
+    });
+  });
+
+  describe('overlaps', () => {
+    describe('overlapping cases', () => {
+      it('should detect partial overlap - first starts before second', () => {
+        const aStart = new Date('2024-07-15T09:00:00.000Z');
+        const aEnd = new Date('2024-07-15T12:00:00.000Z');
+        const bStart = new Date('2024-07-15T11:00:00.000Z');
+        const bEnd = new Date('2024-07-15T14:00:00.000Z');
+        
+        expect(overlaps(aStart, aEnd, bStart, bEnd)).toBe(true);
+        expect(overlaps(bStart, bEnd, aStart, aEnd)).toBe(true);
+      });
+
+      it('should detect partial overlap - second starts before first', () => {
+        const aStart = new Date('2024-07-15T11:00:00.000Z');
+        const aEnd = new Date('2024-07-15T14:00:00.000Z');
+        const bStart = new Date('2024-07-15T09:00:00.000Z');
+        const bEnd = new Date('2024-07-15T12:00:00.000Z');
+        
+        expect(overlaps(aStart, aEnd, bStart, bEnd)).toBe(true);
+        expect(overlaps(bStart, bEnd, aStart, aEnd)).toBe(true);
+      });
+
+      it('should detect complete containment - first contains second', () => {
+        const aStart = new Date('2024-07-15T08:00:00.000Z');
+        const aEnd = new Date('2024-07-15T16:00:00.000Z');
+        const bStart = new Date('2024-07-15T10:00:00.000Z');
+        const bEnd = new Date('2024-07-15T14:00:00.000Z');
+        
+        expect(overlaps(aStart, aEnd, bStart, bEnd)).toBe(true);
+        expect(overlaps(bStart, bEnd, aStart, aEnd)).toBe(true);
+      });
+
+      it('should detect complete containment - second contains first', () => {
+        const aStart = new Date('2024-07-15T10:00:00.000Z');
+        const aEnd = new Date('2024-07-15T14:00:00.000Z');
+        const bStart = new Date('2024-07-15T08:00:00.000Z');
+        const bEnd = new Date('2024-07-15T16:00:00.000Z');
+        
+        expect(overlaps(aStart, aEnd, bStart, bEnd)).toBe(true);
+        expect(overlaps(bStart, bEnd, aStart, aEnd)).toBe(true);
+      });
+
+      it('should detect exact overlap - same times', () => {
+        const aStart = new Date('2024-07-15T09:00:00.000Z');
+        const aEnd = new Date('2024-07-15T17:00:00.000Z');
+        const bStart = new Date('2024-07-15T09:00:00.000Z');
+        const bEnd = new Date('2024-07-15T17:00:00.000Z');
+        
+        expect(overlaps(aStart, aEnd, bStart, bEnd)).toBe(true);
+      });
+
+      it('should handle ISO string inputs for overlapping ranges', () => {
+        const aStart = '2024-07-15T09:00:00.000Z';
+        const aEnd = '2024-07-15T12:00:00.000Z';
+        const bStart = '2024-07-15T11:00:00.000Z';
+        const bEnd = '2024-07-15T14:00:00.000Z';
+        
+        expect(overlaps(aStart, aEnd, bStart, bEnd)).toBe(true);
+      });
+    });
+
+    describe('touching cases (no overlap)', () => {
+      it('should not detect overlap when ranges touch at endpoints - first ends when second starts', () => {
+        const aStart = new Date('2024-07-15T09:00:00.000Z');
+        const aEnd = new Date('2024-07-15T12:00:00.000Z');
+        const bStart = new Date('2024-07-15T12:00:00.000Z'); // Exactly when first ends
+        const bEnd = new Date('2024-07-15T15:00:00.000Z');
+        
+        expect(overlaps(aStart, aEnd, bStart, bEnd)).toBe(false);
+        expect(overlaps(bStart, bEnd, aStart, aEnd)).toBe(false);
+      });
+
+      it('should not detect overlap when ranges touch at endpoints - second ends when first starts', () => {
+        const aStart = new Date('2024-07-15T12:00:00.000Z');
+        const aEnd = new Date('2024-07-15T15:00:00.000Z');
+        const bStart = new Date('2024-07-15T09:00:00.000Z');
+        const bEnd = new Date('2024-07-15T12:00:00.000Z'); // Exactly when first starts
+        
+        expect(overlaps(aStart, aEnd, bStart, bEnd)).toBe(false);
+        expect(overlaps(bStart, bEnd, aStart, aEnd)).toBe(false);
+      });
+
+      it('should handle ISO string inputs for touching ranges', () => {
+        const aStart = '2024-07-15T09:00:00.000Z';
+        const aEnd = '2024-07-15T12:00:00.000Z';
+        const bStart = '2024-07-15T12:00:00.000Z';
+        const bEnd = '2024-07-15T15:00:00.000Z';
+        
+        expect(overlaps(aStart, aEnd, bStart, bEnd)).toBe(false);
+      });
+    });
+
+    describe('non-overlapping cases', () => {
+      it('should not detect overlap when ranges are completely separate - first before second', () => {
+        const aStart = new Date('2024-07-15T09:00:00.000Z');
+        const aEnd = new Date('2024-07-15T11:00:00.000Z');
+        const bStart = new Date('2024-07-15T13:00:00.000Z');
+        const bEnd = new Date('2024-07-15T15:00:00.000Z');
+        
+        expect(overlaps(aStart, aEnd, bStart, bEnd)).toBe(false);
+        expect(overlaps(bStart, bEnd, aStart, aEnd)).toBe(false);
+      });
+
+      it('should not detect overlap when ranges are completely separate - second before first', () => {
+        const aStart = new Date('2024-07-15T13:00:00.000Z');
+        const aEnd = new Date('2024-07-15T15:00:00.000Z');
+        const bStart = new Date('2024-07-15T09:00:00.000Z');
+        const bEnd = new Date('2024-07-15T11:00:00.000Z');
+        
+        expect(overlaps(aStart, aEnd, bStart, bEnd)).toBe(false);
+        expect(overlaps(bStart, bEnd, aStart, aEnd)).toBe(false);
+      });
+
+      it('should not detect overlap across different days', () => {
+        const aStart = new Date('2024-07-15T20:00:00.000Z');
+        const aEnd = new Date('2024-07-15T23:59:00.000Z');
+        const bStart = new Date('2024-07-16T00:01:00.000Z');
+        const bEnd = new Date('2024-07-16T08:00:00.000Z');
+        
+        expect(overlaps(aStart, aEnd, bStart, bEnd)).toBe(false);
+      });
+
+      it('should handle mixed Date and ISO string inputs for non-overlapping ranges', () => {
+        const aStart = new Date('2024-07-15T09:00:00.000Z');
+        const aEnd = '2024-07-15T11:00:00.000Z';
+        const bStart = '2024-07-15T13:00:00.000Z';
+        const bEnd = new Date('2024-07-15T15:00:00.000Z');
+        
+        expect(overlaps(aStart, aEnd, bStart, bEnd)).toBe(false);
+      });
+    });
+
+    describe('edge cases', () => {
+      it('should handle identical start and end times (zero duration)', () => {
+        const aStart = new Date('2024-07-15T12:00:00.000Z');
+        const aEnd = new Date('2024-07-15T12:00:00.000Z');
+        const bStart = new Date('2024-07-15T12:00:00.000Z');
+        const bEnd = new Date('2024-07-15T15:00:00.000Z');
+        
+        expect(overlaps(aStart, aEnd, bStart, bEnd)).toBe(false); // Zero duration, no actual overlap
+      });
+
+      it('should handle millisecond precision differences', () => {
+        const aStart = new Date('2024-07-15T09:00:00.000Z');
+        const aEnd = new Date('2024-07-15T12:00:00.000Z');
+        const bStart = new Date('2024-07-15T11:59:59.999Z'); // 1ms before aEnd
+        const bEnd = new Date('2024-07-15T15:00:00.000Z');
+        
+        expect(overlaps(aStart, aEnd, bStart, bEnd)).toBe(true);
+      });
+
+      it('should handle very small overlaps', () => {
+        const aStart = new Date('2024-07-15T09:00:00.000Z');
+        const aEnd = new Date('2024-07-15T12:00:00.001Z'); // 1ms after noon
+        const bStart = new Date('2024-07-15T12:00:00.000Z'); // Exactly noon
+        const bEnd = new Date('2024-07-15T15:00:00.000Z');
+        
+        expect(overlaps(aStart, aEnd, bStart, bEnd)).toBe(true);
+      });
+
+      it('should handle overnight shifts with proper UTC conversion', () => {
+        // Simulate two overnight shifts that might overlap
+        const shift1Start = new Date('2024-07-15T22:00:00.000Z'); // 22:00 UTC
+        const shift1End = new Date('2024-07-16T06:00:00.000Z');   // 06:00 UTC next day
+        const shift2Start = new Date('2024-07-16T04:00:00.000Z'); // 04:00 UTC next day  
+        const shift2End = new Date('2024-07-16T12:00:00.000Z');   // 12:00 UTC next day
+        
+        expect(overlaps(shift1Start, shift1End, shift2Start, shift2End)).toBe(true);
+      });
     });
   });
 
