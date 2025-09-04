@@ -63,6 +63,8 @@ The application will be available at `http://localhost:5000`.
 - `npm run check` - Run TypeScript compiler check
 - `npm test` - Run test suite
 - `npm run db:push` - Push database schema changes
+- `tsx scripts/audit-contracts.ts -- --all` - Audit all contract seed integrity
+- `tsx scripts/audit-contracts.ts -- --id=123` - Audit specific contract
 
 ## Continuous Integration
 
@@ -126,6 +128,89 @@ The project includes comprehensive testing utilities:
 - **Test Factories**: Pre-built data factories for contracts and schedules
 - **Database Helpers**: Automatic database seeding and cleanup between tests
 - **Coverage Reporting**: HTML and LCOV coverage reports generated in `/coverage`
+
+## Auditing Contract Seeds
+
+The system includes comprehensive audit capabilities to ensure contract shift seeding integrity and detect inconsistencies between scheduled shifts and actual database entries.
+
+### Overview
+
+Contract seeding audit compares expected shifts (generated from contract schedules) against actual shifts in the database, identifying:
+
+- **Missing shifts**: Expected shifts not found in the shifts table
+- **Duplicate shifts**: Multiple shifts for the same date from contract seeding
+- **Finalized conflicts**: Count of finalized shifts that would be affected by re-seeding
+
+### Usage
+
+#### Audit All Contracts
+```bash
+tsx scripts/audit-contracts.ts -- --all
+```
+
+#### Audit Specific Contract
+```bash
+tsx scripts/audit-contracts.ts -- --id=123
+```
+
+### Sample Output
+
+```
+🔍 Auditing all contracts...
+
+📊 Contract Seed Audit Results
+===============================================
+ID | Contract                  | Status      | Expected | Actual | Missing | Duplicates | Finalized
+---+---------------------------+-------------+----------+--------+---------+------------+-----------
+1  | Memorial Hospital ICU     | ✅ Healthy  | 84       | 84     | 0       | 0          | 0
+2  | City General ER          | ⚠️  Issues  | 72       | 70     | 2       | 0          | 1
+3  | Regional Medical Center   | ⚠️  Issues  | 96       | 98     | 0       | 2          | 0
+---+---------------------------+-------------+----------+--------+---------+------------+-----------
+Summary: 1 healthy, 2 with issues
+
+🔍 Detailed Issues:
+
+Contract 2 (City General ER):
+  Missing shifts (2): 2024-09-15, 2024-09-22
+  ⚠️  1 finalized shifts would be affected by re-seeding
+
+Contract 3 (Regional Medical Center):
+  Duplicate shifts (2): 2024-09-08, 2024-09-12
+
+💡 To fix issues:
+   Run: PUT /api/contracts/:id (with seedShifts: true) to resync shifts
+   This will add missing shifts and preserve finalized ones
+```
+
+### Warning Logs
+
+The audit automatically logs warnings for contracts with issues:
+
+```
+[AUDIT] Contract 2 (City General ER) has seeding issues:
+  Missing shifts: 2 dates - 2024-09-15, 2024-09-22
+  1 finalized shifts would be affected by re-seeding
+```
+
+### Audit Results
+
+Each audit returns detailed information:
+
+- **Contract ID & Name**: Basic contract identification
+- **Status**: `healthy` or `has_issues` 
+- **Expected vs Actual**: Shift count comparison
+- **Missing**: Array of dates missing shifts (YYYY-MM-DD format)
+- **Duplicates**: Array of dates with multiple shifts
+- **Finalized Touched**: Count of finalized shifts affected by potential re-seeding
+
+### Integration
+
+The audit utility can be integrated into:
+
+- **Monitoring scripts**: Regular health checks
+- **CI/CD pipelines**: Post-deployment validation
+- **Administrative tools**: Manual troubleshooting
+- **Automated repairs**: Detection before re-seeding
 
 ## Contributing
 
