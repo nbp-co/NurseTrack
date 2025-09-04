@@ -566,7 +566,6 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                 <span className="text-gray-600">Facility:</span>
                 <p className="font-medium">{formData.facility}</p>
               </div>
-              {/* Role field removed per user requirements */
               <div>
                 <span className="text-gray-600">Timezone:</span>
                 <p className="font-medium">{formData.timezone}</p>
