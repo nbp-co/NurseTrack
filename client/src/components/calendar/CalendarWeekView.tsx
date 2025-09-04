@@ -226,7 +226,7 @@ export function CalendarWeekView({
                             {formatTime(shift.startUtc)}-{formatTime(shift.endUtc)}
                           </span>
                           {isOvernightShift(shift) && (
-                            <Badge variant="secondary" className="text-xs px-1 py-0">+1</Badge>
+                            <Badge variant="secondary" className="text-xs px-1 py-0">(+1 day)</Badge>
                           )}
                         </div>
                         {shift.facility && (

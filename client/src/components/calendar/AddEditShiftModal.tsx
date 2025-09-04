@@ -89,6 +89,7 @@ export function AddEditShiftModal({
   const [selectedContractId, setSelectedContractId] = useState<number | null>(null);
   const [overlapWarning, setOverlapWarning] = useState<string>("");
   const [contractValidationError, setContractValidationError] = useState<string>("");
+  const [outOfRangeError, setOutOfRangeError] = useState<string>("");
 
   const form = useForm<ShiftFormData>({
     resolver: zodResolver(shiftSchema),
@@ -103,13 +104,18 @@ export function AddEditShiftModal({
   });
 
   // Get schedule preview for selected contract
-  const { data: schedulePreview } = useQuery({
+  const { data: schedulePreview, error: schedulePreviewError } = useQuery({
     queryKey: ['/api/contracts', selectedContractId, 'schedule-preview', form.watch('date')],
     queryFn: async () => {
       const res = await apiRequest('GET', `/api/contracts/${selectedContractId}/schedule-preview?date=${form.watch('date')}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to get schedule preview');
+      }
       return res.json();
     },
     enabled: !!selectedContractId && !!form.watch('date'),
+    retry: false,
   });
 
   // Check for overlapping shifts
@@ -149,6 +155,11 @@ export function AddEditShiftModal({
       return true;
     }
     
+    if (!Array.isArray(contracts)) {
+      setContractValidationError("Contracts not loaded");
+      return false;
+    }
+    
     const contract = contracts.find(c => c.id === contractId);
     if (!contract) {
       setContractValidationError("Contract not found");
@@ -166,7 +177,7 @@ export function AddEditShiftModal({
 
   // Handle contract selection change
   useEffect(() => {
-    if (selectedContractId && schedulePreview) {
+    if (selectedContractId && schedulePreview && Array.isArray(contracts)) {
       const contract = contracts.find(c => c.id === selectedContractId);
       if (contract && schedulePreview.enabled) {
         form.setValue('start', schedulePreview.start);
@@ -176,13 +187,29 @@ export function AddEditShiftModal({
           form.setValue('facility', contract.facility);
         }
       }
+      setOutOfRangeError(""); // Clear error if preview loads successfully
     } else if (selectedContractId === null) {
       // Reset to default values when "No contract" is selected
       form.setValue('start', '07:00');
       form.setValue('end', '19:00');
       form.setValue('timezone', 'America/Chicago');
+      setOutOfRangeError(""); // Clear any previous errors
     }
   }, [selectedContractId, schedulePreview, contracts, form]);
+
+  // Handle schedule preview errors
+  useEffect(() => {
+    if (schedulePreviewError && selectedContractId) {
+      const errorMessage = schedulePreviewError.message;
+      if (errorMessage.includes('outside contract range')) {
+        setOutOfRangeError("Date is outside contract range. Please select a date within the contract period.");
+      } else {
+        setOutOfRangeError("Failed to load schedule preview for this date.");
+      }
+    } else {
+      setOutOfRangeError("");
+    }
+  }, [schedulePreviewError, selectedContractId]);
 
   // Initialize form when editing
   useEffect(() => {
@@ -240,7 +267,7 @@ export function AddEditShiftModal({
     return start && end && start > end;
   };
 
-  const selectedContract = selectedContractId ? contracts.find(c => c.id === selectedContractId) : null;
+  const selectedContract = selectedContractId && Array.isArray(contracts) ? contracts.find(c => c.id === selectedContractId) : null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -271,7 +298,7 @@ export function AddEditShiftModal({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="null">No contract</SelectItem>
-                      {contracts.map((contract) => (
+                      {Array.isArray(contracts) && contracts.map((contract) => (
                         <SelectItem key={contract.id} value={contract.id.toString()}>
                           <div className="flex items-center justify-between w-full">
                             <span>{contract.name} ({contract.facility})</span>
@@ -295,6 +322,14 @@ export function AddEditShiftModal({
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-800">
                 <AlertTriangle className="w-4 h-4" />
                 <span className="text-sm">{contractValidationError}</span>
+              </div>
+            )}
+
+            {/* OUT_OF_RANGE Error */}
+            {outOfRangeError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-800">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-sm">{outOfRangeError}</span>
               </div>
             )}
 
@@ -417,7 +452,7 @@ export function AddEditShiftModal({
                 </Button>
                 <Button 
                   type="submit" 
-                  disabled={isSubmitting || !!contractValidationError}
+                  disabled={isSubmitting || !!contractValidationError || !!outOfRangeError}
                   data-testid="button-save-shift"
                 >
                   {isSubmitting ? 'Saving...' : editingShift ? 'Update' : 'Create'}

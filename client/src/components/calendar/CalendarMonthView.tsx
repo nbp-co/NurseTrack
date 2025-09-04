@@ -192,12 +192,17 @@ export function CalendarMonthView({
                           {formatTime(shift.startUtc)}-{formatTime(shift.endUtc)}
                         </span>
                         {isOvernightShift(shift) && (
-                          <Badge variant="secondary" className="text-xs px-1 py-0">+1</Badge>
+                          <Badge variant="secondary" className="text-xs px-1 py-0">(+1 day)</Badge>
                         )}
                       </div>
                       {shift.facility && (
                         <div className="truncate text-gray-600">
                           {shift.facility}
+                        </div>
+                      )}
+                      {!shift.contractId && (
+                        <div className="truncate text-gray-500 text-xs">
+                          No contract
                         </div>
                       )}
                     </div>
