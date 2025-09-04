@@ -507,56 +507,56 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
           </div>
 
           {/* Enabled days editor */}
-          <div className="space-y-4">
-            {WEEKDAYS.filter(day => form.watch(day.key as any)).map((day) => (
-              <div key={day.key} className="bg-gray-50 p-4 rounded-lg border">
-                <div className="flex items-center gap-4 mb-3">
-                  <h5 className="font-medium text-lg">{day.label}</h5>
-                  <span className="text-sm text-gray-500">Enabled</span>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name={day.startField as any}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Start Time</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="time"
-                            {...field}
-                            data-testid={`input-${day.startField}`}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={day.endField as any}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>End Time</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="time"
-                            {...field}
-                            data-testid={`input-${day.endField}`}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-            ))}
+          <div className="bg-gray-50 p-4 rounded-lg border">
+            <h5 className="font-medium text-lg mb-4">Enabled Days</h5>
             
-            {WEEKDAYS.filter(day => form.watch(day.key as any)).length === 0 && (
+            {WEEKDAYS.filter(day => form.watch(day.key as any)).length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <p>Click on the days above to enable them and set working hours</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {WEEKDAYS.filter(day => form.watch(day.key as any)).map((day) => (
+                  <div key={day.key} className="grid grid-cols-[120px_1fr_1fr] gap-4 items-center">
+                    <div className="font-medium">{day.label}</div>
+                    
+                    <FormField
+                      control={form.control}
+                      name={day.startField as any}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-gray-500">Start Time</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="time"
+                              {...field}
+                              data-testid={`input-${day.startField}`}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name={day.endField as any}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-gray-500">End Time</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="time"
+                              {...field}
+                              data-testid={`input-${day.endField}`}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                ))}
               </div>
             )}
           </div>
