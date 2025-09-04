@@ -309,34 +309,6 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Role field removed per user requirements */}
-        
-        <FormField
-          control={form.control}
-          name="timezone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Timezone</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger data-testid="select-timezone">
-                    <SelectValue placeholder="Select timezone" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {TIMEZONES.map((tz) => (
-                    <SelectItem key={tz} value={tz}>
-                      {tz.replace('America/', '').replace('_', ' ')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
