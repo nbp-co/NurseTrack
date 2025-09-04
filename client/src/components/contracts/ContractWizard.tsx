@@ -534,7 +534,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                     }}
                     className="w-full text-center"
                   >
-                    <div className="text-xl font-bold">{day.label.slice(0, 3)}</div>
+                    <div className="text-xl font-bold">{day.label.slice(0, 3).toUpperCase()}</div>
                     {isEnabled && (
                       <div className="text-xs text-green-600 mt-1">✓</div>
                     )}
