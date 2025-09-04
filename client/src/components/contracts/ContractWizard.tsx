@@ -140,16 +140,16 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
   const [seedEstimate, setSeedEstimate] = useState(0);
   const [selectedDay, setSelectedDay] = useState<string>("enableMonday");
 
-  const form = useForm<ContractWizardFormData>({
-    resolver: zodResolver(contractWizardSchema),
-    defaultValues: {
+  // Helper function to get default values with proper schedule loading
+  const getDefaultValues = () => {
+    const defaults = {
       name: initialData?.name || "",
       facility: initialData?.facility || "",
       startDate: initialData?.startDate || "",
       endDate: initialData?.endDate || "",
-      baseRate: initialData?.baseRate || "",
-      otRate: initialData?.otRate || "",
-      hoursPerWeek: initialData?.hoursPerWeek || "",
+      baseRate: initialData?.baseRate?.toString() || "",
+      otRate: initialData?.otRate?.toString() || "",
+      hoursPerWeek: initialData?.hoursPerWeek?.toString() || "",
       timezone: initialData?.timezone || "America/Chicago",
       defaultStart: "07:00",
       defaultEnd: "19:00",
@@ -174,12 +174,47 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
       fridayEnd: "19:00",
       saturdayStart: "07:00",
       saturdayEnd: "19:00",
-    },
+    };
+
+    // If we have schedule data from initialData, load it
+    if (initialData?.schedule) {
+      defaults.defaultStart = initialData.schedule.defaultStart || "07:00";
+      defaults.defaultEnd = initialData.schedule.defaultEnd || "19:00";
+      
+      // Load day-specific schedule settings
+      Object.entries(initialData.schedule.days || {}).forEach(([dayIndex, dayConfig]: [string, any]) => {
+        const weekdayIndex = parseInt(dayIndex);
+        const weekday = WEEKDAYS[weekdayIndex];
+        if (weekday && dayConfig) {
+          (defaults as any)[weekday.key] = dayConfig.enabled;
+          if (dayConfig.start) {
+            (defaults as any)[weekday.startField] = dayConfig.start;
+          }
+          if (dayConfig.end) {
+            (defaults as any)[weekday.endField] = dayConfig.end;
+          }
+        }
+      });
+    }
+
+    return defaults;
+  };
+
+  const form = useForm<ContractWizardFormData>({
+    resolver: zodResolver(contractWizardSchema),
+    defaultValues: getDefaultValues(),
   });
 
   const watchStartDate = form.watch("startDate");
   const watchEndDate = form.watch("endDate");
   const watchEnabledDays = WEEKDAYS.map(day => form.watch(day.key as any));
+
+  // Reset form when initialData changes (for edit mode)
+  useEffect(() => {
+    if (initialData) {
+      form.reset(getDefaultValues());
+    }
+  }, [initialData]);
 
   useEffect(() => {
     if (watchStartDate && watchEndDate) {
