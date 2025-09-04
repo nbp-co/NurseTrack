@@ -47,6 +47,7 @@ export const shifts = pgTable("shifts", {
   shiftDate: date("shift_date").notNull(),
   startTime: time("start_time").notNull(),
   endTime: time("end_time").notNull(),
+  facility: text("facility"),
   source: text("source").notNull().default("contract_seed"),
   status: text("status").notNull().default("In Process"),
   baseRate: decimal("base_rate", { precision: 10, scale: 2 }),

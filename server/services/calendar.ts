@@ -161,6 +161,7 @@ export async function updateShift(
   if (updates.end) updateData.endTime = updates.end;
   if (updates.contractId !== undefined) updateData.contractId = updates.contractId;
   if (updates.status) updateData.status = updates.status;
+  if (updates.facility !== undefined) updateData.facility = updates.facility;
   
   // Validate times if being updated
   if (updates.start || updates.end) {
@@ -214,7 +215,7 @@ export async function getContractSchedulePreview(
       enabled: false,
       start: '07:00',
       end: '19:00',
-      timezone: contract.timezone
+      timezone: 'America/New_York'
     };
   }
   
@@ -223,6 +224,6 @@ export async function getContractSchedulePreview(
     enabled: scheduleDay.enabled,
     start: scheduleDay.startLocal,
     end: scheduleDay.endLocal,
-    timezone: contract.timezone
+    timezone: 'America/New_York'
   };
 }
