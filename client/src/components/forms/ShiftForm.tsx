@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -99,6 +100,9 @@ export function ShiftForm({
           <DialogTitle data-testid="text-shift-form-title">
             {initialData ? "Edit Shift" : "Add Shift"}
           </DialogTitle>
+          <DialogDescription>
+            {initialData ? "Update the details of your shift" : "Create a new shift for your schedule"}
+          </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>

@@ -20,18 +20,10 @@ import NotFound from "@/pages/not-found";
 function AppRoutes() {
   return (
     <Switch>
-      <Route path="/auth/login" component={() => (
-        <>
-          <LoginPage />
-          <FeedbackButton />
-        </>
-      )} />
-      <Route path="/auth/signup" component={() => (
-        <>
-          <SignupPage />
-          <FeedbackButton />
-        </>
-      )} />
+
+      <Route path="/auth/login" component={LoginPage} />
+      <Route path="/auth/signup" component={SignupPage} />
+
       <Route path="/" component={() => <Redirect to="/dashboard" />} />
       <Route path="/dashboard" component={() => <AppShell><DashboardPage /></AppShell>} />
       <Route path="/calendar" component={() => <AppShell><CalendarPage /></AppShell>} />

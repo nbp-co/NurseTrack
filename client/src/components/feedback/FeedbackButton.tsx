@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -45,11 +47,10 @@ export function FeedbackButton() {
         {
           ...data,
           page: location,
-          buildVersion: versionStringLong(),
-          buildSha: BUILD_INFO.sha,
-          buildBranch: BUILD_INFO.branch,
-          buildTag: BUILD_INFO.tag,
-          buildTime: BUILD_INFO.builtAt,
+          version: "1.0.0",
+          timestamp: new Date().toISOString(),
+
+
         }
       );
     },
@@ -76,14 +77,21 @@ export function FeedbackButton() {
 
   return (
     <>
-      <Button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 z-50"
-        size="icon"
-        data-testid="button-feedback"
-      >
-        <MessageCircle className="w-6 h-6" />
-      </Button>
+
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-1">
+        <Button
+          onClick={() => setIsOpen(true)}
+          className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200"
+          size="icon"
+          data-testid="button-feedback"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </Button>
+        <span className="text-xs text-gray-500 bg-white/80 px-2 py-1 rounded-full shadow-sm">
+          v1.0.0
+        </span>
+      </div>
+
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-md" data-testid="dialog-feedback">
@@ -92,6 +100,11 @@ export function FeedbackButton() {
               <MessageCircle className="w-5 h-5" />
               Send Feedback
             </DialogTitle>
+
+            <DialogDescription>
+              Help us improve the app by sharing your thoughts, reporting bugs, or suggesting features.
+            </DialogDescription>
+
           </DialogHeader>
 
           <Form {...form}>
