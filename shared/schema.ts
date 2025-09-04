@@ -44,7 +44,7 @@ export const contractScheduleDay = pgTable("contract_schedule_day", {
 export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").references(() => users.id).notNull(),
-  contractId: integer("contract_id").references(() => contracts.id, { onDelete: "cascade" }).notNull(),
+  contractId: integer("contract_id").references(() => contracts.id, { onDelete: "cascade" }),
   startUtc: timestamp("start_utc", { withTimezone: true }).notNull(),
   endUtc: timestamp("end_utc", { withTimezone: true }).notNull(),
   localDate: date("local_date").notNull(),
@@ -52,7 +52,6 @@ export const shifts = pgTable("shifts", {
   status: text("status").notNull().default("In Process"),
 }, (table) => ({
   contractDateIdx: index("shifts_contract_date_idx").on(table.contractId, table.localDate),
-  contractDateSourceUnique: unique("shifts_contract_date_source_unique").on(table.contractId, table.localDate, table.source),
 }));
 
 export const expenses = pgTable("expenses", {
@@ -113,6 +112,32 @@ export const insertShiftSchema = createInsertSchema(shifts).pick({
   localDate: true,
   source: true,
   status: true,
+});
+
+// Calendar-specific schemas
+export const createShiftRequestSchema = z.object({
+  contractId: z.number().optional().nullable(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
+  start: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/), // HH:mm
+  end: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/), // HH:mm
+  timezone: z.string(),
+  facility: z.string().optional(),
+});
+
+export const updateShiftRequestSchema = z.object({
+  contractId: z.number().optional().nullable(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // YYYY-MM-DD
+  start: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(), // HH:mm
+  end: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(), // HH:mm
+  timezone: z.string().optional(),
+  facility: z.string().optional(),
+  status: z.string().optional(),
+});
+
+export const getShiftsQuerySchema = z.object({
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
+  userId: z.string(),
 });
 
 export const insertExpenseSchema = createInsertSchema(expenses).pick({
@@ -208,3 +233,6 @@ export type ScheduleConfig = z.infer<typeof scheduleConfigSchema>;
 export type CreateContractRequest = z.infer<typeof createContractRequestSchema>;
 export type UpdateContractRequest = z.infer<typeof updateContractRequestSchema>;
 export type UpdateContractStatusRequest = z.infer<typeof updateContractStatusSchema>;
+export type CreateShiftRequest = z.infer<typeof createShiftRequestSchema>;
+export type UpdateShiftRequest = z.infer<typeof updateShiftRequestSchema>;
+export type GetShiftsQuery = z.infer<typeof getShiftsQuerySchema>;

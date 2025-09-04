@@ -1,8 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertContractSchema, insertShiftSchema, insertExpenseSchema, insertFeedbackSchema, createContractRequestSchema, updateContractRequestSchema, updateContractStatusSchema } from "@shared/schema";
+import { insertUserSchema, insertContractSchema, insertShiftSchema, insertExpenseSchema, insertFeedbackSchema, createContractRequestSchema, updateContractRequestSchema, updateContractStatusSchema, createShiftRequestSchema, updateShiftRequestSchema, getShiftsQuerySchema } from "@shared/schema";
 import * as contractsService from "./services/contracts";
+import * as calendarService from "./services/calendar";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
@@ -343,20 +344,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Shift routes
+  // Calendar API - Shift routes with timezone support
   app.get("/api/shifts", async (req, res) => {
     try {
-      const userId = req.query.userId as string;
-      if (!userId) return res.status(400).json({ message: "User ID required" });
+      const query = getShiftsQuerySchema.parse(req.query);
       
-      const filters = {
-        month: req.query.month as string,
-        contractId: req.query.contractId as string,
-      };
+      // Validate date range
+      const rangeErrors = calendarService.validateDateRange(query.from, query.to);
+      if (rangeErrors.length > 0) {
+        return res.status(400).json({ 
+          message: "Invalid date range", 
+          errors: rangeErrors 
+        });
+      }
       
-      const shifts = await storage.listShifts(userId, filters);
+      const shifts = await storage.getShiftsInRange(query.userId, query.from, query.to);
       res.json(shifts);
     } catch (error) {
+      console.error('Failed to fetch shifts:', error);
       res.status(500).json({ message: "Failed to fetch shifts" });
     }
   });
@@ -366,18 +371,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.query.userId as string;
       if (!userId) return res.status(400).json({ message: "User ID required" });
       
-      const shiftData = insertShiftSchema.parse(req.body);
-      const shift = await storage.createShift({ ...shiftData, userId });
+      const shiftRequest = createShiftRequestSchema.parse(req.body);
+      const shift = await calendarService.createShiftWithTimezone(userId, shiftRequest);
       res.json(shift);
     } catch (error) {
-      res.status(400).json({ message: "Failed to create shift" });
+      console.error('Failed to create shift:', error);
+      if (error.message.includes('must be between')) {
+        res.status(409).json({ message: error.message });
+      } else {
+        res.status(400).json({ message: "Failed to create shift" });
+      }
     }
   });
 
   app.put("/api/shifts/:id", async (req, res) => {
     try {
-      const shiftData = insertShiftSchema.partial().parse(req.body);
-      const shift = await storage.updateShift(req.params.id, shiftData);
+      const updates = updateShiftRequestSchema.parse(req.body);
+      const shift = await calendarService.updateShiftWithTimezone(req.params.id, updates);
       
       if (!shift) {
         return res.status(404).json({ message: "Shift not found" });
@@ -385,10 +395,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(shift);
     } catch (error) {
-      res.status(400).json({ message: "Failed to update shift" });
+      console.error('Failed to update shift:', error);
+      if (error.message.includes('must be between')) {
+        res.status(409).json({ message: error.message });
+      } else {
+        res.status(400).json({ message: "Failed to update shift" });
+      }
     }
   });
 
+  app.delete("/api/shifts/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteShift(req.params.id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Shift not found" });
+      }
+      
+      res.json({ message: "Shift deleted successfully" });
+    } catch (error) {
+      console.error('Failed to delete shift:', error);
+      res.status(400).json({ message: "Failed to delete shift" });
+    }
+  });
+
+  app.get("/api/contracts/:id/schedule-preview", async (req, res) => {
+    try {
+      const contractId = parseInt(req.params.id);
+      const date = req.query.date as string;
+      
+      if (isNaN(contractId)) {
+        return res.status(400).json({ message: "Invalid contract ID" });
+      }
+      
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(400).json({ message: "Valid date (YYYY-MM-DD) required" });
+      }
+      
+      const preview = await calendarService.getContractSchedulePreview(contractId, date);
+      
+      if (!preview) {
+        return res.status(404).json({ message: "Contract not found" });
+      }
+      
+      res.json(preview);
+    } catch (error) {
+      console.error('Failed to get schedule preview:', error);
+      res.status(500).json({ message: "Failed to get schedule preview" });
+    }
+  });
+
+  // Legacy shift routes for backward compatibility
   app.post("/api/shifts/:id/confirm", async (req, res) => {
     try {
       const { actualStart, actualEnd } = req.body;

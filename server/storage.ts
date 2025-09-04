@@ -1,7 +1,7 @@
 import { type User, type InsertUser, type Contract, type InsertContract, type Shift, type InsertShift, type Expense, type InsertExpense, type Feedback, type InsertFeedback } from "@shared/schema";
 import { db } from "./db";
 import { users, contracts, shifts, expenses, feedback } from "@shared/schema";
-import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
+import { eq, and, gte, lte, desc, sql, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -16,7 +16,13 @@ export interface IStorage {
   updateContract(id: string, contract: Partial<InsertContract>): Promise<Contract | undefined>;
   deleteContract(id: string): Promise<boolean>;
 
-  // Shifts
+  // Shifts - Calendar API
+  getShiftsInRange(userId: string, fromDate: string, toDate: string): Promise<any[]>;
+  createShiftWithTimezone(shift: InsertShift & { userId: string }): Promise<Shift>;
+  updateShiftWithTimezone(id: string, shift: Partial<InsertShift>): Promise<Shift | undefined>;
+  deleteShift(id: string): Promise<boolean>;
+  
+  // Shifts - Legacy
   listShifts(userId: string, filters?: { month?: string; contractId?: string }): Promise<Shift[]>;
   getShift(id: string): Promise<Shift | undefined>;
   createShift(shift: InsertShift & { userId: string }): Promise<Shift>;
@@ -216,6 +222,79 @@ export class DatabaseStorage implements IStorage {
       .where(eq(shifts.contractId, contractId));
     
     return result[0]?.count || 0;
+  }
+
+  // Calendar API Methods
+  async getShiftsInRange(userId: string, fromDate: string, toDate: string): Promise<any[]> {
+    const result = await db
+      .select({
+        id: shifts.id,
+        contractId: shifts.contractId,
+        startUtc: shifts.startUtc,
+        endUtc: shifts.endUtc,
+        localDate: shifts.localDate,
+        status: shifts.status,
+        source: shifts.source,
+        contractName: contracts.name,
+        contractFacility: contracts.facility,
+        contractRole: contracts.role,
+      })
+      .from(shifts)
+      .leftJoin(contracts, eq(shifts.contractId, contracts.id))
+      .where(
+        and(
+          eq(shifts.userId, userId),
+          gte(shifts.localDate, fromDate),
+          lte(shifts.localDate, toDate)
+        )
+      )
+      .orderBy(shifts.startUtc);
+
+    return result.map(row => ({
+      id: row.id,
+      contractId: row.contractId,
+      startUtc: row.startUtc?.toISOString(),
+      endUtc: row.endUtc?.toISOString(),
+      localDate: row.localDate,
+      status: row.status,
+      contract: row.contractId ? {
+        id: row.contractId,
+        name: row.contractName,
+        facility: row.contractFacility,
+        role: row.contractRole,
+      } : null
+    }));
+  }
+
+  async createShiftWithTimezone(shiftData: InsertShift & { userId: string }): Promise<Shift> {
+    const [shift] = await db
+      .insert(shifts)
+      .values(shiftData)
+      .returning();
+    return shift;
+  }
+
+  async updateShiftWithTimezone(id: string, updates: Partial<InsertShift>): Promise<Shift | undefined> {
+    const shiftId = parseInt(id);
+    if (isNaN(shiftId)) return undefined;
+    
+    const [shift] = await db
+      .update(shifts)
+      .set(updates)
+      .where(eq(shifts.id, shiftId))
+      .returning();
+    return shift || undefined;
+  }
+
+  async deleteShift(id: string): Promise<boolean> {
+    const shiftId = parseInt(id);
+    if (isNaN(shiftId)) return false;
+    
+    const result = await db
+      .delete(shifts)
+      .where(eq(shifts.id, shiftId));
+    
+    return result.rowCount > 0;
   }
 
   // Expenses
