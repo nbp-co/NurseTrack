@@ -313,6 +313,21 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
     return `$${parseFloat(value).toFixed(2)}/hour`;
   };
 
+  const formatDateRange = (startDate: string, endDate: string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    return `${start.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric'
+    })} - ${end.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    })}`;
+  };
+
   const renderBasicsStep = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -622,7 +637,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                 <span className="text-gray-600">Duration:</span>
                 <p className="font-medium flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
-                  {formData.startDate} to {formData.endDate}
+                  {formatDateRange(formData.startDate, formData.endDate)}
                 </p>
               </div>
             </div>
