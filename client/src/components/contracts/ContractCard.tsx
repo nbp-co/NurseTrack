@@ -137,6 +137,14 @@ export function ContractCard({ contract, onEdit, onDelete, onViewDetails, shifts
           </div>
           
           <div className="flex items-center space-x-1 ml-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onEdit}
+              data-testid={`button-edit-contract-${contract.id}`}
+            >
+              <Edit2 className="w-4 h-4" />
+            </Button>
             {onDelete && (
               <Button
                 variant="ghost"
@@ -148,14 +156,6 @@ export function ContractCard({ contract, onEdit, onDelete, onViewDetails, shifts
                 <Trash2 className="w-4 h-4" />
               </Button>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onEdit}
-              data-testid={`button-edit-contract-${contract.id}`}
-            >
-              <Edit2 className="w-4 h-4" />
-            </Button>
             {onViewDetails && (
               <Button
                 variant="ghost"
