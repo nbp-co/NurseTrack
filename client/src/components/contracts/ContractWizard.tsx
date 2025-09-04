@@ -287,6 +287,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
     const apiData: CreateContractRequest = {
       name: data.name,
       facility: data.facility,
+      status: data.status,
       // role field removed per user requirements
       startDate: data.startDate,
       endDate: data.endDate,
