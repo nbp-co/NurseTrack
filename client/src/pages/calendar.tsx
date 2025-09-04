@@ -4,9 +4,7 @@ import { useLocation } from "wouter";
 import { Plus, Calendar as CalendarIcon, Clock } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarMonthView } from "@/components/calendar/CalendarMonthView";
-import { CalendarWeekView } from "@/components/calendar/CalendarWeekView";
 import { UpcomingShiftsList } from "@/components/calendar/UpcomingShiftsList";
 import { AddEditShiftModal } from "@/components/calendar/AddEditShiftModal";
 import { PageLoader } from "@/components/ui/loader";
@@ -23,10 +21,9 @@ export default function CalendarPage() {
   // URL state management
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const selectedDateFromUrl = urlParams.get('d');
-  const viewFromUrl = urlParams.get('view') || 'month';
   
   const [selectedDate, setSelectedDate] = useState<string>(selectedDateFromUrl || new Date().toISOString().split('T')[0]);
-  const [currentView, setCurrentView] = useState<'month' | 'week'>(viewFromUrl as 'month' | 'week');
+  const [currentView, setCurrentView] = useState<'month'>('month');
   const [showAddEditModal, setShowAddEditModal] = useState(false);
   const [editingShift, setEditingShift] = useState<any>(null);
   
@@ -36,36 +33,21 @@ export default function CalendarPage() {
     if (selectedDate !== new Date().toISOString().split('T')[0]) {
       params.set('d', selectedDate);
     }
-    if (currentView !== 'month') {
-      params.set('view', currentView);
-    }
     const newUrl = params.toString() ? `${location.split('?')[0]}?${params.toString()}` : location.split('?')[0];
     if (newUrl !== location) {
       setLocation(newUrl, { replace: true });
     }
   }, [selectedDate, currentView, location, setLocation]);
 
-  // Calculate visible date range based on current view
+  // Calculate visible date range for month view
   const getVisibleRange = () => {
     const date = new Date(selectedDate);
-    if (currentView === 'month') {
-      const start = new Date(date.getFullYear(), date.getMonth(), 1);
-      const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-      return {
-        from: start.toISOString().split('T')[0],
-        to: end.toISOString().split('T')[0]
-      };
-    } else {
-      // Week view - get Sunday to Saturday
-      const sunday = new Date(date);
-      sunday.setDate(date.getDate() - date.getDay());
-      const saturday = new Date(sunday);
-      saturday.setDate(sunday.getDate() + 6);
-      return {
-        from: sunday.toISOString().split('T')[0],
-        to: saturday.toISOString().split('T')[0]
-      };
-    }
+    const start = new Date(date.getFullYear(), date.getMonth(), 1);
+    const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    return {
+      from: start.toISOString().split('T')[0],
+      to: end.toISOString().split('T')[0]
+    };
   };
   
   const visibleRange = getVisibleRange();
@@ -183,9 +165,6 @@ export default function CalendarPage() {
     setSelectedDate(date);
   };
   
-  const handleViewChange = (view: string) => {
-    setCurrentView(view as 'month' | 'week');
-  };
   
   const handleAddShift = (date?: string) => {
     setEditingShift(null);
@@ -283,34 +262,15 @@ export default function CalendarPage() {
           onShiftClick={handleEditShift}
         />
 
-        {/* Calendar Tabs */}
-        <Tabs value={currentView} onValueChange={handleViewChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="month" data-testid="tab-month">Month</TabsTrigger>
-            <TabsTrigger value="week" data-testid="tab-week">Week</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="month" className="mt-0">
-            <CalendarMonthView
-              selectedDate={selectedDate}
-              shifts={shifts}
-              onDateSelect={handleDateSelect}
-              onAddShift={handleAddShift}
-              onEditShift={handleEditShift}
-              dayShifts={dayShifts}
-            />
-          </TabsContent>
-          
-          <TabsContent value="week" className="mt-0">
-            <CalendarWeekView
-              selectedDate={selectedDate}
-              shifts={shifts}
-              onDateSelect={handleDateSelect}
-              onAddShift={handleAddShift}
-              onEditShift={handleEditShift}
-            />
-          </TabsContent>
-        </Tabs>
+        {/* Calendar Month View */}
+        <CalendarMonthView
+          selectedDate={selectedDate}
+          shifts={shifts}
+          onDateSelect={handleDateSelect}
+          onAddShift={handleAddShift}
+          onEditShift={handleEditShift}
+          dayShifts={dayShifts}
+        />
       </div>
 
       {/* Add/Edit Shift Modal */}
