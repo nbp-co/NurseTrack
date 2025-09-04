@@ -194,6 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: updateData.name,
         facility: updateData.facility,
         role: updateData.role,
+        status: updateData.status,
         startDate: updateData.startDate,
         endDate: updateData.endDate,
         baseRate: updateData.baseRate,
