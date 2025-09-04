@@ -481,14 +481,10 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
               const isEnabled = form.watch(day.key as any);
               
               return (
-                <button
+                <div
                   key={day.key}
-                  type="button"
-                  onClick={() => {
-                    form.setValue(day.key as any, !isEnabled);
-                  }}
                   className={`
-                    p-3 rounded-lg border-2 text-center transition-colors
+                    p-3 rounded-lg border-2 transition-colors
                     ${isEnabled 
                       ? 'border-green-500 bg-green-50 text-green-700' 
                       : 'border-gray-200 hover:border-gray-300'
@@ -496,70 +492,71 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                   `}
                   data-testid={`day-selector-${day.key}`}
                 >
-                  <div className="text-xs font-medium">{day.short}</div>
-                  <div className="text-lg font-bold">{day.label.slice(0, 3)}</div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      form.setValue(day.key as any, !isEnabled);
+                    }}
+                    className="w-full text-center"
+                  >
+                    <div className="text-xs font-medium">{day.short}</div>
+                    <div className="text-lg font-bold">{day.label.slice(0, 3)}</div>
+                    {isEnabled && (
+                      <div className="text-xs text-green-600 mt-1">✓</div>
+                    )}
+                  </button>
+                  
+                  {/* Time inputs within the day box */}
                   {isEnabled && (
-                    <div className="text-xs text-green-600 mt-1">✓</div>
+                    <div className="mt-3 space-y-2">
+                      <FormField
+                        control={form.control}
+                        name={day.startField as any}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                type="time"
+                                {...field}
+                                className="text-xs h-7 w-full"
+                                data-testid={`input-${day.startField}`}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name={day.endField as any}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                type="time"
+                                {...field}
+                                className="text-xs h-7 w-full"
+                                data-testid={`input-${day.endField}`}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
 
-          {/* Enabled days editor */}
-          <div className="bg-gray-50 p-4 rounded-lg border">
-            <h5 className="font-medium text-lg mb-4">Enabled Days</h5>
-            
-            {WEEKDAYS.filter(day => form.watch(day.key as any)).length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <p>Click on the days above to enable them and set working hours</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {WEEKDAYS.filter(day => form.watch(day.key as any)).map((day) => (
-                  <div key={day.key} className="grid grid-cols-[120px_1fr_1fr] gap-4 items-center">
-                    <div className="font-medium">{day.label}</div>
-                    
-                    <FormField
-                      control={form.control}
-                      name={day.startField as any}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs text-gray-500">Start Time</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="time"
-                              {...field}
-                              data-testid={`input-${day.startField}`}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name={day.endField as any}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs text-gray-500">End Time</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="time"
-                              {...field}
-                              data-testid={`input-${day.endField}`}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Helper text */}
+          {WEEKDAYS.filter(day => form.watch(day.key as any)).length === 0 && (
+            <div className="text-center py-4 text-gray-500">
+              <p>Click on the days above to enable them and set working hours</p>
+            </div>
+          )}
         </div>
       </div>
     );
