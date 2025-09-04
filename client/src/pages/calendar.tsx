@@ -244,13 +244,24 @@ export default function CalendarPage() {
         <div className="lg:px-8 px-4 pt-6 pb-0">
           <Card className="mb-6" data-testid="upcoming-shifts-section">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                <Clock className="w-5 h-5 text-blue-500" />
-                Upcoming Shifts
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-lg font-semibold">
+                  <Clock className="w-5 h-5 text-blue-500" />
+                  Upcoming Shifts
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowUpcoming(!showUpcoming)}
+                  data-testid="button-toggle-upcoming-shifts"
+                >
+                  <ChevronUp className={`w-4 h-4 transition-transform ${showUpcoming ? 'rotate-180' : ''}`} />
+                </Button>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
+            {showUpcoming && (
+              <CardContent>
+                <div className="space-y-2">
                 {nextThreeShifts.map((shift) => {
                   const formatDate = (dateStr: string) => {
                     const date = new Date(dateStr);
@@ -298,8 +309,9 @@ export default function CalendarPage() {
                     </div>
                   );
                 })}
-              </div>
-            </CardContent>
+                </div>
+              </CardContent>
+            )}
           </Card>
         </div>
       )}
