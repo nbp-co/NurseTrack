@@ -181,9 +181,11 @@ export default function CalendarPage() {
   
   // Convert 12-hour time format to 24-hour format
   const convertTo24Hour = (time12h: string): string => {
-    // If already in 24-hour format, return as-is
+    // If already in 24-hour format and matches HH:mm pattern, return as-is
     if (!time12h.includes('AM') && !time12h.includes('PM')) {
-      return time12h;
+      // Ensure it's properly formatted as HH:mm
+      const [hours, minutes] = time12h.split(':');
+      return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
     }
     
     const [time, modifier] = time12h.split(' ');
@@ -193,14 +195,18 @@ export default function CalendarPage() {
     if (modifier === 'AM') {
       if (hour === 12) {
         hours = '00';
+      } else {
+        hours = hour.toString();
       }
     } else if (modifier === 'PM') {
       if (hour !== 12) {
-        hours = String(hour + 12);
+        hours = (hour + 12).toString();
+      } else {
+        hours = '12';
       }
     }
     
-    return `${hours.padStart(2, '0')}:${minutes}`;
+    return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
   };
 
   const handleShiftSubmit = (shiftData: any) => {
@@ -210,6 +216,12 @@ export default function CalendarPage() {
       start: convertTo24Hour(shiftData.start),
       end: convertTo24Hour(shiftData.end)
     };
+    
+    // Debug logging
+    console.log('Original data:', shiftData);
+    console.log('Converted data:', convertedData);
+    console.log('Start conversion:', shiftData.start, '->', convertedData.start);
+    console.log('End conversion:', shiftData.end, '->', convertedData.end);
     
     if (editingShift) {
       updateShiftMutation.mutate({ id: editingShift.id, ...convertedData });
