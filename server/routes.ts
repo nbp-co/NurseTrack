@@ -108,8 +108,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         startDate: contractData.startDate,
         endDate: contractData.endDate,
         baseRate: contractData.baseRate,
-        otRate: contractData.otRate && contractData.otRate.trim() !== '' ? contractData.otRate : null,
-        hoursPerWeek: contractData.hoursPerWeek && contractData.hoursPerWeek.trim() !== '' ? contractData.hoursPerWeek : null,
+        otRate: contractData.otRate || null,
+        hoursPerWeek: contractData.hoursPerWeek || null,
         timezone: contractData.timezone || 'America/Chicago',
         status: 'planned',
         userId: userId
