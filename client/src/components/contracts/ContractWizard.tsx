@@ -148,7 +148,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
     const defaults = {
       name: initialData?.name || "",
       facility: initialData?.facility || "",
-      status: initialData?.status || "unconfirmed",
+      status: initialData?.status || "active",
       startDate: initialData?.startDate || "",
       endDate: initialData?.endDate || "",
       baseRate: initialData?.baseRate?.toString() || "",
