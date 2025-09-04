@@ -237,6 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         updateResult = await contractsService.applySeedActions(
           contractId,
+          existing.contract.userId,
           actions,
           updateData.timezone || existing.contract.timezone,
           updateData.schedule
