@@ -698,20 +698,35 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
 
         {/* Progress indicator */}
         <div className="flex items-center justify-between mb-6 px-2">
-          {[1, 2, 3].map((step) => (
-            <div key={step} className="flex items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                step < currentStep 
-                  ? "bg-green-100 text-green-600" 
-                  : step === currentStep 
-                  ? "bg-blue-100 text-blue-600" 
-                  : "bg-gray-100 text-gray-400"
-              }`}>
-                {step < currentStep ? <Check className="w-4 h-4" /> : step}
+          {[
+            { number: 1, label: "Basics" },
+            { number: 2, label: "Schedule" },
+            { number: 3, label: "Review" }
+          ].map((step) => (
+            <div key={step.number} className="flex items-center">
+              <div className="flex flex-col items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  step.number < currentStep 
+                    ? "bg-green-100 text-green-600" 
+                    : step.number === currentStep 
+                    ? "bg-blue-100 text-blue-600" 
+                    : "bg-gray-100 text-gray-400"
+                }`}>
+                  {step.number < currentStep ? <Check className="w-4 h-4" /> : step.number}
+                </div>
+                <div className={`text-xs mt-1 font-medium ${
+                  step.number === currentStep 
+                    ? "text-blue-600" 
+                    : step.number < currentStep
+                    ? "text-green-600"
+                    : "text-gray-400"
+                }`}>
+                  {step.label}
+                </div>
               </div>
-              {step < 3 && (
+              {step.number < 3 && (
                 <div className={`w-16 h-1 mx-2 ${
-                  step < currentStep ? "bg-green-200" : "bg-gray-200"
+                  step.number < currentStep ? "bg-green-200" : "bg-gray-200"
                 }`} />
               )}
             </div>
