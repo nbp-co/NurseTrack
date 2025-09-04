@@ -292,14 +292,14 @@ export default function ContractsPage() {
         {/* Combined Filters and Add Button */}
         <Card className="mb-6">
           <CardContent className="p-2">
-            <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
+            <div className="flex items-center justify-end gap-2 sm:gap-4 overflow-hidden">
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Filter className="w-4 h-4 text-gray-500" />
                 <span className="text-sm font-medium text-gray-700">Filters</span>
               </div>
               
-              <div className="flex gap-2 sm:gap-4 flex-1 min-w-0">
-                <div className="flex-1 min-w-[120px] max-w-[200px]">
+              <div className="flex gap-2 sm:gap-4">
+                <div className="min-w-[120px] max-w-[200px]">
                   <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
                     <SelectTrigger data-testid="select-status-filter">
                       <SelectValue placeholder="Filter by status" />
@@ -314,7 +314,7 @@ export default function ContractsPage() {
                   </Select>
                 </div>
                 
-                <div className="flex-1 min-w-[120px] max-w-[200px]">
+                <div className="min-w-[120px] max-w-[200px]">
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger data-testid="select-sort-by">
                       <SelectValue placeholder="Sort by" />
