@@ -3,12 +3,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, ChevronUp, Clock, MapPin } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarMonth } from "@/components/calendar/CalendarMonth";
 import { CalendarWeekToggle, CalendarWeekView } from "@/components/calendar/CalendarWeek";
 import { DayDetailDrawer } from "@/components/drawers/DayDetailDrawer";
 import { ShiftForm } from "@/components/forms/ShiftForm";
 import { PageLoader } from "@/components/ui/loader";
 import { contractApi, shiftApi } from "@/api/mock";
+import { contractsApi, shiftsApi } from "@/lib/contracts-api";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarEvent, Shift } from "@/types";
@@ -35,6 +37,14 @@ export default function CalendarPage() {
     queryKey: ['/api/shifts', currentMonth],
     queryFn: () => shiftApi.listShifts({ month: currentMonth }),
   });
+
+  // Fetch real upcoming shifts
+  const { data: upcomingShiftsReal = [] } = useQuery({
+    queryKey: ['/api/shifts', user?.id],
+    queryFn: () => shiftsApi.listShifts({ userId: user?.id }),
+    enabled: !!user,
+  });
+
 
   const isLoading = contractsLoading || shiftsLoading;
 
@@ -105,18 +115,12 @@ export default function CalendarPage() {
   }, [shifts]);
 
   const nextThreeShifts = useMemo(() => {
-    const today = new Date();
-    const nextMonth = new Date(today);
-    nextMonth.setDate(today.getDate() + 30);
-    
-    return shifts
-      .filter(shift => {
-        const shiftDate = new Date(shift.date);
-        return shiftDate >= today && shiftDate <= nextMonth && !shift.completed;
-      })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    const today = new Date().toISOString().split('T')[0];
+    return upcomingShiftsReal
+      .filter(shift => shift.localDate >= today)
+      .sort((a, b) => new Date(a.localDate).getTime() - new Date(b.localDate).getTime())
       .slice(0, 3);
-  }, [shifts]);
+  }, [upcomingShiftsReal]);
 
   const handleDayClick = (date: string) => {
     setSelectedDate(date);
@@ -173,62 +177,67 @@ export default function CalendarPage() {
       />
 
       {/* Upcoming Shifts Section */}
-      {upcomingShifts.length > 0 && (
+      {nextThreeShifts.length > 0 && (
         <div className="lg:px-8 px-4 pt-6 pb-0">
-          <div 
-            className="flex items-center justify-between cursor-pointer mb-4"
-            onClick={() => setShowUpcoming(!showUpcoming)}
-            data-testid="button-toggle-upcoming"
-          >
-            <h2 className="text-xl font-semibold text-gray-900">Upcoming Shifts</h2>
-            <ChevronUp 
-              className={`w-5 h-5 text-gray-500 transition-transform ${
-                showUpcoming ? 'rotate-0' : 'rotate-180'
-              }`}
-            />
-          </div>
-          
-          {showUpcoming && (
-            <div className="space-y-3 mb-6">
-              {upcomingShifts.map((shift) => {
-                const contract = contracts.find(c => c.id === shift.contractId);
-                
-                return (
-                  <div 
-                    key={shift.id} 
-                    className="bg-rose-50 border border-rose-200 rounded-lg p-4 cursor-pointer hover:bg-rose-100 transition-colors"
-                    onClick={() => handleDayClick(shift.date)}
-                    data-testid={`upcoming-shift-${shift.id}`}
-                  >
-                    <div className="grid grid-cols-3 items-center">
-                      <div className="flex items-center space-x-3">
-                        <div className="text-sm font-medium text-gray-900">
-                          {formatShiftDate(shift.date)}
+          <Card className="mb-6" data-testid="upcoming-shifts-section">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                <Clock className="w-5 h-5 text-blue-500" />
+                Upcoming Shifts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {nextThreeShifts.map((shift) => {
+                  const formatDate = (dateStr: string) => {
+                    const date = new Date(dateStr);
+                    const today = new Date();
+                    const tomorrow = new Date();
+                    tomorrow.setDate(today.getDate() + 1);
+                    
+                    if (date.toDateString() === today.toDateString()) {
+                      return 'Today';
+                    } else if (date.toDateString() === tomorrow.toDateString()) {
+                      return 'Tomorrow';
+                    } else {
+                      return date.toLocaleDateString('en-US', { 
+                        weekday: 'short', 
+                        month: 'short', 
+                        day: 'numeric' 
+                      });
+                    }
+                  };
+
+                  const formatTime = (utcDate: string) => {
+                    return new Date(utcDate).toLocaleTimeString('en-US', {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: true
+                    });
+                  };
+
+                  return (
+                    <div key={shift.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg" data-testid={`shift-item-${shift.id}`}>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <div className="text-sm font-medium text-gray-900">
+                            {formatDate(shift.localDate)}
+                          </div>
+                          <div className="flex items-center gap-1 text-sm text-gray-600">
+                            <MapPin className="w-3 h-3" />
+                            {shift.facility}
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="flex flex-col items-center">
-                        <div className="flex items-center space-x-2 text-sm text-gray-700">
-                          <MapPin className="w-4 h-4" />
-                          <span className="font-medium">{shift.facility}</span>
+                        <div className="text-sm text-gray-500 mt-1">
+                          {formatTime(shift.startUtc)} - {formatTime(shift.endUtc)} · {shift.role}
                         </div>
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
-                          <Clock className="w-4 h-4" />
-                          <span>{shift.start} - {shift.end}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-end">
-                        <span className="text-sm font-medium text-gray-600 bg-white px-3 py-1 rounded-full border">
-                          {shift.role}
-                        </span>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
