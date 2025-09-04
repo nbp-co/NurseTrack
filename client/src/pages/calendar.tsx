@@ -219,7 +219,11 @@ export default function CalendarPage() {
       end: convertTo24Hour(shiftData.end)
     };
     
+    console.log('Frontend: Original shiftData:', shiftData);
+    console.log('Frontend: Converted data:', convertedData);
+    
     if (editingShift) {
+      console.log('Frontend: Updating shift with:', { id: editingShift.id, ...convertedData });
       updateShiftMutation.mutate({ id: editingShift.id, ...convertedData });
     } else {
       createShiftMutation.mutate(convertedData);
