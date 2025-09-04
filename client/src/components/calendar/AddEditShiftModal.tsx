@@ -247,16 +247,22 @@ export function AddEditShiftModal({
   // Initialize form when editing
   useEffect(() => {
     if (editingShift) {
-      const startTime = new Date(editingShift.startUtc).toLocaleTimeString('en-US', {
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      const endTime = new Date(editingShift.endUtc).toLocaleTimeString('en-US', {
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      // Handle simple time strings like "07:00:00" or "19:00:00"
+      const formatTimeForInput = (timeString: string) => {
+        const [hourStr, minuteStr] = timeString.split(':');
+        const hour = parseInt(hourStr, 10);
+        const minute = parseInt(minuteStr, 10);
+        
+        // Convert to 12-hour format for display
+        const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+        const period = hour < 12 ? 'AM' : 'PM';
+        const minuteStr2 = minute.toString().padStart(2, '0');
+        
+        return `${displayHour.toString().padStart(2, '0')}:${minuteStr2} ${period}`;
+      };
+      
+      const startTime = formatTimeForInput(editingShift.startUtc);
+      const endTime = formatTimeForInput(editingShift.endUtc);
       
       form.setValue('contractId', editingShift.contractId || null);
       form.setValue('date', editingShift.localDate);
