@@ -383,7 +383,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/shifts/:id", async (req, res) => {
     try {
+      console.log('Shift update request body:', req.body);
       const updates = updateShiftRequestSchema.parse(req.body);
+      console.log('Parsed updates:', updates);
       const shift = await calendarService.updateShift(req.params.id, updates);
       
       if (!shift) {
