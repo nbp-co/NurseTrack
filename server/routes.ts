@@ -107,24 +107,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         otRate: contractData.otRate,
         hoursPerWeek: contractData.hoursPerWeek,
         timezone: contractData.timezone,
-        status: 'planned'
+        status: 'planned',
+        userId: 'mock-user-id' // TODO: Get from session
       });
       
-      // Upsert schedule days
-      await contractsService.upsertScheduleDays(contract.id, contractData.schedule);
+      // For now, skip database operations since we're using in-memory storage
+      // TODO: Implement proper database storage layer
       
       let seedResult = null;
       if (contractData.seedShifts) {
-        // Seed shifts
-        seedResult = await contractsService.seedShifts(
-          contract.id,
-          contractData.startDate,
-          contractData.endDate,
-          contractData.timezone,
-          contractData.schedule
-        );
-        
-        console.log('Seed summary:', seedResult);
+        console.log('Shift seeding skipped - using in-memory storage');
+        seedResult = {
+          contractId: contract.id,
+          totalDays: 0,
+          enabledDays: 0,
+          created: 0,
+          skipped: 0
+        };
       }
       
       res.json({

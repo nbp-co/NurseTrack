@@ -1,5 +1,8 @@
 import { type User, type InsertUser, type Contract, type InsertContract, type Shift, type InsertShift, type Expense, type InsertExpense, type Feedback, type InsertFeedback } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { users, contracts, shifts, expenses, feedback } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // Users
