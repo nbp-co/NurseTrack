@@ -170,8 +170,8 @@ export const updateContractRequestSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // YYYY-MM-DD
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),   // YYYY-MM-DD
   baseRate: z.string().optional(),
-  otRate: z.string().optional(),
-  hoursPerWeek: z.string().optional(),
+  otRate: z.string().optional().transform(val => val === '' || val === undefined ? undefined : val),
+  hoursPerWeek: z.string().optional().transform(val => val === '' || val === undefined ? undefined : val),
   timezone: z.string().optional(),
   schedule: scheduleConfigSchema.optional(),
   seedShifts: z.boolean().optional(),
