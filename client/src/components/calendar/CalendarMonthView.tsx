@@ -93,11 +93,22 @@ export function CalendarMonthView({
   };
 
   const formatTime = (utcDateString: string) => {
-    return new Date(utcDateString).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
+    const date = new Date(utcDateString);
+    const hour = date.getHours();
+    const minute = date.getMinutes();
+    
+    // Format as "8A" or "8P" style
+    if (minute === 0) {
+      // For times on the hour, show just hour + A/P
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      const period = hour < 12 ? 'A' : 'P';
+      return `${displayHour}${period}`;
+    } else {
+      // For times with minutes, show hour:minute + AM/PM
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      const period = hour < 12 ? 'AM' : 'PM';
+      return `${displayHour}:${minute.toString().padStart(2, '0')}${period}`;
+    }
   };
 
   const isOvernightShift = (shift: Shift) => {
