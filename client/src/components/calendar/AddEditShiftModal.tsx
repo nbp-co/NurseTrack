@@ -62,7 +62,7 @@ const shiftSchema = z.object({
   start: z.string(),
   end: z.string(),
   facility: z.string().optional(),
-  status: z.enum(['scheduled', 'unconfirmed', 'completed', 'cancelled']).default('scheduled'),
+  status: z.enum(['active', 'unconfirmed', 'completed', 'archive']).default('active'),
   timezone: z.string().default('America/Chicago'),
   baseRate: z.string().optional().default(""),
   otRate: z.string().optional().default("")
@@ -105,7 +105,7 @@ export function AddEditShiftModal({
       start: "07:00",
       end: "19:00",
       facility: "",
-      status: "scheduled",
+      status: "active",
       timezone: "America/Chicago",
       baseRate: "",
       otRate: ""
@@ -478,10 +478,10 @@ export function AddEditShiftModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="unconfirmed">Awaiting Confirmation</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="unconfirmed">Unconfirmed</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Canceled</SelectItem>
+                      <SelectItem value="archive">Archive</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
