@@ -840,9 +840,12 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
           <form 
             onSubmit={form.handleSubmit(handleSubmit)} 
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && currentStep < 3) {
+              if (e.key === 'Enter') {
                 e.preventDefault();
-                handleNext();
+                if (currentStep < 3) {
+                  handleNext();
+                }
+                // On step 3, do nothing - user must explicitly click the submit button
               }
             }}
             className="space-y-6"
