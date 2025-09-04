@@ -51,13 +51,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const contracts = await storage.listContracts(userId);
       
-      // Add shift counts to each contract
+      // Add shift counts and schedule data to each contract
       const contractsWithShiftCounts = await Promise.all(
         contracts.map(async (contract) => {
           const shiftsCount = await storage.getShiftCountByContract(contract.id);
+          const contractWithSchedule = await contractsService.getContractWithSchedule(contract.id);
           return {
             ...contract,
-            shiftsCount
+            shiftsCount,
+            scheduleData: contractWithSchedule?.schedule || []
           };
         })
       );
@@ -125,6 +127,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'unconfirmed',
         userId: userId
       });
+      
+      // Always save the schedule days to the database
+      await contractsService.upsertScheduleDays(contract.id, contractData.schedule);
       
       // Seed shifts if requested
       let seedResult = null;
