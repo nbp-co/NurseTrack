@@ -129,6 +129,68 @@ export const insertFeedbackSchema = createInsertSchema(feedback).pick({
   type: true,
 });
 
+// API-specific schemas for contract management
+export const scheduleDaySchema = z.object({
+  enabled: z.boolean(),
+  start: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(), // HH:mm format
+  end: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),   // HH:mm format
+});
+
+export const scheduleConfigSchema = z.object({
+  defaultStart: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/), // HH:mm format
+  defaultEnd: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),   // HH:mm format
+  days: z.record(z.string(), scheduleDaySchema), // "0" to "6" for weekdays
+});
+
+export const createContractRequestSchema = z.object({
+  name: z.string().min(1),
+  facility: z.string().min(1),
+  role: z.string().min(1),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),   // YYYY-MM-DD
+  baseRate: z.string(),
+  otRate: z.string().optional(),
+  hoursPerWeek: z.string().optional(),
+  timezone: z.string().min(1),
+  schedule: scheduleConfigSchema,
+  seedShifts: z.boolean(),
+}).refine((data) => {
+  const start = new Date(data.startDate);
+  const end = new Date(data.endDate);
+  return end >= start;
+}, {
+  message: "endDate must be greater than or equal to startDate",
+  path: ["endDate"],
+});
+
+export const updateContractRequestSchema = z.object({
+  name: z.string().min(1).optional(),
+  facility: z.string().min(1).optional(),
+  role: z.string().min(1).optional(),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // YYYY-MM-DD
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),   // YYYY-MM-DD
+  baseRate: z.string().optional(),
+  otRate: z.string().optional(),
+  hoursPerWeek: z.string().optional(),
+  timezone: z.string().min(1).optional(),
+  schedule: scheduleConfigSchema.optional(),
+  seedShifts: z.boolean().optional(),
+}).refine((data) => {
+  if (data.startDate && data.endDate) {
+    const start = new Date(data.startDate);
+    const end = new Date(data.endDate);
+    return end >= start;
+  }
+  return true;
+}, {
+  message: "endDate must be greater than or equal to startDate",
+  path: ["endDate"],
+});
+
+export const updateContractStatusSchema = z.object({
+  status: z.enum(['planned', 'active', 'archived']),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertContract = z.infer<typeof insertContractSchema>;
@@ -141,3 +203,8 @@ export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 export type Expense = typeof expenses.$inferSelect;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type Feedback = typeof feedback.$inferSelect;
+export type ScheduleDay = z.infer<typeof scheduleDaySchema>;
+export type ScheduleConfig = z.infer<typeof scheduleConfigSchema>;
+export type CreateContractRequest = z.infer<typeof createContractRequestSchema>;
+export type UpdateContractRequest = z.infer<typeof updateContractRequestSchema>;
+export type UpdateContractStatusRequest = z.infer<typeof updateContractStatusSchema>;

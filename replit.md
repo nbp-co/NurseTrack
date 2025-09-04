@@ -81,9 +81,32 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Updates
 
+### DST-Safe Contracts API Implementation (September 2025)
+- Implemented comprehensive contracts service with timezone-aware business logic
+- Added Luxon library for proper DST handling and timezone conversions
+- Created timezone-safe shift generation with proper UTC storage and local time tracking
+- Built contract lifecycle management with schedule validation and bulk operations
+- Developed extensive unit and integration test suites for contracts service
+- Enhanced API endpoints for contract creation, updates, status management, and schedule seeding
+
 ### Contact Information Enhancement (August 2025)
 - Added comprehensive contact information section to contract basics step
 - New fields include: address, contact name, phone number, and notes
 - Contact information appears at bottom of basics page with clear visual separation
 - Updated schema and types to support new fields
 - Enhanced review step to display contact information in summary
+
+## Implementation Architecture
+
+### Timezone & DST Handling
+- **UTC Storage**: All timestamps stored as UTC in database using timestamptz
+- **Local Tracking**: Date fields store local dates, timezone stored per contract
+- **Luxon Integration**: Handles DST transitions and timezone conversions automatically
+- **Schedule Management**: Day-specific overrides with proper local time preservation
+
+### Contracts Service
+- **Business Logic Separation**: Core logic isolated from API routes
+- **Shift Seeding**: Automatic generation of shifts based on contract schedules
+- **Schedule Validation**: Comprehensive validation for recurring patterns
+- **Contract Lifecycle**: Status transitions and update workflows
+- **Test Coverage**: Unit tests for business logic, integration tests for API endpoints
