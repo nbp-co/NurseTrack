@@ -374,7 +374,7 @@ export function AddEditShiftModal({
                   <FormItem>
                     <FormLabel>Start Time</FormLabel>
                     <FormControl>
-                      <Input type="time" {...field} data-testid="input-start-time" />
+                      <Input type="time" step="300" {...field} data-testid="input-start-time" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -388,7 +388,7 @@ export function AddEditShiftModal({
                   <FormItem>
                     <FormLabel>End Time</FormLabel>
                     <FormControl>
-                      <Input type="time" {...field} data-testid="input-end-time" />
+                      <Input type="time" step="300" {...field} data-testid="input-end-time" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
