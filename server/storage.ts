@@ -18,8 +18,8 @@ export interface IStorage {
 
   // Shifts - Calendar API
   getShiftsInRange(userId: string, fromDate: string, toDate: string): Promise<any[]>;
-  createShiftWithTimezone(shift: InsertShift & { userId: string }): Promise<Shift>;
-  updateShiftWithTimezone(id: string, shift: Partial<InsertShift>): Promise<Shift | undefined>;
+  createShift(shift: InsertShift & { userId: string }): Promise<Shift>;
+  updateShift(id: string, shift: Partial<InsertShift>): Promise<Shift | undefined>;
   deleteShift(id: string): Promise<boolean>;
   
   // Shifts - Legacy
@@ -120,9 +120,9 @@ export class DatabaseStorage implements IStorage {
         id: shifts.id,
         userId: shifts.userId,
         contractId: shifts.contractId,
-        startUtc: shifts.startUtc,
-        endUtc: shifts.endUtc,
-        localDate: shifts.localDate,
+        shiftDate: shifts.shiftDate,
+        startTime: shifts.startTime,
+        endTime: shifts.endTime,
         source: shifts.source,
         status: shifts.status,
         contractName: contracts.name,
@@ -150,12 +150,12 @@ export class DatabaseStorage implements IStorage {
       const endDate = `${year}-${month}-31`;
       query = query.where(and(
         eq(shifts.userId, userId),
-        gte(shifts.localDate, startDate),
-        lte(shifts.localDate, endDate)
+        gte(shifts.shiftDate, startDate),
+        lte(shifts.shiftDate, endDate)
       ));
     }
 
-    return await query.orderBy(shifts.localDate);
+    return await query.orderBy(shifts.shiftDate, shifts.startTime);
   }
 
   async getShift(id: string): Promise<Shift | undefined> {
@@ -230,15 +230,14 @@ export class DatabaseStorage implements IStorage {
       .select({
         id: shifts.id,
         contractId: shifts.contractId,
-        startUtc: shifts.startUtc,
-        endUtc: shifts.endUtc,
-        localDate: shifts.localDate,
+        shiftDate: shifts.shiftDate,
+        startTime: shifts.startTime,
+        endTime: shifts.endTime,
         status: shifts.status,
         source: shifts.source,
         contractName: contracts.name,
         contractFacility: contracts.facility,
         contractRole: contracts.role,
-        contractTimezone: contracts.timezone,
         contractBaseRate: contracts.baseRate,
       })
       .from(shifts)
@@ -246,8 +245,8 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(shifts.userId, userId),
-          gte(shifts.localDate, fromDate),
-          lte(shifts.localDate, toDate),
+          gte(shifts.shiftDate, fromDate),
+          lte(shifts.shiftDate, toDate),
           // Filter for seeded (source='contract_seed') + manual shifts
           or(
             eq(shifts.source, 'contract_seed'),
@@ -255,46 +254,25 @@ export class DatabaseStorage implements IStorage {
           )
         )
       )
-      .orderBy(shifts.startUtc);
+      .orderBy(shifts.shiftDate, shifts.startTime);
 
     return result.map(row => ({
       id: row.id,
       contractId: row.contractId,
-      startUtc: row.startUtc?.toISOString(),
-      endUtc: row.endUtc?.toISOString(),
-      localDate: row.localDate,
+      date: row.shiftDate,
+      start: row.startTime,
+      end: row.endTime,
       status: row.status,
       source: row.source,
       contract: row.contractId ? {
         id: row.contractId,
         name: row.contractName,
         facility: row.contractFacility,
-        timezone: row.contractTimezone,
         base_rate: row.contractBaseRate,
-        // Note: color field not available in current schema
       } : null
     }));
   }
 
-  async createShiftWithTimezone(shiftData: InsertShift & { userId: string }): Promise<Shift> {
-    const [shift] = await db
-      .insert(shifts)
-      .values(shiftData)
-      .returning();
-    return shift;
-  }
-
-  async updateShiftWithTimezone(id: string, updates: Partial<InsertShift>): Promise<Shift | undefined> {
-    const shiftId = parseInt(id);
-    if (isNaN(shiftId)) return undefined;
-    
-    const [shift] = await db
-      .update(shifts)
-      .set(updates)
-      .where(eq(shifts.id, shiftId))
-      .returning();
-    return shift || undefined;
-  }
 
   async deleteShift(id: string): Promise<boolean> {
     const shiftId = parseInt(id);

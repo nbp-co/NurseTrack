@@ -47,7 +47,6 @@ const contractWizardSchema = z.object({
   baseRate: z.string().min(1, "Base rate is required"),
   otRate: z.string().optional(),
   hoursPerWeek: z.string().optional(),
-  timezone: z.string().optional(),
   
   // Step 2: Schedule
   defaultStart: z.string().min(1, "Default start time is required"),
@@ -129,14 +128,6 @@ const ROLES = [
   "Respiratory Therapist",
 ];
 
-const TIMEZONES = [
-  "America/New_York",
-  "America/Chicago", 
-  "America/Denver",
-  "America/Los_Angeles",
-  "America/Anchorage",
-  "Pacific/Honolulu",
-];
 
 export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: ContractWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
@@ -154,7 +145,6 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
       baseRate: initialData?.baseRate?.toString() || "",
       otRate: initialData?.otRate?.toString() || "",
       hoursPerWeek: initialData?.hoursPerWeek?.toString() || "",
-      timezone: initialData?.timezone || "America/Chicago",
       defaultStart: "07:00",
       defaultEnd: "19:00",
       enableSunday: false,
@@ -294,7 +284,6 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
       baseRate: data.baseRate,
       otRate: data.otRate,
       hoursPerWeek: data.hoursPerWeek,
-      timezone: data.timezone,
       schedule,
       seedShifts: true,
     };

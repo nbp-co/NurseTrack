@@ -122,7 +122,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         baseRate: contractData.baseRate,
         otRate: contractData.otRate || null,
         hoursPerWeek: contractData.hoursPerWeek || null,
-        timezone: contractData.timezone || 'America/Chicago',
         status: 'unconfirmed',
         userId: userId
       });
@@ -136,7 +135,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             userId,
             contractData.startDate,
             contractData.endDate,
-            contractData.timezone || 'America/Chicago',
             contractData.schedule
           );
           
@@ -372,7 +370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!userId) return res.status(400).json({ message: "User ID required" });
       
       const shiftRequest = createShiftRequestSchema.parse(req.body);
-      const shift = await calendarService.createShiftWithTimezone(userId, shiftRequest);
+      const shift = await calendarService.createShift(userId, shiftRequest);
       res.json(shift);
     } catch (error) {
       console.error('Failed to create shift:', error);
@@ -387,7 +385,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/shifts/:id", async (req, res) => {
     try {
       const updates = updateShiftRequestSchema.parse(req.body);
-      const shift = await calendarService.updateShiftWithTimezone(req.params.id, updates);
+      const shift = await calendarService.updateShift(req.params.id, updates);
       
       if (!shift) {
         return res.status(404).json({ message: "Shift not found" });

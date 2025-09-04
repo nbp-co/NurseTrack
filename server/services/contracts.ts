@@ -112,33 +112,24 @@ export function getEffectiveShiftTime(
   }
 }
 
-export function convertLocalToUtc(
-  localDate: string, 
-  localTime: string, 
-  timezone: string
-): DateTime {
-  const dateTime = DateTime.fromISO(`${localDate}T${localTime}`, { zone: timezone });
-  return dateTime.toUTC();
-}
 
 export function generateShiftDates(
   startDate: string,
   endDate: string,
-  timezone: string,
   schedule: ScheduleConfig
 ): Array<{
-  localDate: string;
-  startUtc: DateTime;
-  endUtc: DateTime;
+  shiftDate: string;
+  startTime: string;
+  endTime: string;
 }> {
   const shifts: Array<{
-    localDate: string;
-    startUtc: DateTime;
-    endUtc: DateTime;
+    shiftDate: string;
+    startTime: string;
+    endTime: string;
   }> = [];
 
-  let currentDate = DateTime.fromISO(startDate, { zone: timezone });
-  const end = DateTime.fromISO(endDate, { zone: timezone });
+  let currentDate = DateTime.fromISO(startDate);
+  const end = DateTime.fromISO(endDate);
 
   while (currentDate <= end) {
     const dayOfWeek = currentDate.weekday % 7; // Convert from 1-7 to 0-6 (Sunday-Saturday)
@@ -148,21 +139,12 @@ export function generateShiftDates(
       const startTime = getEffectiveShiftTime(dayOfWeek, schedule, true);
       const endTime = getEffectiveShiftTime(dayOfWeek, schedule, false);
 
-      const localDateStr = currentDate.toISODate()!;
+      const shiftDateStr = currentDate.toISODate()!;
       
-      // Handle overnight shifts (end time next day)
-      let endDateTime = DateTime.fromISO(`${localDateStr}T${endTime}`, { zone: timezone });
-      const startDateTime = DateTime.fromISO(`${localDateStr}T${startTime}`, { zone: timezone });
-      
-      if (endDateTime <= startDateTime) {
-        // Overnight shift - end time is next day
-        endDateTime = endDateTime.plus({ days: 1 });
-      }
-
       shifts.push({
-        localDate: localDateStr,
-        startUtc: startDateTime.toUTC(),
-        endUtc: endDateTime.toUTC(),
+        shiftDate: shiftDateStr,
+        startTime,
+        endTime,
       });
     }
 
@@ -177,10 +159,9 @@ export async function seedShifts(
   userId: string,
   startDate: string,
   endDate: string,
-  timezone: string,
   schedule: ScheduleConfig
 ): Promise<SeedResult> {
-  const shiftDates = generateShiftDates(startDate, endDate, timezone, schedule);
+  const shiftDates = generateShiftDates(startDate, endDate, schedule);
   
   let created = 0;
   let skipped = 0;
@@ -190,13 +171,13 @@ export async function seedShifts(
       const result = await db.insert(shifts).values({
         userId,
         contractId,
-        startUtc: shift.startUtc.toJSDate(),
-        endUtc: shift.endUtc.toJSDate(),
-        localDate: shift.localDate,
+        shiftDate: shift.shiftDate,
+        startTime: shift.startTime,
+        endTime: shift.endTime,
         source: 'contract_seed',
         status: 'scheduled',
       }).onConflictDoNothing({
-        target: [shifts.contractId, shifts.localDate, shifts.source]
+        target: [shifts.contractId, shifts.shiftDate, shifts.source]
       });
       
       // Check if the insert actually happened

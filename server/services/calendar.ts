@@ -4,21 +4,19 @@ import { contracts, contractScheduleDay } from '@shared/schema';
 import { db } from '../db';
 import { eq, and } from 'drizzle-orm';
 
-export interface TimezoneShiftRequest {
+export interface ShiftRequest {
   contractId?: number | null;
   date: string; // YYYY-MM-DD
   start: string; // HH:mm
   end: string; // HH:mm
-  timezone: string;
   facility?: string;
 }
 
-export interface TimezoneShiftUpdate {
+export interface ShiftUpdate {
   contractId?: number | null;
   date?: string;
   start?: string;
   end?: string;
-  timezone?: string;
   facility?: string;
   status?: string;
 }
@@ -55,45 +53,19 @@ export function validateDateRange(fromDate: string, toDate: string): string[] {
 }
 
 /**
- * Converts local time to UTC using timezone and handles overnight shifts
+ * Simple validation for overnight shifts
  */
-export function convertLocalToUtc(
-  date: string,
+export function validateShiftTimes(
   startTime: string,
-  endTime: string,
-  timezone: string
-): { startUtc: Date; endUtc: Date } {
-  const startLocal = DateTime.fromISO(`${date}T${startTime}`, { zone: timezone });
-  let endLocal = DateTime.fromISO(`${date}T${endTime}`, { zone: timezone });
-  
-  // Handle overnight shifts (start > end)
-  if (endTime < startTime) {
-    endLocal = endLocal.plus({ days: 1 });
-  }
-  
-  return {
-    startUtc: startLocal.toUTC().toJSDate(),
-    endUtc: endLocal.toUTC().toJSDate()
-  };
+  endTime: string
+): boolean {
+  // Allow overnight shifts (start > end) - they're valid
+  return true;
 }
 
 /**
  * Converts UTC back to local time
  */
-export function convertUtcToLocal(
-  startUtc: Date,
-  endUtc: Date,
-  timezone: string
-): { localDate: string; start: string; end: string } {
-  const startLocal = DateTime.fromJSDate(startUtc).setZone(timezone);
-  const endLocal = DateTime.fromJSDate(endUtc).setZone(timezone);
-  
-  return {
-    localDate: startLocal.toISODate()!,
-    start: startLocal.toFormat('HH:mm'),
-    end: endLocal.toFormat('HH:mm')
-  };
-}
 
 /**
  * Validates if shift date is within contract date range
@@ -124,9 +96,9 @@ export async function validateContractDateRange(
 /**
  * Creates a shift with timezone conversion
  */
-export async function createShiftWithTimezone(
+export async function createShift(
   userId: string,
-  shiftRequest: TimezoneShiftRequest
+  shiftRequest: ShiftRequest
 ): Promise<any> {
   // Validate contract date range if contractId provided
   if (shiftRequest.contractId) {
@@ -139,21 +111,18 @@ export async function createShiftWithTimezone(
     }
   }
   
-  // Convert local times to UTC
-  const { startUtc, endUtc } = convertLocalToUtc(
-    shiftRequest.date,
-    shiftRequest.start,
-    shiftRequest.end,
-    shiftRequest.timezone
-  );
+  // Validate shift times
+  if (!validateShiftTimes(shiftRequest.start, shiftRequest.end)) {
+    throw new Error('Invalid shift times');
+  }
   
-  // Create shift
-  const shift = await storage.createShiftWithTimezone({
+  // Create shift with simple date/time fields
+  const shift = await storage.createShift({
     userId,
     contractId: shiftRequest.contractId || null,
-    startUtc,
-    endUtc,
-    localDate: shiftRequest.date,
+    shiftDate: shiftRequest.date,
+    startTime: shiftRequest.start,
+    endTime: shiftRequest.end,
     source: shiftRequest.contractId ? 'manual' : 'manual',
     status: 'In Process'
   });
@@ -164,9 +133,9 @@ export async function createShiftWithTimezone(
 /**
  * Updates a shift with timezone conversion
  */
-export async function updateShiftWithTimezone(
+export async function updateShift(
   shiftId: string,
-  updates: TimezoneShiftUpdate
+  updates: ShiftUpdate
 ): Promise<any> {
   const existingShift = await storage.getShift(shiftId);
   if (!existingShift) {
@@ -186,36 +155,23 @@ export async function updateShiftWithTimezone(
   
   let updateData: any = {};
   
-  // If time or date changed, recalculate UTC
-  if (updates.date || updates.start || updates.end || updates.timezone) {
-    const date = updates.date || existingShift.localDate;
-    const timezone = updates.timezone || 'America/Chicago'; // fallback
-    
-    // Get existing local times if not updating
-    const existingLocal = convertUtcToLocal(
-      existingShift.startUtc,
-      existingShift.endUtc,
-      timezone
-    );
-    
-    const start = updates.start || existingLocal.start;
-    const end = updates.end || existingLocal.end;
-    
-    const { startUtc, endUtc } = convertLocalToUtc(date, start, end, timezone);
-    
-    updateData = {
-      ...updateData,
-      startUtc,
-      endUtc,
-      localDate: date
-    };
-  }
-  
-  // Add other updates
+  // Update simple date/time fields
+  if (updates.date) updateData.shiftDate = updates.date;
+  if (updates.start) updateData.startTime = updates.start;
+  if (updates.end) updateData.endTime = updates.end;
   if (updates.contractId !== undefined) updateData.contractId = updates.contractId;
   if (updates.status) updateData.status = updates.status;
   
-  return await storage.updateShiftWithTimezone(shiftId, updateData);
+  // Validate times if being updated
+  if (updates.start || updates.end) {
+    const start = updates.start || existingShift.startTime;
+    const end = updates.end || existingShift.endTime;
+    if (!validateShiftTimes(start, end)) {
+      throw new Error('Invalid shift times');
+    }
+  }
+  
+  return await storage.updateShift(shiftId, updateData);
 }
 
 /**

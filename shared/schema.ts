@@ -24,7 +24,6 @@ export const contracts = pgTable("contracts", {
   otRate: decimal("ot_rate", { precision: 10, scale: 2 }),
   hoursPerWeek: decimal("hours_per_week", { precision: 5, scale: 2 }),
   status: text("status").notNull().default("unconfirmed"),
-  timezone: text("timezone").notNull().default("America/Chicago"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 }, (table) => ({
   statusDateIdx: index("contracts_status_date_idx").on(table.status, table.startDate, table.endDate),
@@ -45,13 +44,13 @@ export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").references(() => users.id).notNull(),
   contractId: integer("contract_id").references(() => contracts.id, { onDelete: "cascade" }),
-  startUtc: timestamp("start_utc", { withTimezone: true }).notNull(),
-  endUtc: timestamp("end_utc", { withTimezone: true }).notNull(),
-  localDate: date("local_date").notNull(),
+  shiftDate: date("shift_date").notNull(),
+  startTime: time("start_time").notNull(),
+  endTime: time("end_time").notNull(),
   source: text("source").notNull().default("contract_seed"),
   status: text("status").notNull().default("In Process"),
 }, (table) => ({
-  contractDateIdx: index("shifts_contract_date_idx").on(table.contractId, table.localDate),
+  contractDateIdx: index("shifts_contract_date_idx").on(table.contractId, table.shiftDate),
 }));
 
 export const expenses = pgTable("expenses", {
@@ -94,7 +93,6 @@ export const insertContractSchema = createInsertSchema(contracts).pick({
   otRate: true,
   hoursPerWeek: true,
   status: true,
-  timezone: true,
 });
 
 export const insertContractScheduleDaySchema = createInsertSchema(contractScheduleDay).pick({
@@ -107,9 +105,9 @@ export const insertContractScheduleDaySchema = createInsertSchema(contractSchedu
 
 export const insertShiftSchema = createInsertSchema(shifts).pick({
   contractId: true,
-  startUtc: true,
-  endUtc: true,
-  localDate: true,
+  shiftDate: true,
+  startTime: true,
+  endTime: true,
   source: true,
   status: true,
 });
@@ -120,7 +118,6 @@ export const createShiftRequestSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
   start: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/), // HH:mm
   end: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/), // HH:mm
-  timezone: z.string(),
   facility: z.string().optional(),
 });
 
@@ -129,7 +126,6 @@ export const updateShiftRequestSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // YYYY-MM-DD
   start: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(), // HH:mm
   end: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(), // HH:mm
-  timezone: z.string().optional(),
   facility: z.string().optional(),
   status: z.string().optional(),
 });
@@ -178,7 +174,7 @@ export const createContractRequestSchema = z.object({
   baseRate: z.string().min(1),
   otRate: z.string().optional().transform(val => val === '' || val === undefined ? undefined : val),
   hoursPerWeek: z.string().optional().transform(val => val === '' || val === undefined ? undefined : val),
-  timezone: z.string().optional(),
+
   schedule: scheduleConfigSchema,
   seedShifts: z.boolean(),
 }).refine((data) => {
@@ -199,7 +195,7 @@ export const updateContractRequestSchema = z.object({
   baseRate: z.string().optional(),
   otRate: z.string().optional().transform(val => val === '' || val === undefined ? undefined : val),
   hoursPerWeek: z.string().optional().transform(val => val === '' || val === undefined ? undefined : val),
-  timezone: z.string().optional(),
+
   schedule: scheduleConfigSchema.optional(),
   seedShifts: z.boolean().optional(),
 }).refine((data) => {
