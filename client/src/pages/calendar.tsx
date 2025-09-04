@@ -69,7 +69,7 @@ export default function CalendarPage() {
       const res = await apiRequest('GET', `/api/shifts?userId=${user?.id}&from=${visibleRange.from}&to=${visibleRange.to}`);
       return res.json();
     },
-    enabled: !!user,
+    enabled: !!user && !!user.id,
   });
   
   // Get upcoming shifts (next 7 days)
@@ -84,7 +84,7 @@ export default function CalendarPage() {
       const res = await apiRequest('GET', `/api/shifts?userId=${user?.id}&from=${upcomingRange.from}&to=${upcomingRange.to}`);
       return res.json();
     },
-    enabled: !!user,
+    enabled: !!user && !!user.id,
   });
 
 
