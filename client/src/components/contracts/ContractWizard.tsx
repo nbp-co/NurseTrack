@@ -39,7 +39,9 @@ const contractWizardSchema = z.object({
   // Step 1: Basics
   name: z.string().min(1, "Contract name is required"),
   facility: z.string().optional(),
-  status: z.enum(["active", "unconfirmed", "completed", "archive"]),
+  status: z.enum(["active", "unconfirmed", "completed", "archive"], {
+    required_error: "Status is required",
+  }),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
   baseRate: z.string().min(1, "Base rate is required"),
@@ -266,8 +268,6 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
   };
 
   const handleSubmit = (data: ContractWizardFormData) => {
-    console.log('Form submission started', { data, initialData });
-    
     // Convert form data to API format
     const schedule: any = {
       defaultStart: data.defaultStart,
@@ -298,7 +298,6 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
       seedShifts: true,
     };
 
-    console.log('Calling onSubmit with data:', apiData);
     onSubmit(apiData);
   };
 
