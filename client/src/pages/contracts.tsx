@@ -208,7 +208,6 @@ export default function ContractsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="facility">Sort by Facility</SelectItem>
-                      <SelectItem value="role">Sort by Role</SelectItem>
                       <SelectItem value="startDate">Sort by Start Date</SelectItem>
                       <SelectItem value="endDate">Sort by End Date</SelectItem>
                       <SelectItem value="status">Sort by Status</SelectItem>
