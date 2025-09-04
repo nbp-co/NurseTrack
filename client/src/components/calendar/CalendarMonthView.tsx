@@ -118,10 +118,11 @@ export function CalendarMonthView({
     }
   };
 
-  const formatTime = (utcDateString: string) => {
-    const date = new Date(utcDateString);
-    const hour = date.getHours();
-    const minute = date.getMinutes();
+  const formatTime = (timeString: string) => {
+    // Handle simple time strings like "07:00:00" or "19:00:00"
+    const [hourStr, minuteStr] = timeString.split(':');
+    const hour = parseInt(hourStr, 10);
+    const minute = parseInt(minuteStr, 10);
     
     // Format as "8A" or "8P" style
     if (minute === 0) {
@@ -138,9 +139,11 @@ export function CalendarMonthView({
   };
 
   const isOvernightShift = (shift: Shift) => {
-    const start = new Date(shift.startUtc);
-    const end = new Date(shift.endUtc);
-    return end.getDate() !== start.getDate();
+    // For simple time strings, compare the hour values
+    const [startHour] = shift.startUtc.split(':').map(Number);
+    const [endHour] = shift.endUtc.split(':').map(Number);
+    // If end time is less than start time, it's an overnight shift
+    return endHour < startHour;
   };
 
   const formatDate = (dateStr: string) => {
