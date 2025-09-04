@@ -282,11 +282,43 @@ export function AddEditShiftModal({
     return () => subscription.unsubscribe();
   }, [form]);
 
+  // Convert 12-hour time format to 24-hour format
+  const convertTo24Hour = (time12h: string): string => {
+    // If already in 24-hour format, return as-is
+    if (!time12h.includes('AM') && !time12h.includes('PM')) {
+      return time12h;
+    }
+    
+    const [time, modifier] = time12h.split(' ');
+    let [hours, minutes] = time.split(':');
+    const hour = parseInt(hours, 10);
+    
+    if (modifier === 'AM') {
+      if (hour === 12) {
+        hours = '00';
+      }
+    } else if (modifier === 'PM') {
+      if (hour !== 12) {
+        hours = String(hour + 12);
+      }
+    }
+    
+    return `${hours.padStart(2, '0')}:${minutes}`;
+  };
+
   const handleSubmit = (data: ShiftFormData) => {
     if (!validateContractDate(data.contractId, data.date)) {
       return;
     }
-    onSubmit(data);
+    
+    // Convert times to 24-hour format before sending to backend
+    const convertedData = {
+      ...data,
+      start: convertTo24Hour(data.start),
+      end: convertTo24Hour(data.end)
+    };
+    
+    onSubmit(convertedData);
   };
 
   const handleContractChange = (value: string) => {
