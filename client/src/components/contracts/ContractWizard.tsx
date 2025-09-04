@@ -467,7 +467,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
       <div className="space-y-6">
         <div className="bg-blue-50 p-4 rounded-lg border">
           <h4 className="font-medium text-blue-900 mb-2">Default Schedule Times</h4>
-          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+          <div className="flex flex-row items-end gap-4">
             <FormField
               control={form.control}
               name="defaultStart"
