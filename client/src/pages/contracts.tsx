@@ -200,10 +200,16 @@ export default function ContractsPage() {
       />
 
       <div className="lg:px-8 px-4 py-6">
-        {/* Filters */}
+        {/* Combined Filters and Add Button */}
         <Card className="mb-6">
           <CardContent className="p-2">
             <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
+              {/* Add Contract Button - Left Side */}
+              <Button onClick={() => setShowContractWizard(true)} data-testid="button-add-contract" className="flex-shrink-0">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Contract
+              </Button>
+              
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Filter className="w-4 h-4 text-gray-500" />
                 <span className="text-sm font-medium text-gray-700">Filters</span>
@@ -245,14 +251,6 @@ export default function ContractsPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Add Contract Button */}
-        <div className="mb-6 text-center">
-          <Button onClick={() => setShowContractWizard(true)} data-testid="button-add-contract" className="px-8">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Contract
-          </Button>
-        </div>
 
         {/* Contracts List */}
         {contracts.length > 0 ? (
