@@ -115,7 +115,27 @@ export class DatabaseStorage implements IStorage {
 
   // Shifts
   async listShifts(userId: string, filters?: { month?: string; contractId?: string }): Promise<any[]> {
-    let query = db
+    let whereConditions = [eq(shifts.userId, userId)];
+
+    if (filters?.contractId) {
+      const contractId = parseInt(filters.contractId);
+      if (!isNaN(contractId)) {
+        whereConditions.push(eq(shifts.contractId, contractId));
+      }
+    }
+
+    if (filters?.month) {
+      // Month filter format: YYYY-MM
+      const [year, month] = filters.month.split('-');
+      const startDate = `${year}-${month}-01`;
+      const endDate = `${year}-${month}-31`;
+      whereConditions.push(
+        gte(shifts.shiftDate, startDate),
+        lte(shifts.shiftDate, endDate)
+      );
+    }
+
+    const query = db
       .select({
         id: shifts.id,
         userId: shifts.userId,
@@ -131,31 +151,10 @@ export class DatabaseStorage implements IStorage {
       })
       .from(shifts)
       .innerJoin(contracts, eq(shifts.contractId, contracts.id))
-      .where(eq(shifts.userId, userId));
+      .where(and(...whereConditions))
+      .orderBy(shifts.shiftDate, shifts.startTime);
 
-    if (filters?.contractId) {
-      const contractId = parseInt(filters.contractId);
-      if (!isNaN(contractId)) {
-        query = query.where(and(
-          eq(shifts.userId, userId),
-          eq(shifts.contractId, contractId)
-        ));
-      }
-    }
-
-    if (filters?.month) {
-      // Month filter format: YYYY-MM
-      const [year, month] = filters.month.split('-');
-      const startDate = `${year}-${month}-01`;
-      const endDate = `${year}-${month}-31`;
-      query = query.where(and(
-        eq(shifts.userId, userId),
-        gte(shifts.shiftDate, startDate),
-        lte(shifts.shiftDate, endDate)
-      ));
-    }
-
-    return await query.orderBy(shifts.shiftDate, shifts.startTime);
+    return await query;
   }
 
   async getShift(id: string): Promise<Shift | undefined> {

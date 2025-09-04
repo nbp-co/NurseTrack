@@ -210,7 +210,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         baseRate: updateData.baseRate,
         otRate: updateData.otRate,
         hoursPerWeek: updateData.hoursPerWeek,
-        timezone: updateData.timezone,
       });
       
       if (!updatedContract) {
@@ -257,7 +256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             contractId,
             existing.contract.userId,
             actions,
-            updateData.timezone || existing.contract.timezone,
+            null,
             updateData.schedule
           );
         }
