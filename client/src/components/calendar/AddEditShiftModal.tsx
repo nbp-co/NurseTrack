@@ -50,6 +50,7 @@ interface Contract {
   name: string;
   facility: string;
   baseRate?: string;
+  otRate?: string;
   startDate: string;
   endDate: string;
   timezone: string;
@@ -317,13 +318,17 @@ export function AddEditShiftModal({
                       <SelectItem value="null">No contract</SelectItem>
                       {Array.isArray(contracts) && contracts.map((contract) => (
                         <SelectItem key={contract.id} value={contract.id.toString()}>
-                          <div className="flex items-center justify-between w-full">
-                            <span>{contract.name} ({contract.facility})</span>
-                            {contract.baseRate && (
-                              <span className="text-sm text-gray-500 ml-2">
-                                ${contract.baseRate}/hr
-                              </span>
-                            )}
+                          <div className="flex flex-col w-full">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">{contract.name}</span>
+                              <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <span>Base: ${contract.baseRate}/hr</span>
+                                {contract.otRate && (
+                                  <span>OT: ${contract.otRate}/hr</span>
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-sm text-gray-500">{contract.facility}</span>
                           </div>
                         </SelectItem>
                       ))}
@@ -436,9 +441,12 @@ export function AddEditShiftModal({
                 <div className="text-sm text-blue-800">
                   <div className="font-medium">{selectedContract.name}</div>
                   <div>Facility: {selectedContract.facility}</div>
-                  {selectedContract.baseRate && (
-                    <div>Rate: ${selectedContract.baseRate}/hour</div>
-                  )}
+                  <div className="flex items-center gap-4 mt-1">
+                    <span>Base Rate: ${selectedContract.baseRate}/hour</span>
+                    {selectedContract.otRate && (
+                      <span>OT Rate: ${selectedContract.otRate}/hour</span>
+                    )}
+                  </div>
                   <div className="text-xs text-blue-600 mt-1">
                     Contract active: {selectedContract.startDate} - {selectedContract.endDate}
                   </div>
