@@ -162,7 +162,7 @@ export function CalendarMonthView({
               <div
                 key={day.date}
                 className={cn(
-                  "min-h-[120px] p-2 border-r border-b last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors",
+                  "min-h-[60px] p-1 border-r border-b last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors",
                   !day.isCurrentMonth && "bg-gray-50 text-gray-400",
                   day.isSelected && "bg-blue-50 border-blue-200",
                   day.isToday && "bg-yellow-50"
