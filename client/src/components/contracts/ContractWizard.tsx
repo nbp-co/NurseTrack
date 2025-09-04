@@ -479,20 +479,20 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
           <div className="grid grid-cols-7 gap-2 mb-6">
             {WEEKDAYS.map((day) => {
               const isEnabled = form.watch(day.key as any);
-              const isSelected = selectedDay === day.key;
               
               return (
                 <button
                   key={day.key}
                   type="button"
-                  onClick={() => setSelectedDay(day.key)}
+                  onClick={() => {
+                    form.setValue(day.key as any, !isEnabled);
+                  }}
                   className={`
                     p-3 rounded-lg border-2 text-center transition-colors
-                    ${isSelected 
-                      ? 'border-blue-500 bg-blue-50 text-blue-700' 
+                    ${isEnabled 
+                      ? 'border-green-500 bg-green-50 text-green-700' 
                       : 'border-gray-200 hover:border-gray-300'
                     }
-                    ${isEnabled ? 'bg-green-50 border-green-200' : ''}
                   `}
                   data-testid={`day-selector-${day.key}`}
                 >
@@ -506,36 +506,19 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
             })}
           </div>
 
-          {/* Selected day editor */}
-          {selectedDayInfo && (
-            <div className="bg-gray-50 p-4 rounded-lg border">
-              <div className="flex items-center gap-4 mb-4">
-                <h5 className="font-medium text-lg">{selectedDayInfo.label}</h5>
-                <FormField
-                  control={form.control}
-                  name={selectedDay as any}
-                  render={({ field }) => (
-                    <FormItem className="flex items-center gap-2 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          data-testid={`checkbox-${selectedDay}`}
-                        />
-                      </FormControl>
-                      <FormLabel className="text-sm">
-                        Enable this day
-                      </FormLabel>
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              {form.watch(selectedDay as any) && (
+          {/* Enabled days editor */}
+          <div className="space-y-4">
+            {WEEKDAYS.filter(day => form.watch(day.key as any)).map((day) => (
+              <div key={day.key} className="bg-gray-50 p-4 rounded-lg border">
+                <div className="flex items-center gap-4 mb-3">
+                  <h5 className="font-medium text-lg">{day.label}</h5>
+                  <span className="text-sm text-gray-500">Enabled</span>
+                </div>
+                
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name={selectedDayInfo.startField as any}
+                    name={day.startField as any}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Start Time</FormLabel>
@@ -543,7 +526,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                           <Input
                             type="time"
                             {...field}
-                            data-testid={`input-${selectedDayInfo.startField}`}
+                            data-testid={`input-${day.startField}`}
                           />
                         </FormControl>
                         <FormMessage />
@@ -552,7 +535,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                   />
                   <FormField
                     control={form.control}
-                    name={selectedDayInfo.endField as any}
+                    name={day.endField as any}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>End Time</FormLabel>
@@ -560,7 +543,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                           <Input
                             type="time"
                             {...field}
-                            data-testid={`input-${selectedDayInfo.endField}`}
+                            data-testid={`input-${day.endField}`}
                           />
                         </FormControl>
                         <FormMessage />
@@ -568,9 +551,15 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
                     )}
                   />
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            ))}
+            
+            {WEEKDAYS.filter(day => form.watch(day.key as any)).length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <p>Click on the days above to enable them and set working hours</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
