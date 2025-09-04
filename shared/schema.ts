@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, integer, decimal, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, integer, decimal, jsonb, date, time, smallint, index, unique, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -13,45 +13,50 @@ export const users = pgTable("users", {
 });
 
 export const contracts = pgTable("contracts", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
   facility: text("facility").notNull(),
   role: text("role").notNull(),
-  department: text("department"),
-  startDate: text("start_date").notNull(), // ISO string
-  endDate: text("end_date").notNull(),     // ISO string
-  payType: text("pay_type").notNull(), // 'hourly' | 'salary'
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
   baseRate: decimal("base_rate", { precision: 10, scale: 2 }).notNull(),
-  overtimeRate: decimal("overtime_rate", { precision: 10, scale: 2 }),
-  weeklyHours: integer("weekly_hours").notNull(),
-  recurrence: jsonb("recurrence").notNull(), // RecurrenceRules
-  status: text("status").notNull(), // 'planned' | 'active' | 'completed'
-  address: text("address"),
-  contactName: text("contact_name"),
-  phoneNumber: text("phone_number"),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+  otRate: decimal("ot_rate", { precision: 10, scale: 2 }),
+  hoursPerWeek: decimal("hours_per_week", { precision: 5, scale: 2 }),
+  status: text("status").notNull().default("planned"),
+  timezone: text("timezone").notNull().default("America/Chicago"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+}, (table) => ({
+  statusDateIdx: index("contracts_status_date_idx").on(table.status, table.startDate, table.endDate),
+}));
+
+export const contractScheduleDay = pgTable("contract_schedule_day", {
+  id: serial("id").primaryKey(),
+  contractId: integer("contract_id").references(() => contracts.id, { onDelete: "cascade" }).notNull(),
+  weekday: smallint("weekday").notNull(), // 0=Sun..6=Sat
+  enabled: boolean("enabled").notNull().default(false),
+  startLocal: time("start_local").notNull().default("07:00"),
+  endLocal: time("end_local").notNull().default("19:00"),
+}, (table) => ({
+  contractWeekdayUnique: unique("contract_schedule_day_contract_weekday_unique").on(table.contractId, table.weekday),
+}));
 
 export const shifts = pgTable("shifts", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  contractId: varchar("contract_id").references(() => contracts.id).notNull(),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  date: text("date").notNull(),     // ISO string
-  start: text("start").notNull(),   // "07:00"
-  end: text("end").notNull(),       // "19:00"
-  role: text("role").notNull(),
-  facility: text("facility").notNull(),
-  completed: boolean("completed").default(false).notNull(),
-  actualStart: text("actual_start"), // "07:00"
-  actualEnd: text("actual_end"),     // "19:15"
-  createdAt: timestamp("created_at").defaultNow(),
-});
+  id: serial("id").primaryKey(),
+  contractId: integer("contract_id").references(() => contracts.id, { onDelete: "cascade" }).notNull(),
+  startUtc: timestamp("start_utc", { withTimezone: true }).notNull(),
+  endUtc: timestamp("end_utc", { withTimezone: true }).notNull(),
+  localDate: date("local_date").notNull(),
+  source: text("source").notNull().default("contract_seed"),
+  status: text("status").notNull().default("In Process"),
+}, (table) => ({
+  contractDateIdx: index("shifts_contract_date_idx").on(table.contractId, table.localDate),
+  contractDateSourceUnique: unique("shifts_contract_date_source_unique").on(table.contractId, table.localDate, table.source),
+}));
 
 export const expenses = pgTable("expenses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull(),
-  contractId: varchar("contract_id").references(() => contracts.id),
+  contractId: integer("contract_id").references(() => contracts.id),
   date: text("date").notNull(),       // ISO string
   category: text("category").notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
@@ -79,33 +84,33 @@ export const insertUserSchema = createInsertSchema(users).pick({
 });
 
 export const insertContractSchema = createInsertSchema(contracts).pick({
+  name: true,
   facility: true,
   role: true,
-  department: true,
   startDate: true,
   endDate: true,
-  payType: true,
   baseRate: true,
-  overtimeRate: true,
-  weeklyHours: true,
-  recurrence: true,
+  otRate: true,
+  hoursPerWeek: true,
   status: true,
-  address: true,
-  contactName: true,
-  phoneNumber: true,
-  notes: true,
+  timezone: true,
+});
+
+export const insertContractScheduleDaySchema = createInsertSchema(contractScheduleDay).pick({
+  contractId: true,
+  weekday: true,
+  enabled: true,
+  startLocal: true,
+  endLocal: true,
 });
 
 export const insertShiftSchema = createInsertSchema(shifts).pick({
   contractId: true,
-  date: true,
-  start: true,
-  end: true,
-  role: true,
-  facility: true,
-  completed: true,
-  actualStart: true,
-  actualEnd: true,
+  startUtc: true,
+  endUtc: true,
+  localDate: true,
+  source: true,
+  status: true,
 });
 
 export const insertExpenseSchema = createInsertSchema(expenses).pick({
@@ -128,6 +133,8 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertContract = z.infer<typeof insertContractSchema>;
 export type Contract = typeof contracts.$inferSelect;
+export type InsertContractScheduleDay = z.infer<typeof insertContractScheduleDaySchema>;
+export type ContractScheduleDay = typeof contractScheduleDay.$inferSelect;
 export type InsertShift = z.infer<typeof insertShiftSchema>;
 export type Shift = typeof shifts.$inferSelect;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
