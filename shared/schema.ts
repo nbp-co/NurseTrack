@@ -138,8 +138,8 @@ export const updateShiftRequestSchema = z.object({
 });
 
 export const getShiftsQuerySchema = z.object({
-  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
-  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // YYYY-MM-DD
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // YYYY-MM-DD
   userId: z.string(),
 });
 

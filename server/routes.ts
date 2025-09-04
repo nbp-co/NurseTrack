@@ -346,6 +346,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const query = getShiftsQuerySchema.parse(req.query);
       
+      // If no date range provided, get all shifts for user
+      if (!query.from || !query.to) {
+        const shifts = await storage.getAllShifts(query.userId);
+        return res.json(shifts);
+      }
+      
       // Validate date range
       const rangeErrors = calendarService.validateDateRange(query.from, query.to);
       if (rangeErrors.length > 0) {
@@ -511,6 +517,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(expense);
     } catch (error) {
       res.status(400).json({ message: "Failed to update expense" });
+    }
+  });
+
+  // Dashboard routes
+  app.get("/api/dashboard/summary", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      if (!userId) {
+        return res.status(400).json({ error: 'userId is required' });
+      }
+
+      const anchor = req.query.anchor as string;
+      const anchorDate = anchor ? new Date(anchor) : new Date();
+
+      const { computeSummary } = await import('./services/dashboardLocal');
+      const summary = await computeSummary(anchor, userId);
+      
+      res.json({
+        summary,
+        anchorDate: anchor || new Date().toISOString().split('T')[0]
+      });
+    } catch (error) {
+      console.error('Dashboard summary error:', error);
+      res.status(500).json({ error: 'Failed to fetch dashboard summary' });
+    }
+  });
+
+  app.get("/api/dashboard/upcoming", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      if (!userId) {
+        return res.status(400).json({ error: 'userId is required' });
+      }
+
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      if (limit < 1 || limit > 50) {
+        return res.status(400).json({ error: 'Limit must be between 1 and 50' });
+      }
+
+      const { getUpcoming } = await import('./services/dashboardLocal');
+      const upcomingShifts = await getUpcoming(limit, userId);
+      
+      res.json({
+        shifts: upcomingShifts,
+        limit
+      });
+    } catch (error) {
+      console.error('Dashboard upcoming error:', error);
+      res.status(500).json({ error: 'Failed to fetch upcoming shifts' });
     }
   });
 

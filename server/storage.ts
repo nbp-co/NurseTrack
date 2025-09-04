@@ -24,6 +24,7 @@ export interface IStorage {
   
   // Shifts - Legacy
   listShifts(userId: string, filters?: { month?: string; contractId?: string }): Promise<Shift[]>;
+  getAllShifts(userId: string): Promise<Shift[]>;
   getShift(id: string): Promise<Shift | undefined>;
   createShift(shift: InsertShift & { userId: string }): Promise<Shift>;
   updateShift(id: string, shift: Partial<InsertShift>): Promise<Shift | undefined>;
@@ -155,6 +156,14 @@ export class DatabaseStorage implements IStorage {
       .orderBy(shifts.shiftDate, shifts.startTime);
 
     return await query;
+  }
+
+  async getAllShifts(userId: string): Promise<Shift[]> {
+    return await db
+      .select()
+      .from(shifts)
+      .where(eq(shifts.userId, userId))
+      .orderBy(shifts.shiftDate, shifts.startTime);
   }
 
   async getShift(id: string): Promise<Shift | undefined> {

@@ -1,0 +1,119 @@
+Goal: Implement Dashboard (backend + frontend + audit + tests) using ONLY local naïve dates/times from the DB.
+Do NOT add UTC/timezone conversion libraries. Treat shift_date/start_time/end_time as local clock values.
+
+Repo/branch: dev-backup
+
+Data model (already present):
+- shifts( id, shift_date DATE, start_time TIME, end_time TIME, contract_id NULLABLE, status TEXT, source TEXT )
+- contracts( id, name, facility, base_rate NUMERIC, ot_rate NUMERIC NULL, color TEXT NULL )
+Notes:
+- Count hours for status IN ('Planned','In Process','Finalized') only (ignore 'Cancelled').
+- Week starts on Sunday.
+- Earnings rule: per CONTRACT per Sun–Sat week: first 40h at base_rate, any remainder at ot_rate (if null, use base_rate).
+- If contract_id is NULL, hours count but earnings = 0.
+
+========================================
+1) Services (pure local-time math; no UTC)
+========================================
+Create src/lib/localTime.ts with helpers:
+
+- parseHHmm(hhmm: string): {h:number,m:number}
+- minutesBetweenLocal(startHHmm: string, endHHmm: string): number
+  * returns minutes; if end < start, treat as overnight by adding 24h wrap
+  * e.g., 19:00 -> 07:00 = 12h (720 min)
+- hoursFromMinutes(mins: number): number
+  * returns fractional hours with one decimal (or keep full precision and round at display)
+
+- weekStartSunday(dateStr: 'YYYY-MM-DD'): 'YYYY-MM-DD'
+  * given a local date string, return the Sunday (YYYY-MM-DD) of that week
+- addDays(dateStr, n): 'YYYY-MM-DD'
+- inRange(dateStr, startStr, endStr): boolean inclusive
+
+Unit tests for localTime.ts:
+- minutesBetweenLocal('07:00','19:00') = 720
+- minutesBetweenLocal('19:00','07:00') = 720 (overnight)
+- weekStartSunday for Mon/Fri/Sun cases
+
+Create src/services/payrollLocal.ts:
+
+Types:
+type ShiftRow = { id: string|number, shift_date: string /*YYYY-MM-DD*/, start_time: string /*HH:mm*/, end_time: string /*HH:mm*/, contract_id: string|null, status: string };
+type ContractRow = { id: string, base_rate: number, ot_rate: number|null };
+
+Functions:
+- shiftMinutes(shift: ShiftRow): number
+  * uses minutesBetweenLocal(start_time, end_time)
+
+- splitShiftByLocalWeek(shift: ShiftRow): Array<{weekStart: string, minutes: number}>
+  * If overnight AND crosses Sat->Sun boundary, split between weeks.
+  * Simplification: break an overnight shift into two local-day chunks:
+      part1: shift_date from start_time to 24:00,
+      part2: (shift_date+1) from 00:00 to end_time.
+    Then bucket each part by weekStartSunday(localDatePart).
+  * Daytime (end >= start) belongs fully to weekStartSunday(shift_date).
+
+- weeklyEarningsForContract(weekStart: string, weekEnd: string, shifts: ShiftRow[], contract: ContractRow|null): {hours:number, earnings:number}
+  * Filter to shifts whose local dates intersect the week (using splitShiftByLocalWeek).
+  * Sum minutes for that contract_id (null contract allowed).
+  * Convert to hours.
+  * If contract == null -> earnings=0.
+  * Else apply 40h rule: base for min(40,hours), OT for max(0,hours-40) with (ot_rate ?? base_rate).
+
+- periodSummaryByContract(periodStart: string, periodEnd: string, allShifts: ShiftRow[], contractsById: Map<string,ContractRow>):
+  * For a non-week (e.g., month), compute weeklyEarningsForContract for each Sun–Sat week overlapping the period, then sum per contract.
+  * Return {hours:number, earnings:number} summed across contracts.
+
+Unit tests (payrollLocal.test.ts):
+- 07–19 shift = 12h
+- Overnight 19–07 = 12h, correctly split across days/weeks when needed
+- 36h week = base only
+- 48h week with ot_rate → 40 base + 8 OT
+- Null-contract shifts add hours but $0
+
+========================================
+2) Dashboard service & API (local only)
+========================================
+Create src/services/dashboardLocal.ts:
+
+- getThisWeek(anchor: 'YYYY-MM-DD'): {start:'YYYY-MM-DD', end:'YYYY-MM-DD'}
+- getNextWeek(anchor): same
+- getThisMonth(anchor): {start:first day, end:last day}
+
+- computeSummary(anchor?: 'YYYY-MM-DD'):
+  * default anchor = today (as local date via new Date(), formatted YYYY-MM-DD)
+  * Load shifts with shift_date BETWEEN monthStart-7days AND monthEnd+7days (small buffer)
+    AND status IN ('Planned','In Process','Finalized')
+  * Load all contracts (id, base_rate, ot_rate)
+  * For each period:
+      - For weeks (thisWeek, nextWeek): call weeklyEarningsForContract per contract, sum.
+      - For month: call periodSummaryByContract over the whole month.
+  * Return { thisWeek:{hours,earnings}, nextWeek:{hours,earnings}, thisMonth:{hours,earnings} }
+
+- getUpcoming(limit=10):
+  * “now” = current local date+time.
+  * Construct a comparable local start datetime string for each shift:
+      startDateTimeLocal = `${shift_date} ${start_time}`
+  * Return future shifts (startDateTimeLocal > now) ordered by startDateTimeLocal ASC, limited.
+  * Map each to { id, localDate: shift_date, start: start_time, end: end_time, overnight: end_time < start_time, contract?: {id,name,facility,base_rate,color} | null }
+
+API routes (src/routes/dashboard.ts):
+- GET /api/dashboard/summary?anchor=YYYY-MM-DD
+- GET /api/dashboard/upcoming?limit=10
+
+Integration tests (api):
+- /summary returns 3 cards; numbers match seeded data
+- /upcoming returns only future, sorted asc, with/without contract
+
+========================================
+3) Frontend wiring (React)
+========================================
+Dashboard page updates:
+
+Data:
+- GET /api/dashboard/summary (anchor = today)
+- GET /api/dashboard/upcoming?limit=10
+
+UI:
+- Top cards: "This Week", "Next Week", "This Month"
+  * Hours: show with one decimal (e.g., 12.0 hours)
+  * Earnings: currency formatted (fallback to $0.00 if Na

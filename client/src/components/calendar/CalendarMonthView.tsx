@@ -309,16 +309,14 @@ export function CalendarMonthView({
               <div className="flex items-center gap-2">
                 <span>{formatDate(selectedDate)}</span>
               </div>
-              {dayShifts.length > 0 && (
-                <Button 
-                  onClick={() => onAddShift(selectedDate)}
-                  size="sm"
-                  data-testid="button-add-shift-day"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add Shift
-                </Button>
-              )}
+              <Button 
+                onClick={() => onAddShift(selectedDate)}
+                size="sm"
+                data-testid="button-add-shift-day"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add Shift
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>

@@ -100,6 +100,8 @@ export default function CalendarPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/summary'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/upcoming'] });
       toast({
         title: "Shift created",
         description: "Your shift has been added successfully.",
@@ -124,6 +126,8 @@ export default function CalendarPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/summary'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/upcoming'] });
       toast({
         title: "Shift updated",
         description: "Your shift has been updated successfully.",
@@ -148,6 +152,8 @@ export default function CalendarPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/summary'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/upcoming'] });
       toast({
         title: "Shift deleted",
         description: "Shift has been deleted successfully.",
