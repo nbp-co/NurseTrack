@@ -8,105 +8,65 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageLoader } from "@/components/ui/loader";
-import { ShiftForm } from "@/components/forms/ShiftForm";
-import { contractApi, shiftApi, expenseApi } from "@/api/mock";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  getDaysCompleteAndRemaining, 
-  getWeeklySummaries, 
-  calculateMonthlyEarnings,
-  formatCurrency 
-} from "@/lib/metrics";
-import { Shift } from "@/types";
+import { apiRequest } from "@/lib/queryClient";
+import { formatCurrency } from "@/lib/metrics";
 
 export default function DashboardPage() {
   const [showShiftForm, setShowShiftForm] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const currentMonth = new Date().toISOString().slice(0, 7);
-  const currentWeekStart = useMemo(() => {
-    const today = new Date();
-    const sunday = new Date(today.setDate(today.getDate() - today.getDay()));
-    return sunday.toISOString().split('T')[0];
-  }, []);
+  const currentDate = new Date().toISOString().split('T')[0];
 
-  const { data: contracts = [], isLoading: contractsLoading } = useQuery({
-    queryKey: ['/api/contracts'],
-    queryFn: () => contractApi.listContracts(),
+  // Fetch dashboard summary data
+  const { data: summaryData, isLoading: summaryLoading } = useQuery({
+    queryKey: ['/api/dashboard/summary', currentDate, user?.id],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/dashboard/summary?anchor=${currentDate}&userId=${user?.id}`);
+      return res.json();
+    },
+    enabled: !!user,
   });
 
-  const { data: shifts = [], isLoading: shiftsLoading } = useQuery({
-    queryKey: ['/api/shifts', currentMonth],
-    queryFn: () => shiftApi.listShifts({ month: currentMonth }),
+  // Fetch upcoming shifts
+  const { data: upcomingData, isLoading: upcomingLoading } = useQuery({
+    queryKey: ['/api/dashboard/upcoming', user?.id],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/dashboard/upcoming?limit=10&userId=${user?.id}`);
+      return res.json();
+    },
+    enabled: !!user,
   });
 
-  const { data: expenses = [], isLoading: expensesLoading } = useQuery({
-    queryKey: ['/api/expenses'],
-    queryFn: () => expenseApi.listExpenses(),
+  // Fetch active contracts for count
+  const { data: contractsData, isLoading: contractsLoading } = useQuery({
+    queryKey: ['/api/contracts', user?.id],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/contracts?userId=${user?.id}&status=active`);
+      return res.json();
+    },
+    enabled: !!user,
   });
 
-  const isLoading = contractsLoading || shiftsLoading || expensesLoading;
+  const isLoading = summaryLoading || upcomingLoading || contractsLoading;
+  
+  const activeContracts = contractsData?.contracts || [];
+  const activeContractsCount = activeContracts.length;
 
   const dashboardStats = useMemo(() => {
-    const activeContracts = contracts.filter(c => c.status === 'active');
-    const completedShifts = shifts.filter(s => s.completed);
-    const monthlyEarnings = calculateMonthlyEarnings(contracts, shifts, currentMonth);
-    
-    const monthStart = `${currentMonth}-01`;
-    const monthEnd = new Date(new Date(monthStart).getFullYear(), new Date(monthStart).getMonth() + 1, 0)
-      .toISOString().split('T')[0];
-    
-    const progressMetrics = getDaysCompleteAndRemaining({
-      from: monthStart,
-      to: monthEnd,
-      completedShiftDates: completedShifts.map(s => s.date)
-    });
-
-    const { overallTotal } = getWeeklySummaries(contracts, shifts, currentWeekStart);
-    
-    // Calculate next week stats
-    const nextWeekStart = new Date();
-    nextWeekStart.setDate(nextWeekStart.getDate() + (7 - nextWeekStart.getDay()));
-    const nextWeekStartStr = nextWeekStart.toISOString().split('T')[0];
-    
-    const { overallTotal: nextWeekTotal } = getWeeklySummaries(contracts, shifts, nextWeekStartStr);
-
-    return {
-      activeContracts: activeContracts.length,
-      monthlyEarnings,
-      hoursWorked: Math.round(overallTotal.hours * 10) / 10,
-      weeklyStats: overallTotal,
-      nextWeekStats: nextWeekTotal,
-      progressMetrics
-    };
-  }, [contracts, shifts, currentMonth, currentWeekStart]);
-
-  const futureShifts = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return shifts
-      .filter(shift => shift.date >= today)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .slice(0, 5);
-  }, [shifts]);
-
-  const handleCreateShift = async (shiftData: Omit<Shift, 'id'>) => {
-    try {
-      await shiftApi.createShift(shiftData);
-      toast({
-        title: "Shift created",
-        description: "Your shift has been added successfully.",
-      });
-      setShowShiftForm(false);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create shift. Please try again.",
-        variant: "destructive",
-      });
+    if (!summaryData?.summary) {
+      return {
+        thisWeek: { hours: 0, earnings: 0 },
+        nextWeek: { hours: 0, earnings: 0 },
+        thisMonth: { hours: 0, earnings: 0 },
+      };
     }
-  };
+    return summaryData.summary;
+  }, [summaryData]);
+
+  const upcomingShifts = upcomingData?.shifts || [];
 
   if (isLoading) {
     return <PageLoader text="Loading dashboard..." />;
@@ -133,13 +93,12 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-primary" />
                       <p className="text-lg font-bold text-gray-900" data-testid="text-weekly-hours">
-                        {dashboardStats.weeklyStats.hours} hours
+                        {dashboardStats.thisWeek.hours.toFixed(1)} hours
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-success-500" />
                       <p className="text-lg font-bold text-gray-900" data-testid="text-weekly-earnings">
-                        {formatCurrency(dashboardStats.weeklyStats.earnings)}
+                        {formatCurrency(dashboardStats.thisWeek.earnings)}
                       </p>
                     </div>
                   </div>
@@ -159,13 +118,12 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-primary" />
                       <p className="text-lg font-bold text-gray-900" data-testid="text-next-weekly-hours">
-                        {dashboardStats.nextWeekStats.hours} hours
+                        {dashboardStats.nextWeek.hours.toFixed(1)} hours
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-success-500" />
                       <p className="text-lg font-bold text-gray-900" data-testid="text-next-weekly-earnings">
-                        {formatCurrency(dashboardStats.nextWeekStats.earnings)}
+                        {formatCurrency(dashboardStats.nextWeek.earnings)}
                       </p>
                     </div>
                   </div>
@@ -185,13 +143,12 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-warning-500" />
                       <p className="text-lg font-bold text-gray-900" data-testid="text-monthly-hours">
-                        {dashboardStats.hoursWorked} hours
+                        {dashboardStats.thisMonth.hours.toFixed(1)} hours
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-success-500" />
                       <p className="text-lg font-bold text-gray-900" data-testid="text-monthly-earnings">
-                        {formatCurrency(dashboardStats.monthlyEarnings)}
+                        {formatCurrency(dashboardStats.thisMonth.earnings)}
                       </p>
                     </div>
                   </div>
@@ -210,19 +167,38 @@ export default function DashboardPage() {
               </CardTitle>
               <div className="text-sm text-gray-600">
                 <span data-testid="text-active-contracts-label">
-                  {dashboardStats.activeContracts} Active Contract{dashboardStats.activeContracts !== 1 ? 's' : ''}
+                  {activeContractsCount} Active Contract{activeContractsCount !== 1 ? 's' : ''}
                 </span>
               </div>
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            {futureShifts.length > 0 ? (
+            {upcomingShifts.length > 0 ? (
               <div className="divide-y divide-gray-100">
-                {futureShifts.map((shift) => {
-                  const contract = contracts.find(c => c.id === shift.contractId);
-                  const earnings = contract ? 
-                    ((parseTime(shift.actualEnd || shift.end) - parseTime(shift.actualStart || shift.start)) / (1000 * 60 * 60)) * contract.baseRate
-                    : 0;
+                {upcomingShifts.map((shift: any) => {
+                  const formatDate = (dateStr: string) => {
+                    const date = new Date(dateStr + 'T00:00:00');
+                    return date.toLocaleDateString('en-US', { 
+                      weekday: 'short', 
+                      month: 'short', 
+                      day: 'numeric' 
+                    });
+                  };
+
+                  const formatTime = (timeStr: string) => {
+                    if (!timeStr) return '';
+                    const [hours, minutes] = timeStr.split(':').map(Number);
+                    const date = new Date();
+                    date.setHours(hours, minutes);
+                    return date.toLocaleTimeString('en-US', { 
+                      hour: 'numeric', 
+                      minute: '2-digit',
+                      hour12: true 
+                    });
+                  };
+
+                  // Check if shift goes overnight
+                  const isOvernight = shift.localEnd < shift.localStart;
                   
                   return (
                     <div key={shift.id} className="p-4 flex items-center justify-between">
@@ -232,25 +208,20 @@ export default function DashboardPage() {
                         </div>
                         <div>
                           <p className="font-medium text-gray-900" data-testid={`text-shift-facility-${shift.id}`}>
-                            {shift.facility}
+                            {shift.contract ? `${shift.contract.name} - ${shift.contract.facility}` : "No contract"}
                           </p>
                           <p className="text-sm text-gray-500" data-testid={`text-shift-schedule-${shift.id}`}>
-                            {formatDate(shift.date)}, {shift.start} - {shift.end}
+                            {formatDate(shift.localDate)}, {formatTime(shift.start || '07:00')} – {formatTime(shift.end || '19:00')}{shift.overnight ? ' (+1 day)' : ''}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <Badge 
-                          variant={shift.completed ? "default" : "secondary"}
+                          variant={shift.status === 'Finalized' ? 'default' : 'secondary'}
                           data-testid={`badge-shift-status-${shift.id}`}
                         >
-                          {shift.completed ? "Completed" : "Scheduled"}
+                          {shift.status}
                         </Badge>
-                        {shift.completed && (
-                          <p className="text-sm text-gray-500 mt-1" data-testid={`text-shift-earnings-${shift.id}`}>
-                            {formatCurrency(earnings)}
-                          </p>
-                        )}
                       </div>
                     </div>
                   );
@@ -265,40 +236,7 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
-
       </div>
-
-      <ShiftForm
-        isOpen={showShiftForm}
-        onClose={() => setShowShiftForm(false)}
-        onSubmit={handleCreateShift}
-        contracts={contracts}
-      />
     </>
   );
-}
-
-function parseTime(timeStr: string): number {
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  const date = new Date();
-  date.setHours(hours, minutes, 0, 0);
-  return date.getTime();
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-
-  if (date.toDateString() === today.toDateString()) {
-    return "Today";
-  } else if (date.toDateString() === yesterday.toDateString()) {
-    return "Yesterday";
-  } else {
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric' 
-    });
-  }
 }

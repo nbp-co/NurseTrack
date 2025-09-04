@@ -1,7 +1,8 @@
 import { Edit2, Car, Utensils, Briefcase, Receipt } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Expense } from "@/types";
+import type { Expense } from "@shared/schema";
+import { fromCents } from "@/api/expenses";
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -13,19 +14,18 @@ const categoryIcons = {
   Transportation: Car,
   Meals: Utensils,
   Supplies: Briefcase,
-  Accommodation: Receipt,
+  Lodging: Receipt,
+  Fees: Receipt,
+  Other: Receipt,
 } as const;
 
 export function ExpenseList({ expenses, onEdit }: ExpenseListProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    // Parse date as local naive date to avoid timezone conversion issues
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -42,7 +42,9 @@ export function ExpenseList({ expenses, onEdit }: ExpenseListProps) {
       Transportation: 'bg-warning-50 text-warning-500',
       Meals: 'bg-primary/10 text-primary',
       Supplies: 'bg-success-50 text-success-500',
-      Accommodation: 'bg-purple-50 text-purple-500',
+      Lodging: 'bg-purple-50 text-purple-500',
+      Fees: 'bg-orange-50 text-orange-500',
+      Other: 'bg-gray-50 text-gray-500',
     };
     return colors[category as keyof typeof colors] || 'bg-gray-50 text-gray-500';
   };
@@ -93,7 +95,7 @@ export function ExpenseList({ expenses, onEdit }: ExpenseListProps) {
                 <div className="flex items-center space-x-4">
                   <div className="text-right">
                     <p className="font-medium text-gray-900" data-testid={`text-expense-amount-${expense.id}`}>
-                      {formatCurrency(expense.amount)}
+                      ${fromCents(expense.amountCents)}
                     </p>
                   </div>
                   <Button

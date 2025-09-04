@@ -15,7 +15,7 @@ export interface Contract {
     defaultEnd: string;   // "19:00"
     exceptions?: { date: string; note?: string }[];
   };
-  status: 'planned' | 'active' | 'completed';
+  status: 'unconfirmed' | 'active' | 'completed' | 'archive';
   address?: string;
   contactName?: string;
   phoneNumber?: string;

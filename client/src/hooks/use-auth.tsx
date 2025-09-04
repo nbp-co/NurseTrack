@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { User } from "@/types";
-import { authApi } from "@/api/mock";
+import { apiRequest } from "@/lib/queryClient";
 
 interface AuthContextType {
   user: User | null;
@@ -23,8 +23,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const currentUser = await authApi.getCurrentUser();
-        setUser(currentUser);
+        // For now, just set loading to false since we don't have persistent sessions yet
+        setUser(null);
       } catch (error) {
         setUser(null);
       } finally {
@@ -38,7 +38,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const user = await authApi.login(email, password);
+      const res = await apiRequest('POST', '/api/auth/login', { email, password });
+      const { user } = await res.json();
       setUser(user);
     } finally {
       setIsLoading(false);
@@ -48,7 +49,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = async () => {
     setIsLoading(true);
     try {
-      await authApi.logout();
+      // Just clear the user state for now
       setUser(null);
     } finally {
       setIsLoading(false);

@@ -1,0 +1,65 @@
+Build Calendar UI with Month & Week views and an Add/Edit Shift modal that understands contracts.
+
+Routes/State:
+- /calendar
+- Tabs: Month (default), Week
+- Persist selected date in URL (?d=YYYY-MM-DD)
+- Week starts on Sunday (use user setting if available)
+
+Fetching:
+- On visible range change, call GET /api/shifts?from&to and cache by range key
+- Merge into calendar grid & the "Upcoming Shifts" list (next 7 days)
+
+Month View:
+- Grid (Sun..Sat x 5-6 weeks), today highlight, selected date outline
+- Clicking a day selects it and shows the day panel under the grid:
+  * Day heading with count ("0 shifts" etc.)
+  * Button: "+ Add Shift"
+
+Week View:
+- 7-column columns with day headers and time bands (simplified: show chips spanning start-end)
+
+Shifts rendering:
+- Render each shift as a chip:
+  * time range in local user timezone (respect contract timezone for display by converting from shift.start_utc)
+  * If shift.contract present: add color dot + contract name
+  * If no contract: neutral styling, label "No contract"
+
+Add/Edit Modal:
+- Fields:
+  * Contract (Select) — include option "No contract"
+  * Date (pre-filled from selected date)
+  * Start Time, End Time
+  * Facility (text, optional)
+- Behavior:
+  * When opening, if selected contract ≠ null, prefill time fields from GET /api/contracts/:id/schedule-preview?date=<date>.
+  * If "No contract" chosen, clear prefill and leave default 07:00–19:00.
+  * If chosen contract is outside its start/end for that date, show inline warning and disable Create.
+- Submit:
+  * POST /api/shifts (contractId can be null)
+  * On success: close, toast, refetch visible range.
+- Edit:
+  * Click on a shift chip → open Edit with same fields; PUT /api/shifts/:id
+  * Allow changing contract to "No contract"
+
+UX/A11y:
+- Keyboard nav across days; Enter opens Add modal; Esc closes
+- Focus trap in modal, labeled fields, ARIA for toasts
+
+Edge cases:
+- Overnight (end < start): show end date badge "+1 day" in chip
+- Overlap: non-blocking warning banner inside modal if another shift overlaps on the same date
+
+Contract dropdown:
+- Options = active contracts sorted by facility; first item: "No contract"
+- Each option shows: name (facility) • base rate (optional) • typical hours (derived from schedule day if viewing that weekday)
+
+Tests (React Testing Library + MSW):
+- Month renders, selects a date, shows day panel
+- Tabbing between Month/Week preserves selected date via URL
+- Seeded shifts from GET /api/shifts appear in grid and list
+- Selecting a contract in Add modal autofills times per schedule-preview
+- Choosing "No contract" leaves defaults and submits with null contractId
+- Overnight shows "+1 day" badge
+- Edit flow persists changes and updates UI
+- Overlap scenario surfaces warning but allows save

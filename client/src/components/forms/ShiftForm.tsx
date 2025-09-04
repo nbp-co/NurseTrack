@@ -32,7 +32,6 @@ const shiftFormSchema = z.object({
   date: z.string().min(1, "Date is required"),
   start: z.string().min(1, "Start time is required"),
   end: z.string().min(1, "End time is required"),
-  role: z.string().min(1, "Role is required"),
   facility: z.string().min(1, "Facility is required"),
 });
 
@@ -64,7 +63,6 @@ export function ShiftForm({
       date: initialData?.date || defaultDate || "",
       start: initialData?.start || "07:00",
       end: initialData?.end || "19:00",
-      role: initialData?.role || "",
       facility: initialData?.facility || "",
     },
   });
@@ -73,7 +71,6 @@ export function ShiftForm({
     const contract = contracts.find(c => c.id === contractId);
     if (contract) {
       setSelectedContract(contract);
-      form.setValue("role", contract.role);
       form.setValue("facility", contract.facility);
       form.setValue("start", contract.recurrence.defaultStart);
       form.setValue("end", contract.recurrence.defaultEnd);
@@ -86,7 +83,7 @@ export function ShiftForm({
       date: data.date,
       start: data.start,
       end: data.end,
-      role: data.role,
+      role: selectedContract?.role || "Nurse",
       facility: data.facility,
       completed: false,
       actualStart: undefined,
@@ -211,23 +208,6 @@ export function ShiftForm({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      placeholder="e.g., ICU Nurse"
-                      data-testid="input-shift-role"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <div className="flex justify-end space-x-2 pt-4">
               <Button 

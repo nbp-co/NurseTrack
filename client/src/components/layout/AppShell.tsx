@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { SideNav } from "@/components/nav/SideNav";
 import { BottomNav } from "@/components/nav/BottomNav";
+import { FeedbackButton } from "@/components/feedback/FeedbackButton";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { useEffect } from "react";
@@ -24,12 +25,13 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <div className="lg:grid lg:grid-cols-[260px_1fr] min-h-screen">
+    <div className="min-h-screen">
       <SideNav user={user} />
-      <main className="flex-1 min-h-screen pb-16 lg:pb-0">
+      <main className="flex-1 min-h-screen pb-16 lg:pb-0 lg:ml-[260px]">
         {children}
       </main>
       <BottomNav />
+      <FeedbackButton />
     </div>
   );
 }

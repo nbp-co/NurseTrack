@@ -1,0 +1,114 @@
+Implement Dashboard workflows (backend + frontend + audit + tests) for the NurseTrack app.
+
+Context:
+- shifts table currently has: shift_date (date), start_time (time), end_time (time), source, contract_id (nullable), status
+- contracts table has: id, name, facility, base_rate numeric, ot_rate numeric (nullable), timezone text
+- Week starts on Sunday
+- Earnings rule: per contract, per week (Sun–Sat), first 40h = base_rate, excess hours = ot_rate (if set, else base_rate)
+- If contract_id is null, hours count but earnings = 0
+
+---
+
+## Backend
+
+### 1. Utility functions (src/services/payroll.ts)
+- `durationHours(shift_date, start_time, end_time)`: returns decimal hours; if end_time < start_time, treat as overnight (+24h wrap)
+- `combineDateTime(shift_date, start_time)`: returns UTC timestamp using contract.timezone or fallback 'America/Chicago'
+- `weeklyEarningsForContract(contract, weekStart, weekEnd, shifts)`: sums hours in week, applies 40h base / OT split
+- `monthlyEarningsForContract(contract, monthStart, monthEnd, shifts)`: iterates weeks that overlap month and sums weekly earnings
+
+Tests:
+- Standard 07:00–19:00 shift = 12.0h
+- Overnight 19:00–07:00 = 12.0h next day
+- 36h in week = all base
+- 48h in week = 40h base + 8h OT
+- Null-contract shift adds hours but $=0
+- DST transitions keep 12h local
+
+### 2. Dashboard service (src/services/dashboard.ts)
+- `computeSummary(anchorDate: Date) -> {thisWeek, nextWeek, thisMonth}`
+   * thisWeek = Sun–Sat of anchor
+   * nextWeek = following Sun–Sat
+   * thisMonth = first..last day of anchor month
+   * For each: return {hours, earnings} using payroll helpers
+- `getUpcoming(limit=10) -> [shifts]`
+   * Return future shifts (shift_date + start_time > now)
+   * Include contract details (name, facility, base_rate, timezone)
+   * Format {id, localDate, localStart, localEnd, contract?}
+
+### 3. API routes (src/routes/dashboard.ts)
+- GET `/api/dashboard/summary?anchor=YYYY-MM-DD`
+   * Returns cards {thisWeek, nextWeek, thisMonth}
+- GET `/api/dashboard/upcoming?limit=N`
+   * Returns next N future shifts, ordered asc
+
+Tests (Jest + supertest):
+- /summary: returns 3 cards, numbers match seeded shifts
+- /upcoming: returns only future shifts, sorted asc, includes contract info
+- Out-of-range queries rejected with 400
+
+---
+
+## Frontend
+
+Page: `/dashboard`
+
+### Components:
+1. **Summary cards (top)**
+   - Show "This Week", "Next Week", "This Month"
+   - Hours in `X hours`, earnings formatted `$1,234.00`
+
+2. **Shift Schedule panel**
+   - Title: “Upcoming Shifts”
+   - If empty: show placeholder “No upcoming shifts”
+   - Else: list of shifts:
+     * Day name + date (e.g. Tue, Sep 9)
+     * Time range (e.g. 8:00 AM – 8:00 PM, +1 day if overnight)
+     * Contract name + facility (or “No contract”)
+     * Colored dot if contract has color
+
+### Data:
+- GET /api/dashboard/summary?anchor=today
+- GET /api/dashboard/upcoming?limit=10
+
+### States:
+- Loading skeletons
+- Error with retry button
+
+Tests (React Testing Library + MSW):
+- Renders 3 summary cards with values from mock
+- Empty upcoming shows placeholder
+- Upcoming renders with/without contract
+- Overnight shows “(+1 day)”
+- Error state → retry fetch
+
+---
+
+## Audit Utility
+
+File: `src/audit/dashboardAudit.ts`
+
+- `auditDashboard(anchorDate)`:
+   * recompute summary using dashboard service
+   * direct SQL fallback:
+     - hours: `SUM(EXTRACT(EPOCH FROM (end_time - start_time))/3600)`
+     - earnings: simple base only
+   * compare; log discrepancies > 0.25h or > $1
+
+Add npm script:
+`"audit:dashboard": "ts-node src/audit/dashboardAudit.ts --anchor=$(date +%F)"`
+
+---
+
+## PR Checklist
+
+- [ ] New routes: GET /api/dashboard/summary, GET /api/dashboard/upcoming
+- [ ] Payroll helpers tested (DST + overnight + OT)
+- [ ] Frontend dashboard wired to API
+- [ ] Audit script works
+- [ ] Coverage: services ≥ 80%
+- [ ] Manual QA:
+   * seed 2 shifts (Sat 9/6, Sat 9/13, 07:00–19:00)
+   * Dashboard shows This Week/Next Week = 12h, $540 each (base_rate=45)
+   * This Month = 24h, $1,080
+   * Upcoming list shows future shift with contract name/facility

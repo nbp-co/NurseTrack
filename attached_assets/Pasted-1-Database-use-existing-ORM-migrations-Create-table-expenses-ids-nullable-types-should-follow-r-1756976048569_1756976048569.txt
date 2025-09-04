@@ -1,0 +1,201 @@
+1) Database (use existing ORM/migrations)
+
+Create table expenses (ids/nullable types should follow repo conventions):
+
+id pk (uuid/serial)
+
+userId fk -> users (required)
+
+date date NOT NULL
+
+description text NOT NULL
+
+amountCents int NOT NULL // store money in cents
+
+category varchar NOT NULL // Meals | Supplies | Transportation | Lodging | Fees | Other (reuse existing enum if present)
+
+contractId fk -> contracts NULL
+
+note text NULL
+
+isTaxDeductible boolean DEFAULT false
+
+createdAt timestamptz DEFAULT now()
+
+updatedAt timestamptz DEFAULT now()
+
+Indexes:
+
+(userId,date DESC)
+
+(contractId)
+
+(createdAt DESC)
+
+2) API (match server style—Express/Fastify/etc.)
+
+Add routes:
+
+GET /api/expenses
+
+query: from? to? limit? offset? sort=desc
+
+scope to current user
+
+order: date DESC, createdAt DESC
+
+return { items: ExpenseDto[], total }
+
+GET /api/expenses/:id (user-scoped)
+
+POST /api/expenses
+
+validate required fields, positive amountCents
+
+PATCH /api/expenses/:id
+
+partial update, set updatedAt=now()
+
+GET /api/expenses/totals?today=YYYY-MM-DD
+
+compute This Week, Next Week, This Month in local time with Sunday week start
+
+return { thisWeek, nextWeek, thisMonth } (cents)
+
+GET /api/contracts/active
+
+return minimal { id, name }[] where contract status is active (reuse existing status/flag)
+
+Date math helper (server)
+
+Sunday week start:
+
+thisWeekStart = startOfWeek(today, { weekStartsOn: 0 })
+
+thisWeekEnd = thisWeekStart + 6d
+
+nextWeekStart = thisWeekStart + 7d
+
+nextWeekEnd = nextWeekStart + 6d
+
+monthStart = startOfMonth(today), monthEnd = endOfMonth(today)
+
+3) Client API & hooks (TanStack Query)
+
+Create src/api/expenses.ts:
+
+REST wrappers:
+
+listExpenses(params)
+
+getExpense(id)
+
+createExpense(payload) // dollars→cents
+
+updateExpense(id, payload) // dollars→cents when present
+
+getExpenseTotals()
+
+getActiveContracts()
+
+Hooks:
+
+useExpensesQuery(params)
+
+useExpenseQuery(id)
+
+useCreateExpense()
+
+useUpdateExpense()
+
+useExpenseTotals()
+
+useActiveContracts()
+
+Add small utils:
+
+toCents(dollars:number):number
+
+fromCents(cents:number):string // returns $0.00
+
+4) Wire into the existing Expenses page & modal
+
+Edit only the page’s logic; keep JSX/visuals as-is.
+
+KPI cards (“This Week / Next Week / This Month”)
+
+Call useExpenseTotals(); display fromCents values.
+
+Refetch on add/edit success.
+
+Transactions list/table
+
+Use useExpensesQuery({ sort: 'desc', limit: 50 }).
+
+Ensure items render newest first (by date DESC, createdAt DESC).
+
+Add Expense button
+
+Opens the existing modal in “create” mode.
+
+On submit → createExpense (convert dollars→cents) → invalidate expenses, expenseTotals.
+
+Edit
+
+Clicking the pencil opens modal in “edit” mode with expenseId.
+
+Prefill the form using useExpenseQuery(expenseId) values:
+
+date, description, amount = fromCents(amountCents) (numeric), category,
+contractId (nullable), note, isTaxDeductible.
+
+Submit → updateExpense(id, payload) → invalidate caches.
+
+Related Contract dropdown
+
+Populate with useActiveContracts(); include a No contract option that sends null.
+
+Form validation (use your existing scheme; if using RHF+zod keep):
+
+required: date, description, amount>0, category
+
+optional: contractId, note, isTaxDeductible
+
+No UTC drift
+
+Use local <input type="date"> values as ISO date strings; don’t convert to UTC.
+
+5) Tests (keep your current test framework)
+
+dateRanges helper: verify Sunday week start ranges.
+
+Expenses page
+
+totals render correct sums from mocked /totals
+
+list orders by date desc
+
+add flow calls POST with cents and refreshes totals/list
+
+edit opens with prefilled values, then PATCH uses changed values
+
+6) Caching
+
+On create/update: queryClient.invalidateQueries(['expenses']), ['expenseTotals'], and ['expense', id].
+
+7) Acceptance criteria
+
+Add & Edit both persist to DB and update UI without refresh.
+
+Edit modal always opens prefilled with the selected row’s data.
+
+Top cards show correct sums for current week, next week, month (Sunday start).
+
+Transactions list is descending.
+
+Contracts dropdown shows only active contracts.
+
+All endpoints are user-scoped and validated.
+
+Commit message (squash):
+feat(expenses): wire DB+API to existing UI (totals, add/edit with prefill, active-contract dropdown, desc ordering)

@@ -26,13 +26,14 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Expense, Contract } from "@/types";
+import type { Expense } from "@shared/schema";
+import { fromCents } from "@/api/expenses";
 
 const expenseFormSchema = z.object({
   date: z.string().min(1, "Date is required"),
-  contractId: z.string().optional(),
+  contractId: z.number().optional().nullable(),
   category: z.string().min(1, "Category is required"),
-  amount: z.number().min(0.01, "Amount must be greater than 0"),
+  amount: z.string().min(1, "Amount is required"),
   description: z.string().min(1, "Description is required"),
   note: z.string().optional(),
   deductible: z.boolean().default(false),
@@ -43,18 +44,17 @@ type ExpenseFormData = z.infer<typeof expenseFormSchema>;
 interface ExpenseFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Omit<Expense, 'id'>) => void;
-  contracts: Contract[];
+  onSubmit: (data: any) => void;
+  contracts: { id: number; name: string }[];
   initialData?: Expense;
 }
 
 const EXPENSE_CATEGORIES = [
+  "Meals",
+  "Supplies", 
   "Transportation",
-  "Meals", 
-  "Accommodation",
-  "Supplies",
-  "Equipment",
-  "Training",
+  "Lodging",
+  "Fees",
   "Other"
 ];
 
@@ -69,26 +69,25 @@ export function ExpenseForm({
     resolver: zodResolver(expenseFormSchema),
     defaultValues: {
       date: initialData?.date || new Date().toISOString().split('T')[0],
-      contractId: initialData?.contractId || "none",
+      contractId: initialData?.contractId || null,
       category: initialData?.category || "",
-      amount: initialData?.amount || 0,
+      amount: initialData ? fromCents(initialData.amountCents) : "0.00",
       description: initialData?.description || "",
       note: initialData?.note || "",
-      deductible: initialData?.deductible || false,
+      deductible: initialData?.isTaxDeductible || false,
     },
   });
 
   const handleSubmit = (data: ExpenseFormData) => {
     onSubmit({
       date: data.date,
-      contractId: data.contractId === "none" ? undefined : data.contractId || undefined,
+      contractId: data.contractId,
       category: data.category,
       amount: data.amount,
       description: data.description,
       note: data.note || undefined,
       deductible: data.deductible,
     });
-    onClose();
   };
 
   return (
@@ -153,7 +152,6 @@ export function ExpenseForm({
                         placeholder="0.00"
                         className="pl-8"
                         {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                         data-testid="input-expense-amount"
                       />
                     </div>
@@ -194,7 +192,10 @@ export function ExpenseForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Related Contract</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select 
+                    onValueChange={(value) => field.onChange(value === "none" ? null : parseInt(value))} 
+                    value={field.value ? field.value.toString() : "none"}
+                  >
                     <FormControl>
                       <SelectTrigger data-testid="select-expense-contract">
                         <SelectValue placeholder="Select a contract (optional)" />
@@ -203,8 +204,8 @@ export function ExpenseForm({
                     <SelectContent>
                       <SelectItem value="none">No contract</SelectItem>
                       {contracts.map((contract) => (
-                        <SelectItem key={contract.id} value={contract.id}>
-                          {contract.facility} - {contract.role}
+                        <SelectItem key={contract.id} value={contract.id.toString()}>
+                          {contract.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

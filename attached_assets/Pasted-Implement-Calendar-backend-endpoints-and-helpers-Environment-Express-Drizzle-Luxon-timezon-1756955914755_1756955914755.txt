@@ -1,0 +1,51 @@
+Implement Calendar backend endpoints and helpers.
+
+Environment: Express + Drizzle + Luxon (timezone/DST)
+
+Add/confirm tables (reuse existing):
+- shifts(id, contract_id nullable, start_utc, end_utc, local_date, source, status)
+- contracts(...)
+- contract_schedule_day(contract_id, weekday, enabled, start_local, end_local)
+
+Endpoints:
+
+1) GET /api/shifts
+   Query: from=YYYY-MM-DD, to=YYYY-MM-DD
+   Behavior:
+   - Validate range (<= 93 days). Use contract timezone if available, else UTC.
+   - Return array [{ id, contractId, startUtc, endUtc, localDate, status,
+                     contract: { id, name, facility, role, color? } | null }]
+   - Sorted by startUtc asc.
+   - NOTE: seeded shifts from contract creation MUST be included (source='contract_seed').
+
+2) POST /api/shifts
+   Body: { contractId|null, date: 'YYYY-MM-DD', start: 'HH:mm', end: 'HH:mm', timezone, facility? }
+   Behavior:
+   - If start > end, treat as overnight and add +1 day to end.
+   - Convert local wall times in timezone to UTC via Luxon.
+   - Insert shift with source = contractId ? 'manual' : 'manual'
+   - status default 'In Process'
+   - Return created shift.
+
+3) PUT /api/shifts/:id
+   - Allow updates to contractId (nullable), start/end local times, facility, status
+   - Keep timezone-safe updates; recompute UTC
+
+4) DELETE /api/shifts/:id
+   - Soft delete optional; hard delete acceptable for now
+
+5) GET /api/contracts/:id/schedule-preview?date=YYYY-MM-DD
+   - Returns the **contract’s default times for that weekday** with per-day overrides applied:
+     { weekday, enabled, start: 'HH:mm', end: 'HH:mm', timezone }
+   - Used to prefill the Add Shift modal when a contract is selected.
+
+Validation helpers:
+- Ensure date within contract start/end when contractId provided; if outside, return 409 with message.
+
+Tests (Jest + supertest):
+- GET /api/shifts returns seeded shifts within window
+- POST creates manual shift (no contract) with proper UTC for DST and overnight
+- POST with contract outside range → 409
+- GET schedule-preview returns per-day override values
+- PUT updates times and preserves local clock
+- DELETE removes row

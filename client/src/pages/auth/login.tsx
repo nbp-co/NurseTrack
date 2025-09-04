@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { User2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -202,13 +202,13 @@ export default function LoginPage() {
         <div className="text-center">
           <p className="text-sm text-gray-600">
             Don't have an account?{" "}
-            <Button 
-              variant="link" 
-              className="px-0 font-medium text-primary hover:text-primary/80"
+            <Link
+              to="/auth/signup"
+              className="font-medium text-primary hover:text-primary/80"
               data-testid="link-signup"
             >
               Sign up for NurseTrack
-            </Button>
+            </Link>
           </p>
         </div>
       </div>
