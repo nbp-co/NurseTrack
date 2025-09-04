@@ -92,6 +92,32 @@ export function CalendarMonthView({
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800 hover:bg-green-200';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 hover:bg-red-200';
+      case 'unconfirmed':
+        return 'bg-orange-100 text-orange-800 hover:bg-orange-200';
+      default: // scheduled
+        return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+    }
+  };
+
+  const getStatusIndicatorColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-500';
+      case 'cancelled':
+        return 'bg-red-500';
+      case 'unconfirmed':
+        return 'bg-orange-500';
+      default: // scheduled
+        return 'bg-blue-500';
+    }
+  };
+
   const formatTime = (utcDateString: string) => {
     const date = new Date(utcDateString);
     const hour = date.getHours();
@@ -211,7 +237,7 @@ export function CalendarMonthView({
                       className={cn(
                         "text-xs px-1.5 py-0.5 rounded cursor-pointer truncate",
                         shift.contractId 
-                          ? "bg-blue-100 text-blue-800 hover:bg-blue-200" 
+                          ? getStatusColor(shift.status)
                           : "bg-gray-100 text-gray-800 hover:bg-gray-200"
                       )}
                       onClick={(e) => {
@@ -222,7 +248,7 @@ export function CalendarMonthView({
                     >
                       <div className="flex items-center gap-1">
                         {shift.contractId && (
-                          <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+                          <div className={cn("w-2 h-2 rounded-full flex-shrink-0", getStatusIndicatorColor(shift.status))} />
                         )}
                         <span className="truncate">
                           {formatTime(shift.startUtc)}-{formatTime(shift.endUtc)}
@@ -289,7 +315,7 @@ export function CalendarMonthView({
                   >
                     <div className="flex items-center gap-3">
                       {shift.contractId && (
-                        <div className="w-3 h-3 rounded-full bg-blue-500" />
+                        <div className={cn("w-3 h-3 rounded-full", getStatusIndicatorColor(shift.status))} />
                       )}
                       <div>
                         <div className="font-medium">

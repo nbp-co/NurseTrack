@@ -62,6 +62,7 @@ const shiftSchema = z.object({
   start: z.string(),
   end: z.string(),
   facility: z.string().optional(),
+  status: z.enum(['scheduled', 'unconfirmed', 'completed', 'cancelled']).default('scheduled'),
   timezone: z.string().default('America/Chicago')
 });
 
@@ -102,6 +103,7 @@ export function AddEditShiftModal({
       start: "07:00",
       end: "19:00",
       facility: "",
+      status: "scheduled",
       timezone: "America/Chicago"
     }
   });
@@ -248,6 +250,7 @@ export function AddEditShiftModal({
       form.setValue('start', startTime);
       form.setValue('end', endTime);
       form.setValue('facility', editingShift.facility || '');
+      form.setValue('status', editingShift.status || 'scheduled');
       setSelectedContractId(editingShift.contractId || null);
     } else {
       form.setValue('date', selectedDate);
@@ -407,6 +410,31 @@ export function AddEditShiftModal({
                 <span className="font-medium">Overnight shift detected</span> - End time is next day (+1 day)
               </div>
             )}
+
+            {/* Status */}
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-status">
+                        <SelectValue placeholder="Select shift status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="unconfirmed">Awaiting Confirmation</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Canceled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Facility */}
             <FormField
