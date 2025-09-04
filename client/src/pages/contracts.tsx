@@ -24,7 +24,7 @@ export default function ContractsPage() {
   const [showContractWizard, setShowContractWizard] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | undefined>();
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('facility');
+  const [sortBy, setSortBy] = useState<string>('startDate');
   const [currentPage, setCurrentPage] = useState(1);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -219,6 +219,7 @@ export default function ContractsPage() {
                       <SelectItem value="all">All Status</SelectItem>
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="unconfirmed">Unconfirmed</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="archive">Archive</SelectItem>
                     </SelectContent>
                   </Select>
@@ -230,7 +231,6 @@ export default function ContractsPage() {
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="facility">Sort by Facility</SelectItem>
                       <SelectItem value="startDate">Sort by Start Date</SelectItem>
                       <SelectItem value="endDate">Sort by End Date</SelectItem>
                       <SelectItem value="status">Sort by Status</SelectItem>
