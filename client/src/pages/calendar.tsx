@@ -303,6 +303,7 @@ export default function CalendarPage() {
         <CalendarMonthView
           selectedDate={selectedDate}
           shifts={shifts}
+          contracts={contracts}
           onDateSelect={handleDateSelect}
           onAddShift={handleAddShift}
           onEditShift={handleEditShift}

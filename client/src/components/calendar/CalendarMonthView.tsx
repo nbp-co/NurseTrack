@@ -27,6 +27,7 @@ interface Contract {
 interface CalendarMonthViewProps {
   selectedDate: string;
   shifts: Shift[];
+  contracts?: Contract[];
   onDateSelect: (date: string) => void;
   onAddShift: (date?: string) => void;
   onEditShift: (shift: Shift) => void;
@@ -36,6 +37,7 @@ interface CalendarMonthViewProps {
 export function CalendarMonthView({
   selectedDate,
   shifts,
+  contracts = [],
   onDateSelect,
   onAddShift,
   onEditShift,
@@ -262,9 +264,17 @@ export function CalendarMonthView({
                           <Badge variant="secondary" className="text-xs px-1 py-0">(+1 day)</Badge>
                         )}
                       </div>
-                      {shift.facility && (
+                      {(shift.facility || shift.contractId) && (
                         <div className="truncate text-gray-600 text-xs">
-                          {shift.facility}
+                          {(() => {
+                            if (shift.contractId) {
+                              const contract = contracts?.find(c => c.id === shift.contractId);
+                              const facilityDisplay = shift.facility || contract?.facility || 'No facility';
+                              const contractName = contract?.name || 'Contract';
+                              return `${contractName} - ${facilityDisplay}`;
+                            }
+                            return shift.facility;
+                          })()}
                         </div>
                       )}
                       {shift.baseRate && (
@@ -334,9 +344,14 @@ export function CalendarMonthView({
                           )}
                         </div>
                         <div className="text-sm text-gray-600">
-                          {shift.facility || 'No facility'}
+                          {shift.contractId && (() => {
+                            const contract = contracts?.find(c => c.id === shift.contractId);
+                            const facilityDisplay = shift.facility || contract?.facility || 'No facility';
+                            const contractName = contract?.name || 'Unknown Contract';
+                            return `${contractName} - ${facilityDisplay}`;
+                          })()}
+                          {!shift.contractId && 'No contract'}
                           {shift.baseRate && ` • $${shift.baseRate}/hr`}
-                          {shift.contractId ? ' • Contract' : ' • No contract'}
                         </div>
                       </div>
                     </div>
