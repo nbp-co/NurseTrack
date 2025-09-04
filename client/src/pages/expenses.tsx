@@ -9,11 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageLoader } from "@/components/ui/loader";
-import { contractApi, expenseApi } from "@/api/mock";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { Expense } from "@/types";
-import { calculateTotalExpenses, calculateDeductibleExpenses, formatCurrency } from "@/lib/metrics";
+import type { Expense } from "@shared/schema";
+import { useExpensesQuery, useExpenseTotals, useActiveContracts, useCreateExpense, useUpdateExpense, fromCents } from "@/api/expenses";
 
 export default function ExpensesPage() {
   const [showExpenseForm, setShowExpenseForm] = useState(false);
@@ -22,121 +21,102 @@ export default function ExpensesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const currentMonth = new Date().toISOString().slice(0, 7);
-
-  const { data: contracts = [], isLoading: contractsLoading } = useQuery({
-    queryKey: ['/api/contracts'],
-    queryFn: () => contractApi.listContracts(),
+  const { data: contractsData = [], isLoading: contractsLoading } = useActiveContracts(user?.id);
+  
+  const { data: expensesData, isLoading: expensesLoading } = useExpensesQuery({
+    userId: user?.id,
+    limit: 50,
+    sort: "desc",
   });
 
-  const { data: allExpenses = [], isLoading: expensesLoading } = useQuery({
-    queryKey: ['/api/expenses'],
-    queryFn: () => expenseApi.listExpenses(),
-  });
+  const { data: totalsData, isLoading: totalsLoading } = useExpenseTotals(user?.id);
 
-  const isLoading = contractsLoading || expensesLoading;
+  const allExpenses = expensesData?.items || [];
+  const contracts = contractsData || [];
+  const isLoading = contractsLoading || expensesLoading || totalsLoading;
 
-  const createExpenseMutation = useMutation({
-    mutationFn: (expenseData: Omit<Expense, 'id'>) => expenseApi.createExpense(expenseData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/expenses'] });
-      toast({
-        title: "Expense created",
-        description: "Your expense has been added successfully.",
-      });
-      setShowExpenseForm(false);
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to create expense. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateExpenseMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Expense> }) => 
-      expenseApi.updateExpense(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/expenses'] });
-      toast({
-        title: "Expense updated",
-        description: "Your expense has been updated successfully.",
-      });
-      setShowExpenseForm(false);
-      setEditingExpense(undefined);
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update expense. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
+  const createExpenseMutation = useCreateExpense();
+  const updateExpenseMutation = useUpdateExpense();
 
 
   const stats = useMemo(() => {
-    const now = new Date();
-    const monthlyExpenses = allExpenses.filter(expense => expense.date.startsWith(currentMonth));
-    
-    // Calculate this week (Monday to Sunday)
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay() + 1); // Monday
-    startOfWeek.setHours(0, 0, 0, 0);
-    
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6); // Sunday
-    endOfWeek.setHours(23, 59, 59, 999);
-    
-    // Calculate next week
-    const startOfNextWeek = new Date(endOfWeek);
-    startOfNextWeek.setDate(endOfWeek.getDate() + 1); // Next Monday
-    startOfNextWeek.setHours(0, 0, 0, 0);
-    
-    const endOfNextWeek = new Date(startOfNextWeek);
-    endOfNextWeek.setDate(startOfNextWeek.getDate() + 6); // Next Sunday
-    endOfNextWeek.setHours(23, 59, 59, 999);
-    
-    const thisWeekExpenses = allExpenses.filter(expense => {
-      const expenseDate = new Date(expense.date);
-      return expenseDate >= startOfWeek && expenseDate <= endOfWeek;
-    });
-    
-    const nextWeekExpenses = allExpenses.filter(expense => {
-      const expenseDate = new Date(expense.date);
-      return expenseDate >= startOfNextWeek && expenseDate <= endOfNextWeek;
-    });
-    
-    const totalMonth = calculateTotalExpenses(monthlyExpenses);
-    const totalThisWeek = calculateTotalExpenses(thisWeekExpenses);
-    const totalNextWeek = calculateTotalExpenses(nextWeekExpenses);
-    const deductible = calculateDeductibleExpenses(monthlyExpenses);
-    const pendingReceipts = monthlyExpenses.filter(expense => !expense.note).length;
+    if (!totalsData) {
+      return {
+        totalThisWeek: "$0.00",
+        totalNextWeek: "$0.00", 
+        totalMonth: "$0.00"
+      };
+    }
 
     return {
-      totalMonth,
-      totalThisWeek,
-      totalNextWeek,
-      pendingReceipts,
-      deductible,
-      deductiblePercent: totalMonth > 0 ? Math.round((deductible / totalMonth) * 100) : 0
+      totalThisWeek: `$${fromCents(parseInt(totalsData.thisWeek.toString()) || 0)}`,
+      totalNextWeek: `$${fromCents(parseInt(totalsData.nextWeek.toString()) || 0)}`,
+      totalMonth: `$${fromCents(parseInt(totalsData.thisMonth.toString()) || 0)}`
     };
-  }, [allExpenses, currentMonth]);
+  }, [totalsData]);
 
 
-  const handleCreateExpense = (expenseData: Omit<Expense, 'id'>) => {
-    createExpenseMutation.mutate(expenseData);
+  const handleCreateExpense = (formData: any) => {
+    if (!user?.id) return;
+    
+    const payload = {
+      contractId: formData.contractId || null,
+      date: formData.date,
+      category: formData.category,
+      amount: parseFloat(formData.amount) || 0,
+      description: formData.description,
+      note: formData.note || undefined,
+      isTaxDeductible: formData.deductible || false,
+    };
+    
+    createExpenseMutation.mutate({ payload, userId: user.id }, {
+      onSuccess: () => {
+        toast({
+          title: "Expense created",
+          description: "Your expense has been added successfully.",
+        });
+        setShowExpenseForm(false);
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to create expense. Please try again.",
+          variant: "destructive",
+        });
+      },
+    });
   };
 
-  const handleUpdateExpense = (expenseData: Omit<Expense, 'id'>) => {
-    if (editingExpense) {
-      updateExpenseMutation.mutate({ 
-        id: editingExpense.id, 
-        data: expenseData 
-      });
-    }
+  const handleUpdateExpense = (formData: any) => {
+    if (!editingExpense || !user?.id) return;
+    
+    const payload = {
+      contractId: formData.contractId || null,
+      date: formData.date,
+      category: formData.category,
+      amount: parseFloat(formData.amount) || 0,
+      description: formData.description,
+      note: formData.note || undefined,
+      isTaxDeductible: formData.deductible || false,
+    };
+    
+    updateExpenseMutation.mutate({ id: editingExpense.id, payload, userId: user.id }, {
+      onSuccess: () => {
+        toast({
+          title: "Expense updated",
+          description: "Your expense has been updated successfully.",
+        });
+        setShowExpenseForm(false);
+        setEditingExpense(undefined);
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to update expense. Please try again.",
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   const handleEditExpense = (expense: Expense) => {
@@ -166,15 +146,15 @@ export default function ExpensesPage() {
         <div className="grid grid-cols-3 gap-6 mb-6">
           <StatCard
             label="This Week"
-            value={formatCurrency(stats.totalThisWeek)}
+            value={stats.totalThisWeek}
           />
           <StatCard
             label="Next Week"
-            value={formatCurrency(stats.totalNextWeek)}
+            value={stats.totalNextWeek}
           />
           <StatCard
             label="This Month"
-            value={formatCurrency(stats.totalMonth)}
+            value={stats.totalMonth}
           />
         </div>
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { UserPlus, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 
 const signupSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -43,6 +45,8 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const { login } = useAuth();
 
   const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -59,20 +63,32 @@ export default function SignupPage() {
   const handleSubmit = async (data: SignupFormData) => {
     setIsLoading(true);
     try {
-      // TODO: Implement actual signup logic
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Create the account
+      const registrationData = {
+        name: `${data.firstName} ${data.lastName}`,
+        email: data.email,
+        password: data.password,
+      };
+      
+      const res = await apiRequest('POST', '/api/auth/register', registrationData);
+      const { user } = await res.json();
+      
+      // Automatically log them in after successful registration
+      await login(data.email, data.password);
       
       toast({
         title: "Account created successfully",
-        description: "Welcome to NurseTrack! You can now sign in to your account.",
+        description: "Welcome to NurseTrack! Redirecting to your dashboard...",
         variant: "default",
       });
       
-      // TODO: Navigate to login or dashboard
-    } catch (error) {
+      // Navigate to dashboard
+      setLocation('/dashboard');
+    } catch (error: any) {
+      const errorMessage = error?.message || (error instanceof Error ? error.message : "Registration failed. Please try again.");
       toast({
         title: "Sign up failed",
-        description: error instanceof Error ? error.message : "Please try again later",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

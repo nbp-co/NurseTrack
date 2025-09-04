@@ -33,10 +33,12 @@ export interface IStorage {
   getShiftCountByContract(contractId: number): Promise<number>;
 
   // Expenses
-  listExpenses(userId: string, filters?: { contractId?: string; category?: string; startDate?: string; endDate?: string }): Promise<Expense[]>;
+  listExpenses(userId: string, filters?: { contractId?: string; category?: string; startDate?: string; endDate?: string; limit?: number; offset?: number }): Promise<Expense[]>;
+  getExpensesCount(userId: string, filters?: { contractId?: string; category?: string; startDate?: string; endDate?: string }): Promise<number>;
   getExpense(id: string): Promise<Expense | undefined>;
   createExpense(expense: InsertExpense & { userId: string }): Promise<Expense>;
   updateExpense(id: string, expense: Partial<InsertExpense>): Promise<Expense | undefined>;
+  getExpensesTotals(userId: string, thisWeekStart: string, thisWeekEnd: string, nextWeekStart: string, nextWeekEnd: string, monthStart: string, monthEnd: string): Promise<{ thisWeek: number; nextWeek: number; thisMonth: number }>;
 
   // Feedback
   listFeedback(): Promise<Feedback[]>;
@@ -111,7 +113,7 @@ export class DatabaseStorage implements IStorage {
       .delete(contracts)
       .where(eq(contracts.id, contractId));
     
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // Shifts
@@ -291,48 +293,77 @@ export class DatabaseStorage implements IStorage {
       .delete(shifts)
       .where(eq(shifts.id, shiftId));
     
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   // Expenses
-  async listExpenses(userId: string, filters?: { contractId?: string; category?: string; startDate?: string; endDate?: string }): Promise<Expense[]> {
-    let query = db
-      .select()
-      .from(expenses)
-      .where(eq(expenses.userId, userId));
+  async listExpenses(userId: string, filters?: { contractId?: string; category?: string; startDate?: string; endDate?: string; limit?: number; offset?: number }): Promise<Expense[]> {
+    let whereConditions = [eq(expenses.userId, userId)];
 
     if (filters?.contractId) {
       const contractId = parseInt(filters.contractId);
       if (!isNaN(contractId)) {
-        query = query.where(and(
-          eq(expenses.userId, userId),
-          eq(expenses.contractId, contractId)
-        ));
+        whereConditions.push(eq(expenses.contractId, contractId));
       }
     }
 
     if (filters?.category) {
-      query = query.where(and(
-        eq(expenses.userId, userId),
-        eq(expenses.category, filters.category)
-      ));
+      whereConditions.push(eq(expenses.category, filters.category));
     }
 
     if (filters?.startDate) {
-      query = query.where(and(
-        eq(expenses.userId, userId),
-        gte(expenses.date, filters.startDate)
-      ));
+      whereConditions.push(gte(expenses.date, filters.startDate));
     }
 
     if (filters?.endDate) {
-      query = query.where(and(
-        eq(expenses.userId, userId),
-        lte(expenses.date, filters.endDate)
-      ));
+      whereConditions.push(lte(expenses.date, filters.endDate));
     }
 
-    return await query.orderBy(desc(expenses.date));
+    let query = db
+      .select()
+      .from(expenses)
+      .where(and(...whereConditions))
+      .orderBy(desc(expenses.date), desc(expenses.createdAt));
+
+    if (filters?.limit) {
+      query = query.limit(filters.limit);
+    }
+    
+    if (filters?.offset) {
+      query = query.offset(filters.offset);
+    }
+
+    return await query;
+  }
+
+  async getExpensesCount(userId: string, filters?: { contractId?: string; category?: string; startDate?: string; endDate?: string }): Promise<number> {
+    let whereConditions = [eq(expenses.userId, userId)];
+
+    if (filters?.contractId) {
+      const contractId = parseInt(filters.contractId);
+      if (!isNaN(contractId)) {
+        whereConditions.push(eq(expenses.contractId, contractId));
+      }
+    }
+
+    if (filters?.category) {
+      whereConditions.push(eq(expenses.category, filters.category));
+    }
+
+    if (filters?.startDate) {
+      whereConditions.push(gte(expenses.date, filters.startDate));
+    }
+
+    if (filters?.endDate) {
+      whereConditions.push(lte(expenses.date, filters.endDate));
+    }
+
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(expenses)
+      .where(and(...whereConditions));
+    
+    return result[0]?.count || 0;
   }
 
   async getExpense(id: string): Promise<Expense | undefined> {
@@ -354,10 +385,54 @@ export class DatabaseStorage implements IStorage {
   async updateExpense(id: string, updates: Partial<InsertExpense>): Promise<Expense | undefined> {
     const [expense] = await db
       .update(expenses)
-      .set(updates)
+      .set({ ...updates, updatedAt: sql`now()` })
       .where(eq(expenses.id, id))
       .returning();
     return expense || undefined;
+  }
+
+  async getExpensesTotals(userId: string, thisWeekStart: string, thisWeekEnd: string, nextWeekStart: string, nextWeekEnd: string, monthStart: string, monthEnd: string): Promise<{ thisWeek: number; nextWeek: number; thisMonth: number }> {
+    // Get this week's total
+    const thisWeekResult = await db
+      .select({ total: sql<number>`sum(amount_cents)` })
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.userId, userId),
+          gte(expenses.date, thisWeekStart),
+          lte(expenses.date, thisWeekEnd)
+        )
+      );
+
+    // Get next week's total
+    const nextWeekResult = await db
+      .select({ total: sql<number>`sum(amount_cents)` })
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.userId, userId),
+          gte(expenses.date, nextWeekStart),
+          lte(expenses.date, nextWeekEnd)
+        )
+      );
+
+    // Get this month's total
+    const thisMonthResult = await db
+      .select({ total: sql<number>`sum(amount_cents)` })
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.userId, userId),
+          gte(expenses.date, monthStart),
+          lte(expenses.date, monthEnd)
+        )
+      );
+
+    return {
+      thisWeek: thisWeekResult[0]?.total || 0,
+      nextWeek: nextWeekResult[0]?.total || 0,
+      thisMonth: thisMonthResult[0]?.total || 0,
+    };
   }
 
   // Feedback

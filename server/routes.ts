@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertContractSchema, insertShiftSchema, insertExpenseSchema, insertFeedbackSchema, createContractRequestSchema, updateContractRequestSchema, updateContractStatusSchema, createShiftRequestSchema, updateShiftRequestSchema, getShiftsQuerySchema } from "@shared/schema";
+import { insertUserSchema, insertContractSchema, insertShiftSchema, insertExpenseSchema, insertFeedbackSchema, createContractRequestSchema, updateContractRequestSchema, updateContractStatusSchema, createShiftRequestSchema, updateShiftRequestSchema, getShiftsQuerySchema, createExpenseRequestSchema, updateExpenseRequestSchema, getExpensesQuerySchema } from "@shared/schema";
 import * as contractsService from "./services/contracts";
 import * as calendarService from "./services/calendar";
 
@@ -473,22 +473,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Expense routes
-  app.get("/api/expenses", async (req, res) => {
+  app.get("/api/expenses/totals", async (req, res) => {
     try {
       const userId = req.query.userId as string;
+      const today = req.query.today as string;
+      
       if (!userId) return res.status(400).json({ message: "User ID required" });
+      if (!today || !/^\d{4}-\d{2}-\d{2}$/.test(today)) {
+        return res.status(400).json({ message: "Valid today date (YYYY-MM-DD) required" });
+      }
+      
+      // Calculate date ranges with Sunday week start
+      const todayDate = new Date(today);
+      const todayWeekday = todayDate.getDay(); // 0 = Sunday
+      
+      // This week (Sunday to Saturday)
+      const thisWeekStart = new Date(todayDate);
+      thisWeekStart.setDate(todayDate.getDate() - todayWeekday);
+      const thisWeekEnd = new Date(thisWeekStart);
+      thisWeekEnd.setDate(thisWeekStart.getDate() + 6);
+      
+      // Next week (Sunday to Saturday)
+      const nextWeekStart = new Date(thisWeekStart);
+      nextWeekStart.setDate(thisWeekStart.getDate() + 7);
+      const nextWeekEnd = new Date(nextWeekStart);
+      nextWeekEnd.setDate(nextWeekStart.getDate() + 6);
+      
+      // This month
+      const monthStart = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
+      const monthEnd = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0);
+      
+      const totals = await storage.getExpensesTotals(
+        userId,
+        thisWeekStart.toISOString().split('T')[0],
+        thisWeekEnd.toISOString().split('T')[0],
+        nextWeekStart.toISOString().split('T')[0],
+        nextWeekEnd.toISOString().split('T')[0],
+        monthStart.toISOString().split('T')[0],
+        monthEnd.toISOString().split('T')[0]
+      );
+      
+      res.json(totals);
+    } catch (error) {
+      console.error('Failed to get expense totals:', error);
+      res.status(500).json({ message: "Failed to get expense totals" });
+    }
+  });
+
+  app.get("/api/expenses", async (req, res) => {
+    try {
+      const queryData = getExpensesQuerySchema.parse(req.query);
       
       const filters = {
         contractId: req.query.contractId as string,
         category: req.query.category as string,
-        startDate: req.query.startDate as string,
-        endDate: req.query.endDate as string,
+        startDate: queryData.from,
+        endDate: queryData.to,
+        limit: queryData.limit,
+        offset: queryData.offset,
       };
       
-      const expenses = await storage.listExpenses(userId, filters);
-      res.json(expenses);
+      const [items, total] = await Promise.all([
+        storage.listExpenses(queryData.userId, filters),
+        storage.getExpensesCount(queryData.userId, filters)
+      ]);
+      
+      res.json({ items, total });
     } catch (error) {
+      console.error('Failed to fetch expenses:', error);
       res.status(500).json({ message: "Failed to fetch expenses" });
+    }
+  });
+
+  app.get("/api/expenses/:id", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      if (!userId) return res.status(400).json({ message: "User ID required" });
+      
+      const expense = await storage.getExpense(req.params.id);
+      
+      if (!expense || expense.userId !== userId) {
+        return res.status(404).json({ message: "Expense not found" });
+      }
+      
+      res.json(expense);
+    } catch (error) {
+      console.error('Failed to fetch expense:', error);
+      res.status(500).json({ message: "Failed to fetch expense" });
     }
   });
 
@@ -497,26 +568,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.query.userId as string;
       if (!userId) return res.status(400).json({ message: "User ID required" });
       
-      const expenseData = insertExpenseSchema.parse(req.body);
+      const requestData = createExpenseRequestSchema.parse(req.body);
+      
+      // Convert dollars to cents
+      const expenseData = {
+        contractId: requestData.contractId,
+        date: requestData.date,
+        description: requestData.description,
+        amountCents: Math.round(requestData.amount * 100),
+        category: requestData.category,
+        note: requestData.note || null,
+        isTaxDeductible: requestData.isTaxDeductible || false,
+      };
+      
       const expense = await storage.createExpense({ ...expenseData, userId });
       res.json(expense);
     } catch (error) {
+      console.error('Failed to create expense:', error);
       res.status(400).json({ message: "Failed to create expense" });
     }
   });
 
-  app.put("/api/expenses/:id", async (req, res) => {
+  app.patch("/api/expenses/:id", async (req, res) => {
     try {
-      const expenseData = insertExpenseSchema.partial().parse(req.body);
-      const expense = await storage.updateExpense(req.params.id, expenseData);
+      const userId = req.query.userId as string;
+      if (!userId) return res.status(400).json({ message: "User ID required" });
       
-      if (!expense) {
+      // Check if expense exists and belongs to user
+      const existingExpense = await storage.getExpense(req.params.id);
+      if (!existingExpense || existingExpense.userId !== userId) {
         return res.status(404).json({ message: "Expense not found" });
       }
       
+      const requestData = updateExpenseRequestSchema.parse(req.body);
+      
+      // Convert dollars to cents if amount is provided
+      const updates: any = { ...requestData };
+      if (requestData.amount !== undefined) {
+        updates.amountCents = Math.round(requestData.amount * 100);
+        delete updates.amount;
+      }
+      
+      const expense = await storage.updateExpense(req.params.id, updates);
       res.json(expense);
     } catch (error) {
+      console.error('Failed to update expense:', error);
       res.status(400).json({ message: "Failed to update expense" });
+    }
+  });
+
+  app.get("/api/expenses/totals", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      const today = req.query.today as string;
+      
+      if (!userId) return res.status(400).json({ message: "User ID required" });
+      if (!today || !/^\d{4}-\d{2}-\d{2}$/.test(today)) {
+        return res.status(400).json({ message: "Valid today date (YYYY-MM-DD) required" });
+      }
+      
+      // Calculate date ranges with Sunday week start
+      const todayDate = new Date(today);
+      const todayWeekday = todayDate.getDay(); // 0 = Sunday
+      
+      // This week (Sunday to Saturday)
+      const thisWeekStart = new Date(todayDate);
+      thisWeekStart.setDate(todayDate.getDate() - todayWeekday);
+      const thisWeekEnd = new Date(thisWeekStart);
+      thisWeekEnd.setDate(thisWeekStart.getDate() + 6);
+      
+      // Next week (Sunday to Saturday)
+      const nextWeekStart = new Date(thisWeekStart);
+      nextWeekStart.setDate(thisWeekStart.getDate() + 7);
+      const nextWeekEnd = new Date(nextWeekStart);
+      nextWeekEnd.setDate(nextWeekStart.getDate() + 6);
+      
+      // This month
+      const monthStart = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
+      const monthEnd = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0);
+      
+      const totals = await storage.getExpensesTotals(
+        userId,
+        thisWeekStart.toISOString().split('T')[0],
+        thisWeekEnd.toISOString().split('T')[0],
+        nextWeekStart.toISOString().split('T')[0],
+        nextWeekEnd.toISOString().split('T')[0],
+        monthStart.toISOString().split('T')[0],
+        monthEnd.toISOString().split('T')[0]
+      );
+      
+      res.json(totals);
+    } catch (error) {
+      console.error('Failed to get expense totals:', error);
+      res.status(500).json({ message: "Failed to get expense totals" });
+    }
+  });
+
+  app.get("/api/contracts/active", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      if (!userId) return res.status(400).json({ message: "User ID required" });
+      
+      const allContracts = await storage.listContracts(userId);
+      const activeContracts = allContracts
+        .filter(contract => contract.status === 'active')
+        .map(contract => ({ id: contract.id, name: contract.name }));
+      
+      res.json(activeContracts);
+    } catch (error) {
+      console.error('Failed to fetch active contracts:', error);
+      res.status(500).json({ message: "Failed to fetch active contracts" });
     }
   });
 

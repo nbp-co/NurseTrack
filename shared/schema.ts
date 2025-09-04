@@ -60,14 +60,19 @@ export const expenses = pgTable("expenses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull(),
   contractId: integer("contract_id").references(() => contracts.id),
-  date: text("date").notNull(),       // ISO string
-  category: text("category").notNull(),
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  date: date("date").notNull(),
   description: text("description").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  category: varchar("category").notNull(),
   note: text("note"),
-  deductible: boolean("deductible").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+  isTaxDeductible: boolean("is_tax_deductible").default(false).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+}, (table) => ({
+  userDateIdx: index("expenses_user_date_idx").on(table.userId, table.date),
+  contractIdx: index("expenses_contract_idx").on(table.contractId),
+  createdAtIdx: index("expenses_created_at_idx").on(table.createdAt),
+}));
 
 export const feedback = pgTable("feedback", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -147,10 +152,39 @@ export const insertExpenseSchema = createInsertSchema(expenses).pick({
   contractId: true,
   date: true,
   category: true,
-  amount: true,
+  amountCents: true,
   description: true,
   note: true,
-  deductible: true,
+  isTaxDeductible: true,
+});
+
+export const createExpenseRequestSchema = z.object({
+  contractId: z.number().optional().nullable(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
+  category: z.enum(["Meals", "Supplies", "Transportation", "Lodging", "Fees", "Other"]),
+  amount: z.number().positive(), // dollars, will be converted to cents
+  description: z.string().min(1),
+  note: z.string().optional(),
+  isTaxDeductible: z.boolean().optional().default(false),
+});
+
+export const updateExpenseRequestSchema = z.object({
+  contractId: z.number().optional().nullable(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  category: z.enum(["Meals", "Supplies", "Transportation", "Lodging", "Fees", "Other"]).optional(),
+  amount: z.number().positive().optional(), // dollars, will be converted to cents
+  description: z.string().min(1).optional(),
+  note: z.string().optional(),
+  isTaxDeductible: z.boolean().optional(),
+});
+
+export const getExpensesQuerySchema = z.object({
+  userId: z.string(),
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  limit: z.string().transform(val => parseInt(val, 10)).optional(),
+  offset: z.string().transform(val => parseInt(val, 10)).optional(),
+  sort: z.enum(["asc", "desc"]).optional().default("desc"),
 });
 
 export const insertFeedbackSchema = createInsertSchema(feedback).pick({
@@ -231,6 +265,9 @@ export type InsertShift = z.infer<typeof insertShiftSchema>;
 export type Shift = typeof shifts.$inferSelect;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 export type Expense = typeof expenses.$inferSelect;
+export type CreateExpenseRequest = z.infer<typeof createExpenseRequestSchema>;
+export type UpdateExpenseRequest = z.infer<typeof updateExpenseRequestSchema>;
+export type GetExpensesQuery = z.infer<typeof getExpensesQuerySchema>;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type Feedback = typeof feedback.$inferSelect;
 export type ScheduleDay = z.infer<typeof scheduleDaySchema>;
