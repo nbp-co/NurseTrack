@@ -123,6 +123,8 @@ export const createShiftRequestSchema = z.object({
   start: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/), // HH:mm
   end: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/), // HH:mm
   facility: z.string().optional(),
+  baseRate: z.string().optional(),
+  otRate: z.string().optional(),
 });
 
 export const updateShiftRequestSchema = z.object({
