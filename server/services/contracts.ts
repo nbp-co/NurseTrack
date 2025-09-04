@@ -174,6 +174,7 @@ export function generateShiftDates(
 
 export async function seedShifts(
   contractId: number,
+  userId: string,
   startDate: string,
   endDate: string,
   timezone: string,
@@ -187,6 +188,7 @@ export async function seedShifts(
   for (const shift of shiftDates) {
     try {
       await db.insert(shifts).values({
+        userId,
         contractId,
         startUtc: shift.startUtc.toJSDate(),
         endUtc: shift.endUtc.toJSDate(),
@@ -359,6 +361,7 @@ export function computeSeedActions(
 
 export async function applySeedActions(
   contractId: number,
+  userId: string,
   actions: { addDates: string[]; removeDates: string[]; updateDates: string[] },
   timezone: string,
   schedule: ScheduleConfig
@@ -383,6 +386,7 @@ export async function applySeedActions(
 
     try {
       await db.insert(shifts).values({
+        userId,
         contractId,
         startUtc: startDateTime.toUTC().toJSDate(),
         endUtc: endDateTime.toUTC().toJSDate(),

@@ -14,6 +14,7 @@ export const users = pgTable("users", {
 
 export const contracts = pgTable("contracts", {
   id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   name: text("name").notNull(),
   facility: text("facility").notNull(),
   role: text("role").notNull(),
@@ -42,6 +43,7 @@ export const contractScheduleDay = pgTable("contract_schedule_day", {
 
 export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
   contractId: integer("contract_id").references(() => contracts.id, { onDelete: "cascade" }).notNull(),
   startUtc: timestamp("start_utc", { withTimezone: true }).notNull(),
   endUtc: timestamp("end_utc", { withTimezone: true }).notNull(),
