@@ -274,6 +274,16 @@ export function computeSeedActions(
     updateDates: [] as string[]
   };
 
+  // Safety checks
+  if (!oldContract || !newSchedule || !oldSchedule) {
+    console.error('computeSeedActions: missing required parameters', { 
+      hasOldContract: !!oldContract, 
+      hasNewSchedule: !!newSchedule, 
+      hasOldSchedule: !!oldSchedule 
+    });
+    return result;
+  }
+
   const oldStart = DateTime.fromISO(oldContract.startDate);
   const oldEnd = DateTime.fromISO(oldContract.endDate);
   const newStart = DateTime.fromISO(newContract.startDate || oldContract.startDate);

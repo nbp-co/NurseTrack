@@ -235,13 +235,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updateData.schedule
         );
         
-        updateResult = await contractsService.applySeedActions(
-          contractId,
-          existing.contract.userId,
-          actions,
-          updateData.timezone || existing.contract.timezone,
-          updateData.schedule
-        );
+        console.log('Computed actions:', JSON.stringify(actions, null, 2));
+        
+        // Ensure actions has the right structure
+        if (!actions || typeof actions !== 'object') {
+          console.error('computeSeedActions returned invalid object:', actions);
+          updateResult = { created: 0, updated: 0, deleted: 0 };
+        } else {
+          updateResult = await contractsService.applySeedActions(
+            contractId,
+            existing.contract.userId,
+            actions,
+            updateData.timezone || existing.contract.timezone,
+            updateData.schedule
+          );
+        }
         
         console.log('Update summary:', updateResult);
       }
