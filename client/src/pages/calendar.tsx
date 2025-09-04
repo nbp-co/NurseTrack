@@ -53,7 +53,7 @@ export default function CalendarPage() {
   const visibleRange = getVisibleRange();
   
   // Fetch active contracts
-  const { data: contracts = [], isLoading: contractsLoading } = useQuery({
+  const { data: contractsData, isLoading: contractsLoading } = useQuery({
     queryKey: ['/api/contracts', user?.id],
     queryFn: async () => {
       const res = await apiRequest('GET', `/api/contracts?userId=${user?.id}&status=active`);
@@ -61,6 +61,8 @@ export default function CalendarPage() {
     },
     enabled: !!user,
   });
+  
+  const contracts = contractsData?.contracts || [];
   
   // Fetch shifts for visible range
   const { data: shifts = [], isLoading: shiftsLoading } = useQuery({
