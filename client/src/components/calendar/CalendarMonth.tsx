@@ -110,12 +110,13 @@ export function CalendarMonth({ currentDate, events, onDateChange, onDayClick, u
     <div>
 
       {/* Calendar Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-center mb-6 relative">
         <Button
           variant="ghost"
           size="sm"
           onClick={handlePrevMonth}
           data-testid="button-prev-month"
+          className="absolute left-0"
         >
           <ChevronLeft className="w-4 h-4" />
         </Button>
@@ -124,7 +125,7 @@ export function CalendarMonth({ currentDate, events, onDateChange, onDayClick, u
           {MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}
         </h2>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 absolute right-0">
           <Button
             variant="ghost"
             size="sm"

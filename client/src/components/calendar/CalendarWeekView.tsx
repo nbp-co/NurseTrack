@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -119,15 +119,42 @@ export function CalendarWeekView({
   return (
     <div className="space-y-6">
       {/* Week Navigation */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" size="sm" onClick={handlePrevWeek} data-testid="button-prev-week">
-            <ChevronLeft className="w-4 h-4" />
+      <div className="flex items-center justify-center relative">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handlePrevWeek} 
+          data-testid="button-prev-week"
+          className="absolute left-0"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        
+        <h2 className="text-xl font-semibold">
+          {weekRange}
+        </h2>
+        
+        <div className="flex items-center space-x-2 absolute right-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const today = new Date();
+              const sunday = new Date(today);
+              sunday.setDate(today.getDate() - today.getDay());
+              setCurrentWeek(sunday);
+            }}
+            data-testid="button-today"
+            title="Go to today"
+          >
+            <Calendar className="w-4 h-4" />
           </Button>
-          <h2 className="text-xl font-semibold">
-            {weekRange}
-          </h2>
-          <Button variant="outline" size="sm" onClick={handleNextWeek} data-testid="button-next-week">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleNextWeek} 
+            data-testid="button-next-week"
+          >
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
