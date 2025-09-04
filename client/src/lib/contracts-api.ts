@@ -81,6 +81,22 @@ export const contractsApi = {
   }
 };
 
+export const shiftsApi = {
+  async listShifts(params?: {
+    userId?: string;
+    month?: string;
+    contractId?: string;
+  }): Promise<any[]> {
+    const searchParams = new URLSearchParams();
+    if (params?.userId) searchParams.set('userId', params.userId);
+    if (params?.month) searchParams.set('month', params.month);
+    if (params?.contractId) searchParams.set('contractId', params.contractId);
+
+    const response = await apiRequest('GET', `/api/shifts?${searchParams}`);
+    return response.json();
+  }
+};
+
 // Utility functions
 export function calculateSeedEstimate(
   startDate: string,

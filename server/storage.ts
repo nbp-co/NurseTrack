@@ -108,10 +108,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Shifts
-  async listShifts(userId: string, filters?: { month?: string; contractId?: string }): Promise<Shift[]> {
+  async listShifts(userId: string, filters?: { month?: string; contractId?: string }): Promise<any[]> {
     let query = db
-      .select()
+      .select({
+        id: shifts.id,
+        userId: shifts.userId,
+        contractId: shifts.contractId,
+        startUtc: shifts.startUtc,
+        endUtc: shifts.endUtc,
+        localDate: shifts.localDate,
+        source: shifts.source,
+        status: shifts.status,
+        contractName: contracts.name,
+        facility: contracts.facility,
+        role: contracts.role,
+      })
       .from(shifts)
+      .innerJoin(contracts, eq(shifts.contractId, contracts.id))
       .where(eq(shifts.userId, userId));
 
     if (filters?.contractId) {

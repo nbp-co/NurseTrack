@@ -1,11 +1,11 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, FileText, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, FileText, Filter, ChevronLeft, ChevronRight, MapPin, Clock } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { ContractCard } from "@/components/contracts/ContractCard";
 import { ContractWizard } from "@/components/contracts/ContractWizard";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageLoader } from "@/components/ui/loader";
-import { contractsApi, formatContractDuration } from "@/lib/contracts-api";
+import { contractsApi, formatContractDuration, shiftsApi } from "@/lib/contracts-api";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import type { Contract } from "@shared/schema";
@@ -40,6 +40,22 @@ export default function ContractsPage() {
     }),
     enabled: !!user,
   });
+
+  // Fetch upcoming shifts
+  const { data: upcomingShifts = [] } = useQuery({
+    queryKey: ['/api/shifts', user?.id],
+    queryFn: () => shiftsApi.listShifts({ userId: user?.id }),
+    enabled: !!user,
+  });
+
+  // Calculate next 3 upcoming shifts
+  const nextThreeShifts = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return upcomingShifts
+      .filter(shift => shift.localDate >= today)
+      .sort((a, b) => new Date(a.localDate).getTime() - new Date(b.localDate).getTime())
+      .slice(0, 3);
+  }, [upcomingShifts]);
 
 
   const contracts = useMemo(() => {
@@ -200,6 +216,69 @@ export default function ContractsPage() {
       />
 
       <div className="lg:px-8 px-4 py-6">
+        {/* Upcoming Shifts Section */}
+        {nextThreeShifts.length > 0 && (
+          <Card className="mb-6" data-testid="upcoming-shifts-section">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                <Clock className="w-5 h-5 text-blue-500" />
+                Upcoming Shifts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {nextThreeShifts.map((shift) => {
+                  const formatDate = (dateStr: string) => {
+                    const date = new Date(dateStr);
+                    const today = new Date();
+                    const tomorrow = new Date();
+                    tomorrow.setDate(today.getDate() + 1);
+                    
+                    if (date.toDateString() === today.toDateString()) {
+                      return 'Today';
+                    } else if (date.toDateString() === tomorrow.toDateString()) {
+                      return 'Tomorrow';
+                    } else {
+                      return date.toLocaleDateString('en-US', { 
+                        weekday: 'short', 
+                        month: 'short', 
+                        day: 'numeric' 
+                      });
+                    }
+                  };
+
+                  const formatTime = (utcDate: string) => {
+                    return new Date(utcDate).toLocaleTimeString('en-US', {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: true
+                    });
+                  };
+
+                  return (
+                    <div key={shift.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg" data-testid={`shift-item-${shift.id}`}>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <div className="text-sm font-medium text-gray-900">
+                            {formatDate(shift.localDate)}
+                          </div>
+                          <div className="flex items-center gap-1 text-sm text-gray-600">
+                            <MapPin className="w-3 h-3" />
+                            {shift.facility}
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-500 mt-1">
+                          {formatTime(shift.startUtc)} - {formatTime(shift.endUtc)} · {shift.role}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
         {/* Combined Filters and Add Button */}
         <Card className="mb-6">
           <CardContent className="p-2">
