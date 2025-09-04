@@ -1,7 +1,9 @@
 import { type User, type InsertUser, type Contract, type InsertContract, type Shift, type InsertShift, type Expense, type InsertExpense, type Feedback, type InsertFeedback } from "@shared/schema";
+
 import { db } from "./db";
 import { users, contracts, shifts, expenses, feedback } from "@shared/schema";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
+
 
 export interface IStorage {
   // Users
@@ -31,10 +33,12 @@ export interface IStorage {
   createExpense(expense: InsertExpense & { userId: string }): Promise<Expense>;
   updateExpense(id: string, expense: Partial<InsertExpense>): Promise<Expense | undefined>;
 
+
   // Feedback
   listFeedback(): Promise<Feedback[]>;
   createFeedback(feedback: InsertFeedback & { userId?: string }): Promise<Feedback>;
 }
+
 
 export class DatabaseStorage implements IStorage {
   // Users
@@ -298,6 +302,23 @@ export class DatabaseStorage implements IStorage {
       .values(feedbackData)
       .returning();
     return newFeedback;
+  }
+
+  // Feedback
+  async listFeedback(): Promise<Feedback[]> {
+    return Array.from(this.feedbacks.values()).sort((a, b) => b.createdAt!.getTime() - a.createdAt!.getTime());
+  }
+
+  async createFeedback(feedbackData: InsertFeedback & { userId?: string }): Promise<Feedback> {
+    const id = randomUUID();
+    const feedback: Feedback = { 
+      ...feedbackData, 
+      id,
+      userId: feedbackData.userId || null,
+      createdAt: new Date() 
+    };
+    this.feedbacks.set(id, feedback);
+    return feedback;
   }
 }
 

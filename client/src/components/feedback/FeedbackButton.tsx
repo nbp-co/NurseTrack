@@ -16,7 +16,9 @@ import { useLocation } from "wouter";
 
 const feedbackSchema = z.object({
   type: z.enum(["bug", "feature", "general"]),
+
   message: z.string().min(1, "Message is required"),
+
 });
 
 type FeedbackForm = z.infer<typeof feedbackSchema>;

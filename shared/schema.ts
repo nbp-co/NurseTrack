@@ -131,6 +131,7 @@ export const insertFeedbackSchema = createInsertSchema(feedback).pick({
   type: true,
 });
 
+
 // API-specific schemas for contract management
 export const scheduleDaySchema = z.object({
   enabled: z.boolean(),
@@ -191,6 +192,7 @@ export const updateContractStatusSchema = z.object({
   status: z.enum(['planned', 'active', 'archived']),
 });
 
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertContract = z.infer<typeof insertContractSchema>;
@@ -203,8 +205,10 @@ export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 export type Expense = typeof expenses.$inferSelect;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type Feedback = typeof feedback.$inferSelect;
+
 export type ScheduleDay = z.infer<typeof scheduleDaySchema>;
 export type ScheduleConfig = z.infer<typeof scheduleConfigSchema>;
 export type CreateContractRequest = z.infer<typeof createContractRequestSchema>;
 export type UpdateContractRequest = z.infer<typeof updateContractRequestSchema>;
 export type UpdateContractStatusRequest = z.infer<typeof updateContractStatusSchema>;
+
