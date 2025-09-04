@@ -37,7 +37,7 @@ export const mockContracts: Contract[] = [
       defaultEnd: '18:00',
       exceptions: []
     },
-    status: 'planned'
+    status: 'unconfirmed'
   }
 ];
 
@@ -164,7 +164,7 @@ export const mockExpenses: Expense[] = [
 ];
 
 export const mockUser = {
-  id: '1',
+  id: 'a47111a5-38bb-4dff-a4cb-7cdc5cab2fbc',
   email: 'sarah.johnson@email.com',
   name: 'Sarah Johnson',
   role: 'RN, ICU'

@@ -1,22 +1,24 @@
-import { Edit2, ChevronRight, DollarSign, Clock, Calendar } from "lucide-react";
+import { Edit2, ChevronRight, DollarSign, Clock, Calendar, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Contract } from "@/types";
 
 interface ContractCardProps {
-  contract: Contract;
+  contract: any; // Using any temporarily for API compatibility
   onEdit: () => void;
+  onDelete?: () => void;
   onViewDetails?: () => void;
   shiftsCount?: number;
 }
 
-export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 }: ContractCardProps) {
-  const formatCurrency = (amount: number) => {
+export function ContractCard({ contract, onEdit, onDelete, onViewDetails, shiftsCount = 0 }: ContractCardProps) {
+  const formatCurrency = (amount: string | number) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(numAmount)) return 'N/A';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
-    }).format(amount);
+    }).format(numAmount);
   };
 
   const formatDateRange = (startDate: string, endDate: string) => {
@@ -37,8 +39,9 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'default';
-      case 'planned': return 'secondary';
+      case 'unconfirmed': return 'secondary';
       case 'completed': return 'outline';
+      case 'archive': return 'secondary';
       default: return 'secondary';
     }
   };
@@ -47,7 +50,7 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
     switch (status) {
       case 'active': return 'border-l-green-500';
       case 'completed': return 'border-l-blue-500';
-      case 'planned': return 'border-l-yellow-500';
+      case 'unconfirmed': return 'border-l-yellow-500';
       case 'archive': return 'border-l-gray-400';
       default: return 'border-l-gray-400';
     }
@@ -73,7 +76,7 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
           <div className="flex-1">
             <div className="flex items-center space-x-2 mb-2">
               <h3 className="text-base font-semibold text-gray-900" data-testid={`text-contract-facility-${contract.id}`}>
-                {contract.facility}
+                {contract.name || contract.facility}
               </h3>
               <Badge 
                 variant={getStatusColor(contract.status)}
@@ -82,6 +85,10 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
                 {getStatusLabel(contract.status)}
               </Badge>
             </div>
+            
+            <p className="text-sm text-gray-600 mb-3">
+              {contract.facility} • {contract.role}
+            </p>
             
 
             <div className="grid grid-cols-2 gap-48 text-sm">
@@ -101,7 +108,7 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
                     HRS/WK
                   </p>
                   <p className="font-medium text-gray-900" data-testid={`text-contract-hours-${contract.id}`}>
-                    {contract.weeklyHours} hours
+                    {contract.hoursPerWeek || 'N/A'} hours
                   </p>
                 </div>
 
@@ -113,7 +120,7 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
                     Base Rate
                   </p>
                   <p className="font-medium text-gray-900" data-testid={`text-contract-rate-${contract.id}`}>
-                    {formatCurrency(contract.baseRate)}/{contract.payType === 'hourly' ? 'hour' : 'salary'}
+                    {formatCurrency(contract.baseRate)}/hour
                   </p>
                 </div>
                 <div>
@@ -122,7 +129,7 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
                     OT Rate
                   </p>
                   <p className="font-medium text-gray-900" data-testid={`text-contract-ot-rate-${contract.id}`}>
-                    {contract.overtimeRate ? `${formatCurrency(contract.overtimeRate)}/hour` : 'N/A'}
+                    {contract.otRate ? `${formatCurrency(contract.otRate)}/hour` : 'N/A'}
                   </p>
                 </div>
               </div>
@@ -130,6 +137,17 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
           </div>
           
           <div className="flex items-center space-x-1 ml-3">
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onDelete}
+                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                data-testid={`button-delete-contract-${contract.id}`}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -166,8 +184,11 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
           </div>
 
           <div className="flex space-x-1 justify-between">
-            {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => {
-              const isWorkDay = contract.recurrence.byDay.includes(day as any);
+            {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day, index) => {
+              // For now, show typical working days as active (Mon-Fri with 7A-7P schedule)
+              const isWorkDay = index >= 1 && index <= 5; // Mon through Fri
+              const timeRange = isWorkDay ? "7A-7P" : "";
+              
               return (
                 <div
                   key={day}
@@ -183,13 +204,13 @@ export function ContractCard({ contract, onEdit, onViewDetails, shiftsCount = 0 
                   >
                     {day}
                   </span>
-                  {isWorkDay && (
-                    <div className="mt-1 text-center">
-                      <span className="text-xs font-medium text-gray-700 bg-white px-1 py-0.5 rounded-full border border-blue-200">
-                        7A-7P
+                  <div className="mt-1 text-center">
+                    {isWorkDay && (
+                      <span className="text-xs font-medium px-1 py-0.5 rounded-full border text-gray-700 bg-white border-blue-200">
+                        {timeRange}
                       </span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               );
             })}

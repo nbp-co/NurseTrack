@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { X, ChevronLeft, ChevronRight, Check, Calendar, Clock, MapPin } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -26,21 +28,43 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Contract } from "@/types";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { calculateSeedEstimate } from "@/lib/contracts-api";
+import type { CreateContractRequest } from "@shared/schema";
 
-const contractFormSchema = z.object({
-  facility: z.string().min(1, "Contract name is required"),
-  role: z.string().min(1, "Role is required"),
-  department: z.string().optional(),
-  baseRate: z.number().min(0.01, "Base rate must be greater than 0"),
-  overtimeRate: z.number().min(0, "OT rate must be greater than or equal to 0").optional(),
-  weeklyHours: z.number().min(1, "Weekly hours must be at least 1").max(80, "Weekly hours cannot exceed 80"),
+// Form schema for the 3-step wizard
+const contractWizardSchema = z.object({
+  // Step 1: Basics
+  name: z.string().min(1, "Contract name is required"),
+  facility: z.string().optional(),
+  status: z.enum(["active", "unconfirmed", "completed", "archive"], {
+    required_error: "Status is required",
+  }),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
-  byDay: z.array(z.string()).min(1, "Select at least one day of the week"),
+  baseRate: z.string().min(1, "Base rate is required"),
+  otRate: z.string().optional(),
+  hoursPerWeek: z.string().optional(),
+  timezone: z.string().optional(),
+  
+  // Step 2: Schedule
   defaultStart: z.string().min(1, "Default start time is required"),
   defaultEnd: z.string().min(1, "Default end time is required"),
-  // Individual day schedules
+  
+  // Weekday toggles
+  enableSunday: z.boolean(),
+  enableMonday: z.boolean(),
+  enableTuesday: z.boolean(),
+  enableWednesday: z.boolean(),
+  enableThursday: z.boolean(),
+  enableFriday: z.boolean(),
+  enableSaturday: z.boolean(),
+  
+  // Per-day overrides
+  sundayStart: z.string().optional(),
+  sundayEnd: z.string().optional(),
   mondayStart: z.string().optional(),
   mondayEnd: z.string().optional(),
   tuesdayStart: z.string().optional(),
@@ -53,31 +77,46 @@ const contractFormSchema = z.object({
   fridayEnd: z.string().optional(),
   saturdayStart: z.string().optional(),
   saturdayEnd: z.string().optional(),
-  sundayStart: z.string().optional(),
-  sundayEnd: z.string().optional(),
-  address: z.string().min(1, "Address must contain at least street and city").optional().or(z.literal("")),
-  contactName: z.string().min(2, "Contact name must be at least 2 characters").max(50, "Contact name cannot exceed 50 characters").regex(/^[a-zA-Z\s.-]+$/, "Contact name can only contain letters, spaces, periods, and hyphens").optional().or(z.literal("")),
-  phoneNumber: z.string().regex(/^([0-9]{3})-([0-9]{3})-([0-9]{4})$/, "Please enter a valid phone number (e.g., 444-444-4444)").optional().or(z.literal("")),
-  notes: z.string().max(500, "Notes cannot exceed 500 characters").optional(),
+}).refine((data) => {
+  const start = new Date(data.startDate);
+  const end = new Date(data.endDate);
+  return end >= start;
+}, {
+  message: "End date must be greater than or equal to start date",
+  path: ["endDate"],
+}).refine((data) => {
+  const hasEnabledDays = [
+    data.enableSunday,
+    data.enableMonday,
+    data.enableTuesday,
+    data.enableWednesday,
+    data.enableThursday,
+    data.enableFriday,
+    data.enableSaturday,
+  ].some(Boolean);
+  return hasEnabledDays;
+}, {
+  message: "At least one weekday must be enabled",
+  path: ["enableMonday"],
 });
 
-type ContractFormData = z.infer<typeof contractFormSchema>;
+type ContractWizardFormData = z.infer<typeof contractWizardSchema>;
 
 interface ContractWizardProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Omit<Contract, 'id'>) => void;
-  initialData?: Contract;
+  onSubmit: (data: CreateContractRequest) => void;
+  initialData?: any;
 }
 
-const DAYS_OF_WEEK = [
-  { value: "SUN", label: "Sunday" },
-  { value: "MON", label: "Monday" },
-  { value: "TUE", label: "Tuesday" },
-  { value: "WED", label: "Wednesday" },
-  { value: "THU", label: "Thursday" },
-  { value: "FRI", label: "Friday" },
-  { value: "SAT", label: "Saturday" },
+const WEEKDAYS = [
+  { key: "enableSunday", label: "Sunday", short: "Sun", startField: "sundayStart", endField: "sundayEnd", dayIndex: 0 },
+  { key: "enableMonday", label: "Monday", short: "Mon", startField: "mondayStart", endField: "mondayEnd", dayIndex: 1 },
+  { key: "enableTuesday", label: "Tuesday", short: "Tue", startField: "tuesdayStart", endField: "tuesdayEnd", dayIndex: 2 },
+  { key: "enableWednesday", label: "Wednesday", short: "Wed", startField: "wednesdayStart", endField: "wednesdayEnd", dayIndex: 3 },
+  { key: "enableThursday", label: "Thursday", short: "Thu", startField: "thursdayStart", endField: "thursdayEnd", dayIndex: 4 },
+  { key: "enableFriday", label: "Friday", short: "Fri", startField: "fridayStart", endField: "fridayEnd", dayIndex: 5 },
+  { key: "enableSaturday", label: "Saturday", short: "Sat", startField: "saturdayStart", endField: "saturdayEnd", dayIndex: 6 },
 ];
 
 const ROLES = [
@@ -85,721 +124,778 @@ const ROLES = [
   "Licensed Practical Nurse (LPN)",
   "Certified Nursing Assistant (CNA)",
   "Nurse Practitioner (NP)",
+  "Nurse Manager",
+  "OR Tech",
+  "Respiratory Therapist",
 ];
 
-const DEPARTMENTS = [
-  "ICU",
-  "Emergency",
-  "Medical/Surgical",
-  "Pediatrics",
-  "Oncology",
-  "OR",
-  "Labor & Delivery",
-  "NICU",
+const TIMEZONES = [
+  "America/New_York",
+  "America/Chicago", 
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Anchorage",
+  "Pacific/Honolulu",
 ];
 
 export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: ContractWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
-  
-  const form = useForm<ContractFormData>({
-    resolver: zodResolver(contractFormSchema),
-    defaultValues: {
+  const [seedEstimate, setSeedEstimate] = useState(0);
+  const [selectedDay, setSelectedDay] = useState<string>("enableMonday");
+
+  // Helper function to get default values with proper schedule loading
+  const getDefaultValues = () => {
+    const defaults = {
+      name: initialData?.name || "",
       facility: initialData?.facility || "",
-      role: initialData?.role || "",
-      department: initialData?.department || "",
-      baseRate: initialData?.baseRate || 0,
-      overtimeRate: initialData?.overtimeRate || undefined,
-      weeklyHours: initialData?.weeklyHours || 40,
+      status: initialData?.status || "unconfirmed",
       startDate: initialData?.startDate || "",
       endDate: initialData?.endDate || "",
-      byDay: initialData?.recurrence.byDay || [],
-      defaultStart: initialData?.recurrence.defaultStart || "07:00",
-      defaultEnd: initialData?.recurrence.defaultEnd || "19:00",
-      // Individual day defaults - use default times initially
-      mondayStart: initialData?.recurrence.defaultStart || "07:00",
-      mondayEnd: initialData?.recurrence.defaultEnd || "19:00",
-      tuesdayStart: initialData?.recurrence.defaultStart || "07:00",
-      tuesdayEnd: initialData?.recurrence.defaultEnd || "19:00",
-      wednesdayStart: initialData?.recurrence.defaultStart || "07:00",
-      wednesdayEnd: initialData?.recurrence.defaultEnd || "19:00",
-      thursdayStart: initialData?.recurrence.defaultStart || "07:00",
-      thursdayEnd: initialData?.recurrence.defaultEnd || "19:00",
-      fridayStart: initialData?.recurrence.defaultStart || "07:00",
-      fridayEnd: initialData?.recurrence.defaultEnd || "19:00",
-      saturdayStart: initialData?.recurrence.defaultStart || "07:00",
-      saturdayEnd: initialData?.recurrence.defaultEnd || "19:00",
-      sundayStart: initialData?.recurrence.defaultStart || "07:00",
-      sundayEnd: initialData?.recurrence.defaultEnd || "19:00",
-      address: initialData?.address || "",
-      contactName: initialData?.contactName || "",
-      phoneNumber: initialData?.phoneNumber || "",
-      notes: initialData?.notes || "",
-    },
+      baseRate: initialData?.baseRate?.toString() || "",
+      otRate: initialData?.otRate?.toString() || "",
+      hoursPerWeek: initialData?.hoursPerWeek?.toString() || "",
+      timezone: initialData?.timezone || "America/Chicago",
+      defaultStart: "07:00",
+      defaultEnd: "19:00",
+      enableSunday: false,
+      enableMonday: true,
+      enableTuesday: true,
+      enableWednesday: true,
+      enableThursday: true,
+      enableFriday: true,
+      enableSaturday: false,
+      sundayStart: "07:00",
+      sundayEnd: "19:00",
+      mondayStart: "07:00",
+      mondayEnd: "19:00",
+      tuesdayStart: "07:00",
+      tuesdayEnd: "19:00",
+      wednesdayStart: "07:00",
+      wednesdayEnd: "19:00",
+      thursdayStart: "07:00",
+      thursdayEnd: "19:00",
+      fridayStart: "07:00",
+      fridayEnd: "19:00",
+      saturdayStart: "07:00",
+      saturdayEnd: "19:00",
+    };
+
+    // If we have schedule data from initialData, load it
+    if (initialData?.schedule) {
+      defaults.defaultStart = initialData.schedule.defaultStart || "07:00";
+      defaults.defaultEnd = initialData.schedule.defaultEnd || "19:00";
+      
+      // Load day-specific schedule settings
+      Object.entries(initialData.schedule.days || {}).forEach(([dayIndex, dayConfig]: [string, any]) => {
+        const weekdayIndex = parseInt(dayIndex);
+        const weekday = WEEKDAYS[weekdayIndex];
+        if (weekday && dayConfig) {
+          (defaults as any)[weekday.key] = dayConfig.enabled;
+          if (dayConfig.start) {
+            (defaults as any)[weekday.startField] = dayConfig.start;
+          }
+          if (dayConfig.end) {
+            (defaults as any)[weekday.endField] = dayConfig.end;
+          }
+        }
+      });
+    }
+
+    return defaults;
+  };
+
+  const form = useForm<ContractWizardFormData>({
+    resolver: zodResolver(contractWizardSchema),
+    defaultValues: getDefaultValues(),
   });
 
-  const handleNext = () => {
-    if (currentStep < 3) {
+  const watchStartDate = form.watch("startDate");
+  const watchEndDate = form.watch("endDate");
+  const watchEnabledDays = WEEKDAYS.map(day => form.watch(day.key as any));
+
+  // Reset form when initialData changes (for edit mode)
+  useEffect(() => {
+    if (initialData) {
+      form.reset(getDefaultValues());
+    }
+  }, [initialData]);
+
+  useEffect(() => {
+    if (watchStartDate && watchEndDate) {
+      const enabledDays: Record<string, boolean> = {};
+      WEEKDAYS.forEach((day, index) => {
+        enabledDays[index.toString()] = watchEnabledDays[index];
+      });
+      
+      const estimate = calculateSeedEstimate(watchStartDate, watchEndDate, enabledDays);
+      setSeedEstimate(estimate);
+    }
+  }, [watchStartDate, watchEndDate, ...watchEnabledDays]);
+
+  const handleNext = async () => {
+    let fieldsToValidate: (keyof ContractWizardFormData)[] = [];
+    
+    if (currentStep === 1) {
+      fieldsToValidate = ["name", "startDate", "endDate", "baseRate"];
+    } else if (currentStep === 2) {
+      fieldsToValidate = ["defaultStart", "defaultEnd"];
+      // Also validate that at least one day is enabled
+      const hasEnabledDays = WEEKDAYS.some(day => form.getValues(day.key as any));
+      if (!hasEnabledDays) {
+        form.setError("enableMonday", { message: "At least one weekday must be enabled" });
+        return;
+      }
+    }
+
+    const isValid = await form.trigger(fieldsToValidate);
+    if (isValid) {
       setCurrentStep(currentStep + 1);
     }
   };
 
-  const handlePrev = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
+  const handlePrevious = () => {
+    setCurrentStep(currentStep - 1);
   };
 
-  // Update all individual day times when default times change
-  const updateAllDayTimes = (startTime: string, endTime: string) => {
-    const selectedDays = form.watch('byDay');
-    selectedDays.forEach(dayCode => {
-      const day = DAYS_OF_WEEK.find(d => d.value === dayCode);
-      if (day) {
-        const dayName = day.label.toLowerCase();
-        form.setValue(`${dayName}Start` as keyof ContractFormData, startTime);
-        form.setValue(`${dayName}End` as keyof ContractFormData, endTime);
-      }
+  const applyDefaultTimes = () => {
+    const defaultStart = form.getValues("defaultStart");
+    const defaultEnd = form.getValues("defaultEnd");
+    
+    WEEKDAYS.forEach(day => {
+      form.setValue(day.startField as any, defaultStart);
+      form.setValue(day.endField as any, defaultEnd);
     });
   };
 
-  const handleSubmit = (data: ContractFormData) => {
-    const contract: Omit<Contract, 'id'> = {
+  const handleSubmit = (data: ContractWizardFormData) => {
+    // Convert form data to API format
+    const schedule: any = {
+      defaultStart: data.defaultStart,
+      defaultEnd: data.defaultEnd,
+      days: {}
+    };
+
+    WEEKDAYS.forEach((day, index) => {
+      const enabled = data[day.key as keyof ContractWizardFormData] as boolean;
+      schedule.days[index.toString()] = {
+        enabled,
+        start: enabled ? (data[day.startField as keyof ContractWizardFormData] as string) : undefined,
+        end: enabled ? (data[day.endField as keyof ContractWizardFormData] as string) : undefined,
+      };
+    });
+
+    const apiData: CreateContractRequest = {
+      name: data.name,
       facility: data.facility,
-      role: data.role,
-      department: data.department,
+      // role field removed per user requirements
       startDate: data.startDate,
       endDate: data.endDate,
-      payType: 'hourly',
       baseRate: data.baseRate,
-      overtimeRate: data.overtimeRate,
-      weeklyHours: data.weeklyHours,
-      recurrence: {
-        byDay: data.byDay as any,
-        defaultStart: data.defaultStart,
-        defaultEnd: data.defaultEnd,
-        exceptions: initialData?.recurrence.exceptions || []
-      },
-      status: initialData?.status || 'planned',
-      address: data.address,
-      contactName: data.contactName,
-      phoneNumber: data.phoneNumber,
-      notes: data.notes
+      otRate: data.otRate,
+      hoursPerWeek: data.hoursPerWeek,
+      timezone: data.timezone,
+      schedule,
+      seedShifts: true,
     };
-    
-    onSubmit(contract);
-    onClose();
+
+    onSubmit(apiData);
   };
 
-  const renderStepIndicator = () => (
-    <div className="flex items-center justify-between mb-8">
-      <div className="flex items-center space-x-4">
-        {[1, 2, 3].map((step) => (
-          <div key={step} className="flex items-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              currentStep >= step 
-                ? "bg-primary text-primary-foreground" 
-                : "bg-gray-200 text-gray-600"
-            }`}>
-              {step}
-            </div>
-            <span className={`ml-2 text-sm font-medium ${
-              currentStep >= step ? "text-gray-900" : "text-gray-500"
-            }`}>
-              {step === 1 ? "Basics" : step === 2 ? "Schedule" : "Review"}
-            </span>
-            {step < 3 && <div className="w-8 h-0.5 bg-gray-200 ml-4"></div>}
-          </div>
-        ))}
+  const resetForm = () => {
+    setCurrentStep(1);
+    form.reset();
+  };
+
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    }
+  }, [isOpen]);
+
+  const formatCurrency = (value: string) => {
+    if (!value) return "";
+    return `$${parseFloat(value).toFixed(2)}/hour`;
+  };
+
+  const formatDateRange = (startDate: string, endDate: string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    return `${start.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric'
+    })} - ${end.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    })}`;
+  };
+
+  const renderBasicsStep = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Contract Name</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., Memorial Hospital ICU" {...field} data-testid="input-contract-name" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="facility"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Facility</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., Memorial Hospital" {...field} data-testid="input-facility" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                <FormControl>
+                  <SelectTrigger data-testid="select-status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="unconfirmed">Unconfirmed</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="archive">Archive</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="startDate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Start Date</FormLabel>
+              <FormControl>
+                <Input type="date" {...field} data-testid="input-start-date" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="endDate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>End Date</FormLabel>
+              <FormControl>
+                <Input type="date" {...field} data-testid="input-end-date" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <FormField
+          control={form.control}
+          name="baseRate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Base Rate ($/hour)</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="45.00"
+                    className="pl-8"
+                    {...field}
+                    onKeyPress={(e) => {
+                      if (!/[0-9.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab') {
+                        e.preventDefault();
+                      }
+                    }}
+                    data-testid="input-base-rate"
+                  />
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="otRate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Overtime Rate ($/hour)</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="67.50"
+                    className="pl-8"
+                    {...field}
+                    onKeyPress={(e) => {
+                      if (!/[0-9.]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab') {
+                        e.preventDefault();
+                      }
+                    }}
+                    data-testid="input-ot-rate"
+                  />
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="hoursPerWeek"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Hours per Week</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.5"
+                  placeholder="36"
+                  {...field}
+                  data-testid="input-hours-per-week"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
     </div>
   );
 
+  const renderScheduleStep = () => {
+    const selectedDayInfo = WEEKDAYS.find(day => day.key === selectedDay);
+    
+    return (
+      <div className="space-y-6">
+        <div className="bg-blue-50 p-4 rounded-lg border">
+          <h4 className="font-medium text-blue-900 mb-2">Default Schedule Times</h4>
+          <div className="flex flex-row items-end gap-4">
+            <FormField
+              control={form.control}
+              name="defaultStart"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Default Start Time</FormLabel>
+                  <FormControl>
+                    <Input type="time" {...field} data-testid="input-default-start" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="defaultEnd"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Default End Time</FormLabel>
+                  <FormControl>
+                    <Input type="time" {...field} data-testid="input-default-end" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={applyDefaultTimes}
+              data-testid="button-apply-defaults"
+            >
+              Apply Default Times to All
+            </Button>
+          </div>
+        </div>
+
+        <div>
+          <h4 className="font-medium mb-4">Weekly Schedule</h4>
+          
+          {/* Day selector */}
+          <div className="grid grid-cols-7 gap-2 mb-6">
+            {WEEKDAYS.map((day) => {
+              const isEnabled = form.watch(day.key as any);
+              
+              return (
+                <div
+                  key={day.key}
+                  className={`
+                    p-3 rounded-lg border-2 transition-colors
+                    ${isEnabled 
+                      ? 'border-green-500 bg-green-50 text-green-700' 
+                      : 'border-gray-200 hover:border-gray-300'
+                    }
+                  `}
+                  data-testid={`day-selector-${day.key}`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      form.setValue(day.key as any, !isEnabled);
+                    }}
+                    className="w-full text-center"
+                  >
+                    <div className="text-xl font-bold">{day.label.slice(0, 3).toUpperCase()}</div>
+                    {isEnabled && (
+                      <div className="text-xs text-green-600 mt-1">✓</div>
+                    )}
+                  </button>
+                  
+                  {/* Time inputs within the day box */}
+                  {isEnabled && (
+                    <div className="mt-3 space-y-2">
+                      <FormField
+                        control={form.control}
+                        name={day.startField as any}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                type="time"
+                                {...field}
+                                className="text-xs h-7 w-full"
+                                data-testid={`input-${day.startField}`}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name={day.endField as any}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                type="time"
+                                {...field}
+                                className="text-xs h-7 w-full"
+                                data-testid={`input-${day.endField}`}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Helper text */}
+          {WEEKDAYS.filter(day => form.watch(day.key as any)).length === 0 && (
+            <div className="text-center py-4 text-gray-500">
+              <p>Click on the days above to enable them and set working hours</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderReviewStep = () => {
+    const formData = form.getValues();
+    const enabledDays = WEEKDAYS.filter(day => formData[day.key as keyof ContractWizardFormData]);
+
+    return (
+      <div className="space-y-6">
+        {/* Contract Summary */}
+        <Card>
+          <CardContent className="p-6">
+            <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+              <MapPin className="w-5 h-5" />
+              Contract Details
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Contract Name:</span>
+                <p className="font-medium">{formData.name}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Facility:</span>
+                <p className="font-medium">{formData.facility}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Status:</span>
+                <p className="font-medium capitalize">{formData.status}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Duration:</span>
+                <p className="font-medium flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  {formatDateRange(formData.startDate, formData.endDate)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Rates */}
+        <Card>
+          <CardContent className="p-6">
+            <h4 className="font-semibold text-lg mb-4">Compensation</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Base Rate:</span>
+                <p className="font-medium text-green-600">{formatCurrency(formData.baseRate)}</p>
+              </div>
+              {formData.otRate && (
+                <div>
+                  <span className="text-gray-600">Overtime Rate:</span>
+                  <p className="font-medium text-green-600">{formatCurrency(formData.otRate)}</p>
+                </div>
+              )}
+              {formData.hoursPerWeek && (
+                <div>
+                  <span className="text-gray-600">Hours per Week:</span>
+                  <p className="font-medium">{formData.hoursPerWeek} hours</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Schedule Summary */}
+        <Card>
+          <CardContent className="p-6">
+            <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Schedule
+            </h4>
+            <div className="grid grid-cols-7 gap-2 text-center">
+              {WEEKDAYS.map(day => {
+                const isEnabled = enabledDays.some(enabledDay => enabledDay.key === day.key);
+                const startTime = formData[day.startField as keyof ContractWizardFormData] as string;
+                const endTime = formData[day.endField as keyof ContractWizardFormData] as string;
+                
+                const formatTime = (time: string) => {
+                  if (!time) return '';
+                  const [hours, minutes] = time.split(':');
+                  const hour = parseInt(hours);
+                  const ampm = hour >= 12 ? 'P' : 'A';
+                  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+                  return `${displayHour}${ampm}`;
+                };
+                
+                const timeDisplay = isEnabled && startTime && endTime 
+                  ? `${formatTime(startTime)}-${formatTime(endTime)}`
+                  : '';
+                
+                return (
+                  <div key={day.key} className="flex flex-col items-center">
+                    <div className="text-xs font-medium text-gray-600 mb-1">{day.short.toUpperCase()}</div>
+                    {isEnabled && (
+                      <div className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">
+                        {timeDisplay}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="text-xs text-gray-500 mt-2 text-center">
+              {enabledDays.length} {enabledDays.length === 1 ? 'shift' : 'shifts'}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Seed Estimate */}
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-6">
+            <h4 className="font-semibold text-lg mb-2 text-blue-900">Seed Estimate</h4>
+            <p className="text-blue-800">
+              Based on your selected schedule and contract duration, approximately{" "}
+              <span className="font-bold text-2xl">{seedEstimate}</span> shifts will be created.
+            </p>
+            <p className="text-sm text-blue-700 mt-2">
+              These shifts will be automatically generated when you create the contract.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  const getStepTitle = () => {
+    switch (currentStep) {
+      case 1: return "Contract Basics";
+      case 2: return "Schedule Setup";
+      case 3: return "Review & Create";
+      default: return "Contract Setup";
+    }
+  };
+
+  const canProceed = () => {
+    if (currentStep === 1) {
+      const requiredFields = ["name", "startDate", "endDate", "baseRate"];
+      return requiredFields.every(field => form.getValues(field as any));
+    }
+    if (currentStep === 2) {
+      const hasEnabledDays = WEEKDAYS.some(day => form.getValues(day.key as any));
+      return hasEnabledDays && form.getValues("defaultStart") && form.getValues("defaultEnd");
+    }
+    return true;
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="dialog-contract-wizard">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="wizard-description">
         <DialogHeader>
-          <DialogTitle data-testid="text-contract-wizard-title">
-            {initialData ? "Edit Contract" : "Add New Contract"}
+          <DialogTitle className="flex items-center gap-2">
+            {getStepTitle()}
+            <Badge variant="outline">Step {currentStep} of 3</Badge>
           </DialogTitle>
+          <DialogDescription id="wizard-description">
+            {currentStep === 1 && "Enter basic contract information including rates and duration."}
+            {currentStep === 2 && "Set up your weekly schedule and working hours."}
+            {currentStep === 3 && "Review your contract details before creating."}
+          </DialogDescription>
         </DialogHeader>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            {renderStepIndicator()}
 
-            {/* Step 1: Basics */}
-            {currentStep === 1 && (
-              <div className="space-y-6" data-testid="step-contract-basics">
-                <FormField
-                  control={form.control}
-                  name="facility"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Contract Name *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="St. Mary's Hospital Contract" 
-                          {...field} 
-                          data-testid="input-facility"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="department"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Facility/Unit</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="ICU, Emergency, Medical/Surgical" 
-                            {...field} 
-                            data-testid="input-department"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="role"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Role *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-role">
-                              <SelectValue placeholder="Select a role" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {ROLES.map((role) => (
-                              <SelectItem key={role} value={role}>
-                                {role}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+        {/* Progress indicator */}
+        <div className="flex items-center justify-between mb-6 px-2">
+          {[
+            { number: 1, label: "Basics" },
+            { number: 2, label: "Schedule" },
+            { number: 3, label: "Review" }
+          ].map((step) => (
+            <div key={step.number} className="flex items-center">
+              <div className="flex flex-col items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  step.number < currentStep 
+                    ? "bg-green-100 text-green-600" 
+                    : step.number === currentStep 
+                    ? "bg-blue-100 text-blue-600" 
+                    : "bg-gray-100 text-gray-400"
+                }`}>
+                  {step.number < currentStep ? <Check className="w-4 h-4" /> : step.number}
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="startDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Start Date *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="date" 
-                            {...field} 
-                            data-testid="input-start-date"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="endDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>End Date *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="date" 
-                            {...field} 
-                            data-testid="input-end-date"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="baseRate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Base Rate *</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                            <Input 
-                              type="number" 
-                              step="0.01" 
-                              placeholder="45.00"
-                              className="pl-8"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              data-testid="input-base-rate"
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="overtimeRate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>OT Rate</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                            <Input 
-                              type="number" 
-                              step="0.01" 
-                              placeholder="67.50"
-                              className="pl-8"
-                              {...field}
-                              value={field.value || ''}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
-                              data-testid="input-overtime-rate"
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="weeklyHours"
-                  render={({ field }) => (
-                    <FormItem className="md:w-1/2">
-                      <FormLabel>Est. Weekly Hours *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min="1" 
-                          max="80"
-                          placeholder="40"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                          data-testid="input-weekly-hours"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Contact Information Section */}
-                <div className="border-t border-gray-200 pt-6 mt-6">
-                  <h4 className="text-md font-semibold text-gray-900 mb-4">Contact Information</h4>
-                  
-                  <FormField
-                    control={form.control}
-                    name="contactName"
-                    render={({ field }) => (
-                      <FormItem className="mb-4">
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="John Smith" 
-                            {...field} 
-                            data-testid="input-contact-name"
-                            maxLength={50}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem className="mb-4">
-                        <FormLabel>Address</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="123 Main St, City, State 12345" 
-                            {...field} 
-                            data-testid="input-address"
-                            maxLength={100}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="phoneNumber"
-                    render={({ field }) => (
-                      <FormItem className="mb-4">
-                        <FormLabel>Phone Number</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="444-444-4444" 
-                            {...field} 
-                            data-testid="input-phone-number"
-                            maxLength={12}
-                            onChange={(e) => {
-                              // Only allow numbers and dashes
-                              const value = e.target.value.replace(/[^0-9-]/g, '');
-                              field.onChange(value);
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem className="mt-4">
-                        <FormLabel>Notes</FormLabel>
-                        <FormControl>
-                          <textarea
-                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            placeholder="Additional notes about this contract..."
-                            {...field}
-                            data-testid="textarea-notes"
-                            maxLength={500}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <div className={`text-xs mt-1 font-medium ${
+                  step.number === currentStep 
+                    ? "text-blue-600" 
+                    : step.number < currentStep
+                    ? "text-green-600"
+                    : "text-gray-400"
+                }`}>
+                  {step.label}
                 </div>
               </div>
-            )}
+              {step.number < 3 && (
+                <div className={`w-16 h-1 mx-2 ${
+                  step.number < currentStep ? "bg-green-200" : "bg-gray-200"
+                }`} />
+              )}
+            </div>
+          ))}
+        </div>
 
-            {/* Step 2: Schedule */}
-            {currentStep === 2 && (
-              <div className="space-y-6" data-testid="step-contract-schedule">
-                <div className="grid grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="defaultStart"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Default Start Time *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="time" 
-                            {...field} 
-                            onChange={(e) => {
-                              field.onChange(e);
-                              updateAllDayTimes(e.target.value, form.watch('defaultEnd'));
-                            }}
-                            data-testid="input-default-start"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+        <Form {...form}>
+          <form 
+            onSubmit={form.handleSubmit(handleSubmit)} 
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && currentStep < 3) {
+                e.preventDefault();
+                handleNext();
+              }
+            }}
+            className="space-y-6"
+          >
+            {currentStep === 1 && renderBasicsStep()}
+            {currentStep === 2 && renderScheduleStep()}
+            {currentStep === 3 && renderReviewStep()}
 
-                  <FormField
-                    control={form.control}
-                    name="defaultEnd"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Default End Time *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="time" 
-                            {...field} 
-                            onChange={(e) => {
-                              field.onChange(e);
-                              updateAllDayTimes(form.watch('defaultStart'), e.target.value);
-                            }}
-                            data-testid="input-default-end"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+            {/* Navigation buttons */}
+            <div className="flex items-center justify-between pt-6 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={currentStep === 1}
+                data-testid="button-previous-step"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Previous
+              </Button>
 
-                <FormField
-                  control={form.control}
-                  name="byDay"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Working Days *</FormLabel>
-                      <FormControl>
-                        <div className="grid grid-cols-2 gap-6">
-                          <div className="space-y-4">
-                            {DAYS_OF_WEEK.filter(day => ['MON', 'TUE', 'WED', 'THU'].includes(day.value)).map((day) => (
-                              <div key={day.value} className="flex items-center space-x-2">
-                                <Checkbox
-                                  checked={field.value?.includes(day.value)}
-                                  onCheckedChange={(checked) => {
-                                    const currentValue = field.value || [];
-                                    if (checked) {
-                                      field.onChange([...currentValue, day.value]);
-                                      // Set default times for newly selected day
-                                      const dayName = day.label.toLowerCase();
-                                      form.setValue(`${dayName}Start` as keyof ContractFormData, form.watch('defaultStart'));
-                                      form.setValue(`${dayName}End` as keyof ContractFormData, form.watch('defaultEnd'));
-                                    } else {
-                                      field.onChange(currentValue.filter((d) => d !== day.value));
-                                    }
-                                  }}
-                                  data-testid={`checkbox-day-${day.value.toLowerCase()}`}
-                                />
-                                <label className="text-sm font-medium">{day.label}</label>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="space-y-4">
-                            {['FRI', 'SAT', 'SUN'].map((dayValue) => {
-                              const day = DAYS_OF_WEEK.find(d => d.value === dayValue);
-                              if (!day) return null;
-                              return (
-                                <div key={day.value} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    checked={field.value?.includes(day.value)}
-                                    onCheckedChange={(checked) => {
-                                      const currentValue = field.value || [];
-                                      if (checked) {
-                                        field.onChange([...currentValue, day.value]);
-                                        // Set default times for newly selected day
-                                        const dayName = day.label.toLowerCase();
-                                        form.setValue(`${dayName}Start` as keyof ContractFormData, form.watch('defaultStart'));
-                                        form.setValue(`${dayName}End` as keyof ContractFormData, form.watch('defaultEnd'));
-                                      } else {
-                                        field.onChange(currentValue.filter((d) => d !== day.value));
-                                      }
-                                    }}
-                                    data-testid={`checkbox-day-${day.value.toLowerCase()}`}
-                                  />
-                                  <label className="text-sm font-medium">{day.label}</label>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  data-testid="button-cancel"
+                >
+                  Cancel
+                </Button>
 
-                {/* Individual Day Schedules */}
-                {form.watch('byDay').length > 0 && (
-                  <div className="mt-6 bg-gray-50 p-6 rounded-lg">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-md font-semibold text-gray-900">Individual Day Schedules</h4>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => updateAllDayTimes(form.watch('defaultStart'), form.watch('defaultEnd'))}
-                        data-testid="button-apply-defaults"
-                      >
-                        Apply Default Times to All
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 mb-3">
-                      <div></div>
-                      <div className="text-xs font-medium text-gray-500">Start Time</div>
-                      <div className="text-xs font-medium text-gray-500">End Time</div>
-                    </div>
-                    <div className="space-y-3">
-                      {form.watch('byDay')
-                        .sort((a, b) => {
-                          const dayOrder = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-                          return dayOrder.indexOf(a) - dayOrder.indexOf(b);
-                        })
-                        .map((dayCode) => {
-                        const day = DAYS_OF_WEEK.find(d => d.value === dayCode);
-                        if (!day) return null;
-                        
-                        const dayName = day.label.toLowerCase();
-                        const startFieldName = `${dayName}Start` as keyof ContractFormData;
-                        const endFieldName = `${dayName}End` as keyof ContractFormData;
-                        
-                        return (
-                          <div key={dayCode} className="grid grid-cols-3 gap-4 items-end">
-                            <div className="font-medium text-gray-900 py-2">
-                              {day.label}
-                            </div>
-                            <FormField
-                              control={form.control}
-                              name={startFieldName}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormControl>
-                                    <Input 
-                                      type="time" 
-                                      {...field} 
-                                      data-testid={`input-${dayName}-start`}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={form.control}
-                              name={endFieldName}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormControl>
-                                    <Input 
-                                      type="time" 
-                                      {...field} 
-                                      data-testid={`input-${dayName}-end`}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                {currentStep < 3 ? (
+                  <Button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={!canProceed()}
+                    data-testid="button-next-step"
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={form.formState.isSubmitting}
+                    data-testid="button-create-contract"
+                  >
+                    {form.formState.isSubmitting 
+                      ? (initialData ? "Updating..." : "Creating...") 
+                      : (initialData ? "Update Contract" : "Create Contract")
+                    }
+                  </Button>
                 )}
               </div>
-            )}
-
-            {/* Step 3: Review */}
-            {currentStep === 3 && (
-              <div className="space-y-6" data-testid="step-contract-review">
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Contract Summary</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-500">Contract Name</p>
-                      <p className="font-medium" data-testid="review-facility">{form.watch('facility')}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Facility/Unit</p>
-                      <p className="font-medium" data-testid="review-department">{form.watch('department') || 'Not specified'}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Role</p>
-                      <p className="font-medium" data-testid="review-role">{form.watch('role')}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Weekly Hours</p>
-                      <p className="font-medium" data-testid="review-hours">{form.watch('weeklyHours')} hours</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Base Rate</p>
-                      <p className="font-medium" data-testid="review-rate">
-                        ${form.watch('baseRate')}/hour
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">OT Rate</p>
-                      <p className="font-medium" data-testid="review-overtime-rate">
-                        {form.watch('overtimeRate') ? `$${form.watch('overtimeRate')}/hour` : 'Not specified'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Duration</p>
-                      <p className="font-medium" data-testid="review-duration">
-                        {form.watch('startDate')} to {form.watch('endDate')}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Working Days</p>
-                      <p className="font-medium" data-testid="review-days">
-                        {form.watch('byDay')?.join(', ') || 'None selected'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Contact Information in Review */}
-                  {(form.watch('address') || form.watch('contactName') || form.watch('phoneNumber') || form.watch('notes')) && (
-                    <div className="bg-gray-50 p-4 rounded-lg mt-6">
-                      <h4 className="font-semibold text-gray-900 mb-4">Contact Information</h4>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        {form.watch('address') && (
-                          <div>
-                            <p className="text-gray-500">Address</p>
-                            <p className="font-medium" data-testid="review-address">{form.watch('address')}</p>
-                          </div>
-                        )}
-                        {form.watch('contactName') && (
-                          <div>
-                            <p className="text-gray-500">Name</p>
-                            <p className="font-medium" data-testid="review-contact-name">{form.watch('contactName')}</p>
-                          </div>
-                        )}
-                        {form.watch('phoneNumber') && (
-                          <div>
-                            <p className="text-gray-500">Phone Number</p>
-                            <p className="font-medium" data-testid="review-phone-number">{form.watch('phoneNumber')}</p>
-                          </div>
-                        )}
-                      </div>
-                      {form.watch('notes') && (
-                        <div className="mt-4 pt-4 border-t border-gray-200">
-                          <p className="text-gray-500">Notes</p>
-                          <p className="font-medium text-sm mt-1" data-testid="review-notes">{form.watch('notes')}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Footer */}
-            <div className="flex justify-between pt-6 mt-8 border-t border-gray-200">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={currentStep > 1 ? handlePrev : onClose}
-                data-testid="button-wizard-back"
-              >
-                {currentStep > 1 ? "Back" : "Cancel"}
-              </Button>
-              
-              {currentStep < 3 ? (
-                <Button 
-                  type="button" 
-                  onClick={handleNext}
-                  data-testid="button-wizard-next"
-                >
-                  Continue
-                </Button>
-              ) : (
-                <Button 
-                  type="submit"
-                  data-testid="button-wizard-save"
-                >
-                  {initialData ? "Update Contract" : "Create Contract"}
-                </Button>
-              )}
             </div>
           </form>
         </Form>

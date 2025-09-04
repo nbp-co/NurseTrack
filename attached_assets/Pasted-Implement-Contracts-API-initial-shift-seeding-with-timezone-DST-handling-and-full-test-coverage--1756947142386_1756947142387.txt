@@ -1,0 +1,61 @@
+Implement Contracts API + initial shift seeding with timezone/DST handling and full test coverage.
+
+Environment:
+- Express for HTTP
+- Drizzle ORM for DB
+- Luxon for timezone math (add if missing)
+
+Endpoints:
+1) POST /api/contracts
+  - Validates payload:
+    { name, facility, role, startDate, endDate, baseRate, otRate?, hoursPerWeek?, timezone,
+      schedule: { defaultStart, defaultEnd, days: { "0".."6": { enabled, start?, end? } } },
+      seedShifts: boolean }
+  - Transaction:
+    * Insert into contracts
+    * Upsert 7 rows into contract_schedule_day using provided days (per-day overrides optional)
+    * If seedShifts:
+        - For each date in [startDate..endDate]:
+          - If weekday enabled, compute local start/end: per-day override > default
+          - Support overnight end: if end < start, add +1 day for end
+          - Convert to UTC using Luxon with contract timezone
+          - Insert into shifts {contract_id, start_utc, end_utc, local_date, source:'contract_seed', status:'In Process'}
+            ON CONFLICT (contract_id, local_date, source) DO NOTHING  // idempotent
+  - Response includes count of shifts created
+
+2) PUT /api/contracts/:id
+  - Update any contract fields & schedule rows
+  - Compute delta between old and new config:
+      * If range expanded: ADD seeds for new dates
+      * If narrowed: DELETE seeds (status in ['Planned','In Process']) outside new range
+      * If weekday enable/disable changed: add/remove for affected weekdays (same status guard)
+      * If times changed: UPDATE start/end for affected dates (same status guard)
+  - Never modify shifts where source!='contract_seed' OR status='Finalized'
+  - Return {created, updated, deleted}
+
+3) GET /api/contracts?status=planned|active|archived
+  - Paginated; include minimal schedule summary for the card (hrs/wk, base_rate, ot_rate, date range)
+
+4) PATCH /api/contracts/:id/status
+  - status transitions with simple rules (planned→active→archived)
+
+Validation helpers:
+- endDate >= startDate
+- at least one weekday enabled when seedShifts=true
+
+Logging:
+- Log seed summary: {contractId, totalDays, enabledDays, created, skipped (due to conflict)}
+
+Tests (Jest + supertest):
+- POST creates contract + correct seed count for typical Mon/Wed/Fri range
+- Idempotency: calling same POST again yields 0 created
+- PUT expand range adds only new days
+- PUT narrow range deletes only pending seeds (doesn’t touch Finalized)
+- Timezone/DST: date including DST shift preserves SAME local clock times
+- Overnight shift (19:00→07:00 next day) stored correctly
+- Validation rejects no-weekday w/ seedShifts=true
+
+Deliverables:
+- Route handlers + services split (e.g., services/contracts.ts with pure functions: computeSeedActions(oldCfg, newCfg))
+- Unit tests for computeSeedActions with edge cases
+- Integration tests for endpoints with an in-memory/test DB

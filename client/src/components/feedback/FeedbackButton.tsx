@@ -16,7 +16,9 @@ import { useLocation } from "wouter";
 
 const feedbackSchema = z.object({
   type: z.enum(["bug", "feature", "general"]),
-  message: z.string().min(10, "Message must be at least 10 characters"),
+
+  message: z.string().min(1, "Message is required"),
+
 });
 
 type FeedbackForm = z.infer<typeof feedbackSchema>;
@@ -89,10 +91,6 @@ export function FeedbackButton() {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-              <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
-                <strong>Page:</strong> {location}
-              </div>
-
               <FormField
                 control={form.control}
                 name="type"
