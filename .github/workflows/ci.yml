@@ -1,17 +1,53 @@
 name: CI
 on:
   push:
+    branches: [main, develop]
   pull_request:
+    branches: [main, develop]
+
 jobs:
-  web:
-    name: Typecheck & Build
+  ci:
+    name: CI Pipeline
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      - run: npm ci
-      - run: npm run typecheck --if-present
-      - run: npm run build
+      
+      - name: Install dependencies
+        run: npm ci --cache .npm --prefer-offline
+      
+      - name: Run typecheck
+        run: npm run typecheck --if-present
+      
+      - name: Run lint
+        run: npm run lint --if-present
+      
+      - name: Run build
+        run: npm run build --if-present
+      
+      - name: Run tests with coverage
+        run: npm test -- --ci --reporters=default --coverage
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
+          NODE_ENV: test
