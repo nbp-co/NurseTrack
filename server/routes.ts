@@ -111,19 +111,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: 'mock-user-id' // TODO: Get from session
       });
       
-      // For now, skip database operations since we're using in-memory storage
-      // TODO: Implement proper database storage layer
-      
+      // Seed shifts if requested
       let seedResult = null;
       if (contractData.seedShifts) {
-        console.log('Shift seeding skipped - using in-memory storage');
-        seedResult = {
-          contractId: contract.id,
-          totalDays: 0,
-          enabledDays: 0,
-          created: 0,
-          skipped: 0
-        };
+        try {
+          // Generate shift dates using the contracts service
+          const shiftDates = contractsService.generateShiftDates(
+            contractData.startDate,
+            contractData.endDate,
+            contractData.timezone || 'America/Chicago',
+            contractData.schedule
+          );
+          
+          // Create shifts using in-memory storage
+          let created = 0;
+          let skipped = 0;
+          
+          for (const shift of shiftDates) {
+            try {
+              await storage.createShift({
+                contractId: contract.id,
+                startUtc: shift.startUtc.toJSDate(),
+                endUtc: shift.endUtc.toJSDate(),
+                localDate: shift.localDate,
+                source: 'contract_seed',
+                status: 'In Process',
+                userId: 'mock-user-id'
+              });
+              created++;
+            } catch (error) {
+              skipped++;
+            }
+          }
+          
+          const totalDays = Math.floor((new Date(contractData.endDate).getTime() - new Date(contractData.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          const enabledDays = shiftDates.length;
+          
+          seedResult = {
+            contractId: contract.id,
+            totalDays,
+            enabledDays,
+            created,
+            skipped
+          };
+          
+          console.log(`Shifts seeded: ${created} created, ${skipped} skipped`);
+        } catch (error) {
+          console.error('Failed to seed shifts:', error);
+          seedResult = {
+            contractId: contract.id,
+            totalDays: 0,
+            enabledDays: 0,
+            created: 0,
+            skipped: 0
+          };
+        }
       }
       
       res.json({
