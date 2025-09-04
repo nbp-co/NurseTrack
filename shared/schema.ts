@@ -24,7 +24,6 @@ export const contracts = pgTable("contracts", {
   otRate: decimal("ot_rate", { precision: 10, scale: 2 }),
   hoursPerWeek: decimal("hours_per_week", { precision: 5, scale: 2 }),
   status: text("status").notNull().default("unconfirmed"),
-  timezone: text("timezone").notNull().default("America/Chicago"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 }, (table) => ({
   statusDateIdx: index("contracts_status_date_idx").on(table.status, table.startDate, table.endDate),
@@ -44,15 +43,17 @@ export const contractScheduleDay = pgTable("contract_schedule_day", {
 export const shifts = pgTable("shifts", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").references(() => users.id).notNull(),
-  contractId: integer("contract_id").references(() => contracts.id, { onDelete: "cascade" }).notNull(),
-  startUtc: timestamp("start_utc", { withTimezone: true }).notNull(),
-  endUtc: timestamp("end_utc", { withTimezone: true }).notNull(),
-  localDate: date("local_date").notNull(),
+  contractId: integer("contract_id").references(() => contracts.id, { onDelete: "cascade" }),
+  shiftDate: date("shift_date").notNull(),
+  startTime: time("start_time").notNull(),
+  endTime: time("end_time").notNull(),
+  facility: text("facility"),
   source: text("source").notNull().default("contract_seed"),
   status: text("status").notNull().default("In Process"),
+  baseRate: decimal("base_rate", { precision: 10, scale: 2 }),
+  otRate: decimal("ot_rate", { precision: 10, scale: 2 }),
 }, (table) => ({
-  contractDateIdx: index("shifts_contract_date_idx").on(table.contractId, table.localDate),
-  contractDateSourceUnique: unique("shifts_contract_date_source_unique").on(table.contractId, table.localDate, table.source),
+  contractDateIdx: index("shifts_contract_date_idx").on(table.contractId, table.shiftDate),
 }));
 
 export const expenses = pgTable("expenses", {
@@ -95,7 +96,6 @@ export const insertContractSchema = createInsertSchema(contracts).pick({
   otRate: true,
   hoursPerWeek: true,
   status: true,
-  timezone: true,
 });
 
 export const insertContractScheduleDaySchema = createInsertSchema(contractScheduleDay).pick({
@@ -108,11 +108,39 @@ export const insertContractScheduleDaySchema = createInsertSchema(contractSchedu
 
 export const insertShiftSchema = createInsertSchema(shifts).pick({
   contractId: true,
-  startUtc: true,
-  endUtc: true,
-  localDate: true,
+  shiftDate: true,
+  startTime: true,
+  endTime: true,
   source: true,
   status: true,
+  baseRate: true,
+  otRate: true,
+});
+
+// Calendar-specific schemas
+export const createShiftRequestSchema = z.object({
+  contractId: z.number().optional().nullable(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
+  start: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/), // HH:mm
+  end: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/), // HH:mm
+  facility: z.string().optional(),
+  baseRate: z.string().optional(),
+  otRate: z.string().optional(),
+});
+
+export const updateShiftRequestSchema = z.object({
+  contractId: z.number().optional().nullable(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // YYYY-MM-DD
+  start: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(), // HH:mm
+  end: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(), // HH:mm
+  facility: z.string().optional(),
+  status: z.string().optional(),
+});
+
+export const getShiftsQuerySchema = z.object({
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
+  userId: z.string(),
 });
 
 export const insertExpenseSchema = createInsertSchema(expenses).pick({
@@ -131,7 +159,6 @@ export const insertFeedbackSchema = createInsertSchema(feedback).pick({
   type: true,
 });
 
-
 // API-specific schemas for contract management
 export const scheduleDaySchema = z.object({
   enabled: z.boolean(),
@@ -148,12 +175,13 @@ export const scheduleConfigSchema = z.object({
 export const createContractRequestSchema = z.object({
   name: z.string().min(1),
   facility: z.string().optional(),
+  status: z.enum(["active", "unconfirmed", "completed", "archive"]).optional(),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),   // YYYY-MM-DD
   baseRate: z.string().min(1),
   otRate: z.string().optional().transform(val => val === '' || val === undefined ? undefined : val),
   hoursPerWeek: z.string().optional().transform(val => val === '' || val === undefined ? undefined : val),
-  timezone: z.string().optional(),
+
   schedule: scheduleConfigSchema,
   seedShifts: z.boolean(),
 }).refine((data) => {
@@ -168,12 +196,13 @@ export const createContractRequestSchema = z.object({
 export const updateContractRequestSchema = z.object({
   name: z.string().min(1).optional(),
   facility: z.string().optional(),
+  status: z.enum(["active", "unconfirmed", "completed", "archive"]).optional(),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // YYYY-MM-DD
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),   // YYYY-MM-DD
   baseRate: z.string().optional(),
   otRate: z.string().optional().transform(val => val === '' || val === undefined ? undefined : val),
   hoursPerWeek: z.string().optional().transform(val => val === '' || val === undefined ? undefined : val),
-  timezone: z.string().optional(),
+
   schedule: scheduleConfigSchema.optional(),
   seedShifts: z.boolean().optional(),
 }).refine((data) => {
@@ -192,7 +221,6 @@ export const updateContractStatusSchema = z.object({
   status: z.enum(['planned', 'active', 'archived']),
 });
 
-
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertContract = z.infer<typeof insertContractSchema>;
@@ -205,10 +233,11 @@ export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 export type Expense = typeof expenses.$inferSelect;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type Feedback = typeof feedback.$inferSelect;
-
 export type ScheduleDay = z.infer<typeof scheduleDaySchema>;
 export type ScheduleConfig = z.infer<typeof scheduleConfigSchema>;
 export type CreateContractRequest = z.infer<typeof createContractRequestSchema>;
 export type UpdateContractRequest = z.infer<typeof updateContractRequestSchema>;
 export type UpdateContractStatusRequest = z.infer<typeof updateContractStatusSchema>;
-
+export type CreateShiftRequest = z.infer<typeof createShiftRequestSchema>;
+export type UpdateShiftRequest = z.infer<typeof updateShiftRequestSchema>;
+export type GetShiftsQuery = z.infer<typeof getShiftsQuerySchema>;

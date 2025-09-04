@@ -26,14 +26,12 @@ function AppRoutes() {
           <FeedbackButton />
         </>
       )} />
-
       <Route path="/auth/signup" component={() => (
         <>
           <SignupPage />
           <FeedbackButton />
         </>
       )} />
-
       <Route path="/" component={() => <Redirect to="/dashboard" />} />
       <Route path="/dashboard" component={() => <AppShell><DashboardPage /></AppShell>} />
       <Route path="/calendar" component={() => <AppShell><CalendarPage /></AppShell>} />

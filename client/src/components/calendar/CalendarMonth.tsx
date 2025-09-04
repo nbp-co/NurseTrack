@@ -108,46 +108,15 @@ export function CalendarMonth({ currentDate, events, onDateChange, onDayClick, u
 
   return (
     <div>
-      {/* Next 3 Upcoming Shifts */}
-      {nextThreeShifts.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3" data-testid="text-upcoming-shifts-title">
-            Next 3 Upcoming Shifts
-          </h3>
-          <div className="space-y-2">
-            {nextThreeShifts.map((shift, index) => (
-              <div 
-                key={shift.id} 
-                className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-3 cursor-pointer hover:bg-blue-100 transition-colors"
-                onClick={() => onDayClick(shift.date)}
-                data-testid={`upcoming-shift-compact-${index}`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="text-xs font-medium text-blue-800 min-w-[60px]">
-                    {formatShiftDate(shift.date)}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="w-3 h-3 text-blue-600" />
-                    <span className="text-xs font-medium text-gray-700">{shift.facility}</span>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Clock className="w-3 h-3 text-blue-600" />
-                  <span className="text-xs text-gray-600">{shift.start} - {shift.end}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Calendar Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-center mb-6 relative">
         <Button
           variant="ghost"
           size="sm"
           onClick={handlePrevMonth}
           data-testid="button-prev-month"
+          className="absolute left-0"
         >
           <ChevronLeft className="w-4 h-4" />
         </Button>
@@ -156,7 +125,7 @@ export function CalendarMonth({ currentDate, events, onDateChange, onDayClick, u
           {MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}
         </h2>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 absolute right-0">
           <Button
             variant="ghost"
             size="sm"

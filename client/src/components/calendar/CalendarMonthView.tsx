@@ -1,0 +1,373 @@
+import { useState, useMemo } from "react";
+import { ChevronLeft, ChevronRight, Plus, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+
+interface Shift {
+  id: number;
+  localDate: string;
+  startUtc: string;
+  endUtc: string;
+  facility?: string;
+  contractId?: number | null;
+  status: string;
+  source: string;
+  baseRate?: string;
+  otRate?: string;
+}
+
+interface Contract {
+  id: number;
+  name: string;
+  facility: string;
+}
+
+interface CalendarMonthViewProps {
+  selectedDate: string;
+  shifts: Shift[];
+  contracts?: Contract[];
+  onDateSelect: (date: string) => void;
+  onAddShift: (date?: string) => void;
+  onEditShift: (shift: Shift) => void;
+  dayShifts: Shift[];
+}
+
+export function CalendarMonthView({
+  selectedDate,
+  shifts,
+  contracts = [],
+  onDateSelect,
+  onAddShift,
+  onEditShift,
+  dayShifts
+}: CalendarMonthViewProps) {
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const date = new Date(selectedDate || new Date());
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+  });
+
+  const today = new Date().toISOString().split('T')[0];
+
+  // Generate calendar grid
+  const calendarDays = useMemo(() => {
+    const firstDay = new Date(currentMonth);
+    const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+    
+    // Start from Sunday of the week containing the first day
+    const startDate = new Date(firstDay);
+    startDate.setDate(firstDay.getDate() - firstDay.getDay());
+    
+    // End on Saturday of the week containing the last day  
+    const endDate = new Date(lastDay);
+    endDate.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
+    
+    const days = [];
+    const current = new Date(startDate);
+    
+    while (current <= endDate) {
+      const dateStr = current.toISOString().split('T')[0];
+      const dayShifts = shifts.filter(shift => shift.localDate === dateStr);
+      const isCurrentMonth = current.getMonth() === currentMonth.getMonth();
+      const isToday = dateStr === today;
+      const isSelected = dateStr === selectedDate;
+      
+      days.push({
+        date: dateStr,
+        day: current.getDate(),
+        isCurrentMonth,
+        isToday,
+        isSelected,
+        shifts: dayShifts
+      });
+      
+      current.setDate(current.getDate() + 1);
+    }
+    
+    return days;
+  }, [currentMonth, shifts, selectedDate, today]);
+
+  const handlePrevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800 hover:bg-green-200';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 hover:bg-red-200';
+      case 'unconfirmed':
+        return 'bg-orange-100 text-orange-800 hover:bg-orange-200';
+      default: // scheduled
+        return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+    }
+  };
+
+  const getStatusIndicatorColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-500';
+      case 'cancelled':
+        return 'bg-red-500';
+      case 'unconfirmed':
+        return 'bg-orange-500';
+      default: // scheduled
+        return 'bg-blue-500';
+    }
+  };
+
+  const formatTime = (timeString: string) => {
+    // Handle simple time strings like "07:00:00" or "19:00:00"
+    const [hourStr, minuteStr] = timeString.split(':');
+    const hour = parseInt(hourStr, 10);
+    const minute = parseInt(minuteStr, 10);
+    
+    // Format as "8A" or "8P" style
+    if (minute === 0) {
+      // For times on the hour, show just hour + A/P
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      const period = hour < 12 ? 'A' : 'P';
+      return `${displayHour}${period}`;
+    } else {
+      // For times with minutes, show hour:minute + AM/PM
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      const period = hour < 12 ? 'AM' : 'PM';
+      return `${displayHour}:${minute.toString().padStart(2, '0')}${period}`;
+    }
+  };
+
+  const isOvernightShift = (shift: Shift) => {
+    // For simple time strings, compare the hour values
+    const [startHour] = shift.startUtc.split(':').map(Number);
+    const [endHour] = shift.endUtc.split(':').map(Number);
+    // If end time is less than start time, it's an overnight shift
+    return endHour < startHour;
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Month Navigation */}
+      <div className="flex items-center justify-center relative">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handlePrevMonth} 
+          data-testid="button-prev-month"
+          className="absolute left-0"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        
+        <h2 className="text-xl font-semibold">
+          {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+        </h2>
+        
+        <div className="flex items-center space-x-2 absolute right-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const today = new Date();
+              setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+            }}
+            data-testid="button-today"
+            title="Go to today"
+          >
+            <Calendar className="w-4 h-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleNextMonth} 
+            data-testid="button-next-month"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Calendar Grid */}
+      <Card>
+        <CardContent className="p-0">
+          {/* Day Headers */}
+          <div className="grid grid-cols-7 border-b">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+              <div key={day} className="p-4 text-center text-sm font-medium text-gray-500 border-r last:border-r-0">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar Days */}
+          <div className="grid grid-cols-7">
+            {calendarDays.map((day, index) => (
+              <div
+                key={day.date}
+                className={cn(
+                  "min-h-[60px] p-1 border-r border-b last:border-r-0 cursor-pointer hover:bg-gray-50 transition-colors",
+                  !day.isCurrentMonth && "bg-gray-50 text-gray-400",
+                  day.isSelected && "bg-blue-50 border-blue-200",
+                  day.isToday && "bg-yellow-50"
+                )}
+                onClick={() => onDateSelect(day.date)}
+                data-testid={`calendar-day-${day.date}`}
+              >
+                <div className={cn(
+                  "text-sm font-medium mb-1",
+                  day.isToday && "text-blue-600 font-bold",
+                  day.isSelected && "text-blue-600"
+                )}>
+                  {day.day}
+                </div>
+
+                {/* Shift chips */}
+                <div className="space-y-1">
+                  {day.shifts.slice(0, 2).map((shift) => (
+                    <div
+                      key={shift.id}
+                      className={cn(
+                        "text-xs px-1.5 py-0.5 rounded cursor-pointer truncate",
+                        shift.contractId 
+                          ? getStatusColor(shift.status)
+                          : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditShift(shift);
+                      }}
+                      data-testid={`shift-chip-${shift.id}`}
+                    >
+                      <div className="flex items-center gap-1">
+                        {shift.contractId && (
+                          <div className={cn("w-2 h-2 rounded-full flex-shrink-0", getStatusIndicatorColor(shift.status))} />
+                        )}
+                        <span className="truncate">
+                          {formatTime(shift.startUtc)}-{formatTime(shift.endUtc)}
+                        </span>
+                        {isOvernightShift(shift) && (
+                          <Badge variant="secondary" className="text-xs px-1 py-0">(+1 day)</Badge>
+                        )}
+                      </div>
+                      {(shift.facility || shift.contractId) && (
+                        <div className="truncate text-gray-600 text-xs">
+                          {(() => {
+                            if (shift.contractId) {
+                              const contract = contracts?.find(c => c.id === shift.contractId);
+                              const contractName = contract?.name || 'Contract';
+                              return contractName;
+                            }
+                            return shift.facility;
+                          })()}
+                        </div>
+                      )}
+                      {shift.baseRate && (
+                        <div className="truncate text-gray-600 text-xs">
+                          ${shift.baseRate}/hr
+                        </div>
+                      )}
+                      {!shift.contractId && (
+                        <div className="truncate text-gray-500 text-xs">
+                          No contract
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {day.shifts.length > 2 && (
+                    <div className="text-xs text-gray-500 px-1.5">
+                      +{day.shifts.length - 2} more
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Day Detail Panel */}
+      {selectedDate && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span>{formatDate(selectedDate)}</span>
+              </div>
+              {dayShifts.length > 0 && (
+                <Button 
+                  onClick={() => onAddShift(selectedDate)}
+                  size="sm"
+                  data-testid="button-add-shift-day"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Shift
+                </Button>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dayShifts.length > 0 ? (
+              <div className="space-y-3">
+                {dayShifts.map((shift) => (
+                  <div
+                    key={shift.id}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                    onClick={() => onEditShift(shift)}
+                    data-testid={`day-shift-${shift.id}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {shift.contractId && (
+                        <div className={cn("w-3 h-3 rounded-full", getStatusIndicatorColor(shift.status))} />
+                      )}
+                      <div>
+                        <div className="font-medium">
+                          {formatTime(shift.startUtc)} - {formatTime(shift.endUtc)}
+                          {isOvernightShift(shift) && (
+                            <Badge variant="secondary" className="ml-2 text-xs">+1 day</Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {shift.contractId && (() => {
+                            const contract = contracts?.find(c => c.id === shift.contractId);
+                            const facilityDisplay = shift.facility?.trim() || contract?.facility || 'No facility';
+                            const contractName = contract?.name || 'Unknown Contract';
+                            return `${contractName} - ${facilityDisplay}`;
+                          })()}
+                          {!shift.contractId && 'No contract'}
+                          {shift.baseRate && ` • $${shift.baseRate}/hr`}
+                        </div>
+                      </div>
+                    </div>
+                    <Badge variant={shift.status === 'completed' ? 'default' : 'secondary'}>
+                      {shift.status}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>No shifts scheduled for this day</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

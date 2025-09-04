@@ -1,9 +1,7 @@
 import { type User, type InsertUser, type Contract, type InsertContract, type Shift, type InsertShift, type Expense, type InsertExpense, type Feedback, type InsertFeedback } from "@shared/schema";
-
 import { db } from "./db";
 import { users, contracts, shifts, expenses, feedback } from "@shared/schema";
-import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
-
+import { eq, and, gte, lte, desc, sql, isNull, or } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -18,7 +16,13 @@ export interface IStorage {
   updateContract(id: string, contract: Partial<InsertContract>): Promise<Contract | undefined>;
   deleteContract(id: string): Promise<boolean>;
 
-  // Shifts
+  // Shifts - Calendar API
+  getShiftsInRange(userId: string, fromDate: string, toDate: string): Promise<any[]>;
+  createShift(shift: InsertShift & { userId: string }): Promise<Shift>;
+  updateShift(id: string, shift: Partial<InsertShift>): Promise<Shift | undefined>;
+  deleteShift(id: string): Promise<boolean>;
+  
+  // Shifts - Legacy
   listShifts(userId: string, filters?: { month?: string; contractId?: string }): Promise<Shift[]>;
   getShift(id: string): Promise<Shift | undefined>;
   createShift(shift: InsertShift & { userId: string }): Promise<Shift>;
@@ -33,12 +37,10 @@ export interface IStorage {
   createExpense(expense: InsertExpense & { userId: string }): Promise<Expense>;
   updateExpense(id: string, expense: Partial<InsertExpense>): Promise<Expense | undefined>;
 
-
   // Feedback
   listFeedback(): Promise<Feedback[]>;
   createFeedback(feedback: InsertFeedback & { userId?: string }): Promise<Feedback>;
 }
-
 
 export class DatabaseStorage implements IStorage {
   // Users
@@ -113,31 +115,12 @@ export class DatabaseStorage implements IStorage {
 
   // Shifts
   async listShifts(userId: string, filters?: { month?: string; contractId?: string }): Promise<any[]> {
-    let query = db
-      .select({
-        id: shifts.id,
-        userId: shifts.userId,
-        contractId: shifts.contractId,
-        startUtc: shifts.startUtc,
-        endUtc: shifts.endUtc,
-        localDate: shifts.localDate,
-        source: shifts.source,
-        status: shifts.status,
-        contractName: contracts.name,
-        facility: contracts.facility,
-        role: contracts.role,
-      })
-      .from(shifts)
-      .innerJoin(contracts, eq(shifts.contractId, contracts.id))
-      .where(eq(shifts.userId, userId));
+    let whereConditions = [eq(shifts.userId, userId)];
 
     if (filters?.contractId) {
       const contractId = parseInt(filters.contractId);
       if (!isNaN(contractId)) {
-        query = query.where(and(
-          eq(shifts.userId, userId),
-          eq(shifts.contractId, contractId)
-        ));
+        whereConditions.push(eq(shifts.contractId, contractId));
       }
     }
 
@@ -146,14 +129,32 @@ export class DatabaseStorage implements IStorage {
       const [year, month] = filters.month.split('-');
       const startDate = `${year}-${month}-01`;
       const endDate = `${year}-${month}-31`;
-      query = query.where(and(
-        eq(shifts.userId, userId),
-        gte(shifts.localDate, startDate),
-        lte(shifts.localDate, endDate)
-      ));
+      whereConditions.push(
+        gte(shifts.shiftDate, startDate),
+        lte(shifts.shiftDate, endDate)
+      );
     }
 
-    return await query.orderBy(shifts.localDate);
+    const query = db
+      .select({
+        id: shifts.id,
+        userId: shifts.userId,
+        contractId: shifts.contractId,
+        shiftDate: shifts.shiftDate,
+        startTime: shifts.startTime,
+        endTime: shifts.endTime,
+        source: shifts.source,
+        status: shifts.status,
+        contractName: contracts.name,
+        facility: contracts.facility,
+        role: contracts.role,
+      })
+      .from(shifts)
+      .innerJoin(contracts, eq(shifts.contractId, contracts.id))
+      .where(and(...whereConditions))
+      .orderBy(shifts.shiftDate, shifts.startTime);
+
+    return await query;
   }
 
   async getShift(id: string): Promise<Shift | undefined> {
@@ -220,6 +221,68 @@ export class DatabaseStorage implements IStorage {
       .where(eq(shifts.contractId, contractId));
     
     return result[0]?.count || 0;
+  }
+
+  // Calendar API Methods
+  async getShiftsInRange(userId: string, fromDate: string, toDate: string): Promise<any[]> {
+    const result = await db
+      .select({
+        id: shifts.id,
+        contractId: shifts.contractId,
+        shiftDate: shifts.shiftDate,
+        startTime: shifts.startTime,
+        endTime: shifts.endTime,
+        status: shifts.status,
+        source: shifts.source,
+        contractName: contracts.name,
+        contractFacility: contracts.facility,
+        contractRole: contracts.role,
+        contractBaseRate: contracts.baseRate,
+      })
+      .from(shifts)
+      .leftJoin(contracts, eq(shifts.contractId, contracts.id))
+      .where(
+        and(
+          eq(shifts.userId, userId),
+          gte(shifts.shiftDate, fromDate),
+          lte(shifts.shiftDate, toDate),
+          // Filter for seeded (source='contract_seed') + manual shifts
+          or(
+            eq(shifts.source, 'contract_seed'),
+            eq(shifts.source, 'manual')
+          )
+        )
+      )
+      .orderBy(shifts.shiftDate, shifts.startTime);
+
+    return result.map(row => ({
+      id: row.id,
+      contractId: row.contractId,
+      localDate: row.shiftDate,
+      startUtc: row.startTime,
+      endUtc: row.endTime,
+      status: row.status,
+      source: row.source,
+      facility: row.contractFacility,
+      contract: row.contractId ? {
+        id: row.contractId,
+        name: row.contractName,
+        facility: row.contractFacility,
+        base_rate: row.contractBaseRate,
+      } : null
+    }));
+  }
+
+
+  async deleteShift(id: string): Promise<boolean> {
+    const shiftId = parseInt(id);
+    if (isNaN(shiftId)) return false;
+    
+    const result = await db
+      .delete(shifts)
+      .where(eq(shifts.id, shiftId));
+    
+    return result.rowCount > 0;
   }
 
   // Expenses
@@ -302,23 +365,6 @@ export class DatabaseStorage implements IStorage {
       .values(feedbackData)
       .returning();
     return newFeedback;
-  }
-
-  // Feedback
-  async listFeedback(): Promise<Feedback[]> {
-    return Array.from(this.feedbacks.values()).sort((a, b) => b.createdAt!.getTime() - a.createdAt!.getTime());
-  }
-
-  async createFeedback(feedbackData: InsertFeedback & { userId?: string }): Promise<Feedback> {
-    const id = randomUUID();
-    const feedback: Feedback = { 
-      ...feedbackData, 
-      id,
-      userId: feedbackData.userId || null,
-      createdAt: new Date() 
-    };
-    this.feedbacks.set(id, feedback);
-    return feedback;
   }
 }
 

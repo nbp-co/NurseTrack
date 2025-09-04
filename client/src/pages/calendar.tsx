@@ -1,282 +1,336 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, ChevronUp, Clock, MapPin } from "lucide-react";
+import { useLocation } from "wouter";
+import { Plus, Calendar as CalendarIcon, Clock } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Button } from "@/components/ui/button";
-import { CalendarMonth } from "@/components/calendar/CalendarMonth";
-import { CalendarWeekToggle, CalendarWeekView } from "@/components/calendar/CalendarWeek";
-import { DayDetailDrawer } from "@/components/drawers/DayDetailDrawer";
-import { ShiftForm } from "@/components/forms/ShiftForm";
+import { CalendarMonthView } from "@/components/calendar/CalendarMonthView";
+import { UpcomingShiftsList } from "@/components/calendar/UpcomingShiftsList";
+import { AddEditShiftModal } from "@/components/calendar/AddEditShiftModal";
 import { PageLoader } from "@/components/ui/loader";
-import { contractApi, shiftApi } from "@/api/mock";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarEvent, Shift } from "@/types";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function CalendarPage() {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [isWeekView, setIsWeekView] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<string>("");
-  const [showDayDetail, setShowDayDetail] = useState(false);
-  const [showShiftForm, setShowShiftForm] = useState(false);
-  const [showUpcoming, setShowUpcoming] = useState(true);
+  const [location, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // URL state management
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const selectedDateFromUrl = urlParams.get('d');
+  
+  const [selectedDate, setSelectedDate] = useState<string>(selectedDateFromUrl || new Date().toISOString().split('T')[0]);
+  const [currentView, setCurrentView] = useState<'month'>('month');
+  const [showAddEditModal, setShowAddEditModal] = useState(false);
+  const [editingShift, setEditingShift] = useState<any>(null);
+  
+  // Update URL when state changes
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedDate !== new Date().toISOString().split('T')[0]) {
+      params.set('d', selectedDate);
+    }
+    const newUrl = params.toString() ? `${location.split('?')[0]}?${params.toString()}` : location.split('?')[0];
+    if (newUrl !== location) {
+      setLocation(newUrl, { replace: true });
+    }
+  }, [selectedDate, currentView, location, setLocation]);
 
-  const currentMonth = currentDate.toISOString().slice(0, 7);
-
-  const { data: contracts = [], isLoading: contractsLoading } = useQuery({
-    queryKey: ['/api/contracts'],
-    queryFn: () => contractApi.listContracts(),
+  // Calculate visible date range for month view
+  const getVisibleRange = () => {
+    const date = new Date(selectedDate);
+    const start = new Date(date.getFullYear(), date.getMonth(), 1);
+    const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    return {
+      from: start.toISOString().split('T')[0],
+      to: end.toISOString().split('T')[0]
+    };
+  };
+  
+  const visibleRange = getVisibleRange();
+  
+  // Fetch active contracts
+  const { data: contractsData, isLoading: contractsLoading } = useQuery({
+    queryKey: ['/api/contracts', user?.id],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/contracts?userId=${user?.id}&status=active`);
+      return res.json();
+    },
+    enabled: !!user,
   });
-
+  
+  const contracts = contractsData?.contracts || [];
+  
+  // Fetch shifts for visible range
   const { data: shifts = [], isLoading: shiftsLoading } = useQuery({
-    queryKey: ['/api/shifts', currentMonth],
-    queryFn: () => shiftApi.listShifts({ month: currentMonth }),
+    queryKey: ['/api/shifts', visibleRange.from, visibleRange.to, user?.id],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/shifts?userId=${user?.id}&from=${visibleRange.from}&to=${visibleRange.to}`);
+      return res.json();
+    },
+    enabled: !!user && !!user.id,
   });
+  
+  // Get upcoming shifts (next 7 days)
+  const upcomingRange = {
+    from: new Date().toISOString().split('T')[0],
+    to: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  };
+  
+  const { data: upcomingShifts = [] } = useQuery({
+    queryKey: ['/api/shifts', 'upcoming', upcomingRange.from, upcomingRange.to, user?.id],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/shifts?userId=${user?.id}&from=${upcomingRange.from}&to=${upcomingRange.to}`);
+      return res.json();
+    },
+    enabled: !!user && !!user.id,
+  });
+
 
   const isLoading = contractsLoading || shiftsLoading;
-
-  const confirmShiftMutation = useMutation({
-    mutationFn: ({ shiftId, updates }: { shiftId: string, updates: { actualStart: string; actualEnd: string } }) =>
-      shiftApi.confirmShiftCompleted(shiftId, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
-      toast({
-        title: "Shift confirmed",
-        description: "Shift has been marked as completed.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to confirm shift. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
+  
+  // Create shift mutation
   const createShiftMutation = useMutation({
-    mutationFn: (shiftData: Omit<Shift, 'id'>) =>
-      shiftApi.createShift(shiftData),
+    mutationFn: async (shiftData: any) => {
+      const res = await apiRequest('POST', `/api/shifts?userId=${user?.id}`, shiftData);
+      return res.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
       toast({
         title: "Shift created",
         description: "Your shift has been added successfully.",
       });
-      setShowShiftForm(false);
+      setShowAddEditModal(false);
+      setEditingShift(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create shift. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Update shift mutation
+  const updateShiftMutation = useMutation({
+    mutationFn: async ({ id, ...shiftData }: any) => {
+      const res = await apiRequest('PUT', `/api/shifts/${id}`, shiftData);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      toast({
+        title: "Shift updated",
+        description: "Your shift has been updated successfully.",
+      });
+      setShowAddEditModal(false);
+      setEditingShift(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update shift. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Delete shift mutation
+  const deleteShiftMutation = useMutation({
+    mutationFn: async (shiftId: string) => {
+      const res = await apiRequest('DELETE', `/api/shifts/${shiftId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+      toast({
+        title: "Shift deleted",
+        description: "Shift has been deleted successfully.",
+      });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to create shift. Please try again.",
+        description: "Failed to delete shift. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  const calendarEvents: CalendarEvent[] = useMemo(() => {
-    return shifts.map(shift => ({
-      id: shift.id,
-      date: shift.date,
-      type: 'shift' as const,
-      completed: shift.completed
-    }));
-  }, [shifts]);
-
-  const dayShifts = useMemo(() => {
-    return shifts.filter(shift => shift.date === selectedDate);
-  }, [shifts, selectedDate]);
-
-  const upcomingShifts = useMemo(() => {
-    const today = new Date();
-    const next7Days = new Date(today);
-    next7Days.setDate(today.getDate() + 7);
-    
-    return shifts
-      .filter(shift => {
-        const shiftDate = new Date(shift.date);
-        return shiftDate >= today && shiftDate <= next7Days && !shift.completed;
-      })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .slice(0, 5);
-  }, [shifts]);
-
-  const nextThreeShifts = useMemo(() => {
-    const today = new Date();
-    const nextMonth = new Date(today);
-    nextMonth.setDate(today.getDate() + 30);
-    
-    return shifts
-      .filter(shift => {
-        const shiftDate = new Date(shift.date);
-        return shiftDate >= today && shiftDate <= nextMonth && !shift.completed;
-      })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .slice(0, 3);
-  }, [shifts]);
-
-  const handleDayClick = (date: string) => {
+  // Event handlers
+  const handleDateSelect = (date: string) => {
     setSelectedDate(date);
-    setShowDayDetail(true);
   };
-
-  const handleConfirmShift = (shiftId: string, updates: { actualStart: string; actualEnd: string }) => {
-    confirmShiftMutation.mutate({ shiftId, updates });
+  
+  
+  const handleAddShift = (date?: string) => {
+    setEditingShift(null);
+    if (date) {
+      setSelectedDate(date);
+    }
+    setShowAddEditModal(true);
   };
-
-  const handleCreateShift = (shiftData: Omit<Shift, 'id'>) => {
-    createShiftMutation.mutate(shiftData);
+  
+  const handleEditShift = (shift: any) => {
+    setEditingShift(shift);
+    setShowAddEditModal(true);
   };
-
-  const handleAddShiftToDay = () => {
-    setShowDayDetail(false);
-    setShowShiftForm(true);
-  };
-
-  const formatShiftDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
+  
+  // Convert 12-hour time format to 24-hour format
+  const convertTo24Hour = (time12h: string): string => {
+    // If already in 24-hour format and matches HH:mm pattern, return as-is
+    if (!time12h.includes('AM') && !time12h.includes('PM')) {
+      // Ensure it's properly formatted as HH:mm
+      const [hours, minutes] = time12h.split(':');
+      return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+    }
     
-    if (date.toDateString() === today.toDateString()) {
-      return "Today";
-    } else if (date.toDateString() === tomorrow.toDateString()) {
-      return "Tomorrow";
+    const [time, modifier] = time12h.split(' ');
+    let [hours, minutes] = time.split(':');
+    const hour = parseInt(hours, 10);
+    
+    if (modifier === 'AM') {
+      if (hour === 12) {
+        hours = '00';
+      } else {
+        hours = hour.toString();
+      }
+    } else if (modifier === 'PM') {
+      if (hour !== 12) {
+        hours = (hour + 12).toString();
+      } else {
+        hours = '12';
+      }
+    }
+    
+    return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+  };
+
+  const handleShiftSubmit = (shiftData: any) => {
+    // Convert times to 24-hour format before sending to backend
+    const convertedData = {
+      ...shiftData,
+      start: convertTo24Hour(shiftData.start),
+      end: convertTo24Hour(shiftData.end)
+    };
+    
+    console.log('Frontend: Original shiftData:', shiftData);
+    console.log('Frontend: Converted data:', convertedData);
+    
+    if (editingShift) {
+      console.log('Frontend: Updating shift with:', { id: editingShift.id, ...convertedData });
+      updateShiftMutation.mutate({ id: editingShift.id, ...convertedData });
     } else {
-      return date.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        month: 'short', 
-        day: 'numeric' 
-      });
+      createShiftMutation.mutate(convertedData);
     }
   };
+  
+  const handleShiftDelete = (shiftId: string) => {
+    if (confirm('Are you sure you want to delete this shift?')) {
+      deleteShiftMutation.mutate(shiftId);
+    }
+  };
+  
+  const dayShifts = useMemo(() => {
+    return shifts.filter(shift => shift.localDate === selectedDate);
+  }, [shifts, selectedDate]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return; // Don't interfere with form inputs
+      }
+      
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          const prevDate = new Date(selectedDate);
+          prevDate.setDate(prevDate.getDate() - 1);
+          setSelectedDate(prevDate.toISOString().split('T')[0]);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          const nextDate = new Date(selectedDate);
+          nextDate.setDate(nextDate.getDate() + 1);
+          setSelectedDate(nextDate.toISOString().split('T')[0]);
+          break;
+        case 'Enter':
+          e.preventDefault();
+          handleAddShift(selectedDate);
+          break;
+        case 'Escape':
+          if (showAddEditModal) {
+            setShowAddEditModal(false);
+            setEditingShift(null);
+          }
+          break;
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selectedDate, showAddEditModal]);
 
   if (isLoading) {
     return <PageLoader text="Loading calendar..." />;
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-gray-50">
       <AppHeader 
         title="Calendar"
         subtitle="View and manage your shift schedule"
         actions={
-          <CalendarWeekToggle 
-            isWeekView={isWeekView}
-            onToggle={setIsWeekView}
-          />
-        }
-      />
-
-      {/* Upcoming Shifts Section */}
-      {upcomingShifts.length > 0 && (
-        <div className="lg:px-8 px-4 pt-6 pb-0">
-          <div 
-            className="flex items-center justify-between cursor-pointer mb-4"
-            onClick={() => setShowUpcoming(!showUpcoming)}
-            data-testid="button-toggle-upcoming"
+          <Button 
+            onClick={() => handleAddShift()}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            data-testid="button-add-shift"
           >
-            <h2 className="text-xl font-semibold text-gray-900">Upcoming Shifts</h2>
-            <ChevronUp 
-              className={`w-5 h-5 text-gray-500 transition-transform ${
-                showUpcoming ? 'rotate-0' : 'rotate-180'
-              }`}
-            />
-          </div>
-          
-          {showUpcoming && (
-            <div className="space-y-3 mb-6">
-              {upcomingShifts.map((shift) => {
-                const contract = contracts.find(c => c.id === shift.contractId);
-                
-                return (
-                  <div 
-                    key={shift.id} 
-                    className="bg-rose-50 border border-rose-200 rounded-lg p-4 cursor-pointer hover:bg-rose-100 transition-colors"
-                    onClick={() => handleDayClick(shift.date)}
-                    data-testid={`upcoming-shift-${shift.id}`}
-                  >
-                    <div className="grid grid-cols-3 items-center">
-                      <div className="flex items-center space-x-3">
-                        <div className="text-sm font-medium text-gray-900">
-                          {formatShiftDate(shift.date)}
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-col items-center">
-                        <div className="flex items-center space-x-2 text-sm text-gray-700">
-                          <MapPin className="w-4 h-4" />
-                          <span className="font-medium">{shift.facility}</span>
-                        </div>
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
-                          <Clock className="w-4 h-4" />
-                          <span>{shift.start} - {shift.end}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-end">
-                        <span className="text-sm font-medium text-gray-600 bg-white px-3 py-1 rounded-full border">
-                          {shift.role}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Add Shift Button */}
-      <div className="lg:px-8 px-4 pt-6 pb-0">
-        <div className="mb-6 text-center">
-          <Button onClick={() => setShowShiftForm(true)} data-testid="button-add-shift" className="px-8">
             <Plus className="w-4 h-4 mr-2" />
             Add Shift
           </Button>
-        </div>
-      </div>
-
-      <div className="lg:px-8 px-4 py-6">
-        {!isWeekView ? (
-          <CalendarMonth
-            currentDate={currentDate}
-            events={calendarEvents}
-            onDateChange={setCurrentDate}
-            onDayClick={handleDayClick}
-            upcomingShifts={nextThreeShifts}
-          />
-        ) : (
-          <CalendarWeekView
-            currentDate={currentDate}
-            events={calendarEvents}
-            onDateChange={setCurrentDate}
-            onDayClick={handleDayClick}
-          />
-        )}
-      </div>
-
-      <DayDetailDrawer
-        isOpen={showDayDetail}
-        onClose={() => setShowDayDetail(false)}
-        selectedDate={selectedDate}
-        shifts={dayShifts}
-        onConfirmShift={handleConfirmShift}
-        onAddShift={handleAddShiftToDay}
+        }
       />
 
-      <ShiftForm
-        isOpen={showShiftForm}
-        onClose={() => setShowShiftForm(false)}
-        onSubmit={handleCreateShift}
+      <div className="container mx-auto px-4 py-6">
+        {/* Upcoming Shifts */}
+        <UpcomingShiftsList 
+          shifts={upcomingShifts}
+          onShiftClick={handleEditShift}
+        />
+
+        {/* Calendar Month View */}
+        <CalendarMonthView
+          selectedDate={selectedDate}
+          shifts={shifts}
+          contracts={contracts}
+          onDateSelect={handleDateSelect}
+          onAddShift={handleAddShift}
+          onEditShift={handleEditShift}
+          dayShifts={dayShifts}
+        />
+      </div>
+
+      {/* Add/Edit Shift Modal */}
+      <AddEditShiftModal
+        isOpen={showAddEditModal}
+        onClose={() => {
+          setShowAddEditModal(false);
+          setEditingShift(null);
+        }}
+        onSubmit={handleShiftSubmit}
+        onDelete={handleShiftDelete}
+        editingShift={editingShift}
         contracts={contracts}
-        defaultDate={selectedDate || undefined}
+        selectedDate={selectedDate}
+        isSubmitting={createShiftMutation.isPending || updateShiftMutation.isPending}
       />
-    </>
+    </div>
   );
 }

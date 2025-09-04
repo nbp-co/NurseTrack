@@ -185,9 +185,26 @@ export function ContractCard({ contract, onEdit, onDelete, onViewDetails, shifts
 
           <div className="flex space-x-1 justify-between">
             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day, index) => {
-              // For now, show typical working days as active (Mon-Fri with 7A-7P schedule)
-              const isWorkDay = index >= 1 && index <= 5; // Mon through Fri
-              const timeRange = isWorkDay ? "7A-7P" : "";
+              // Check if this day is enabled in the actual contract schedule
+              const scheduleData = contract.scheduleData || [];
+              const daySchedule = scheduleData.find(s => s.weekday === index);
+              const isWorkDay = daySchedule?.enabled || false;
+              
+              // Format time range if available
+              let timeRange = "";
+              if (isWorkDay && daySchedule) {
+                const startTime = daySchedule.startLocal || contract.defaultStart || "07:00";
+                const endTime = daySchedule.endLocal || contract.defaultEnd || "19:00";
+                // Convert 24h to 12h format for display
+                const formatTime = (time: string) => {
+                  const [hours, minutes] = time.split(':');
+                  const hour = parseInt(hours);
+                  const ampm = hour >= 12 ? 'P' : 'A';
+                  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+                  return `${displayHour}${ampm}`;
+                };
+                timeRange = `${formatTime(startTime)}-${formatTime(endTime)}`;
+              }
               
               return (
                 <div
@@ -205,7 +222,7 @@ export function ContractCard({ contract, onEdit, onDelete, onViewDetails, shifts
                     {day}
                   </span>
                   <div className="mt-1 text-center">
-                    {isWorkDay && (
+                    {isWorkDay && timeRange && (
                       <span className="text-xs font-medium px-1 py-0.5 rounded-full border text-gray-700 bg-white border-blue-200">
                         {timeRange}
                       </span>
