@@ -172,6 +172,7 @@ export const scheduleConfigSchema = z.object({
 export const createContractRequestSchema = z.object({
   name: z.string().min(1),
   facility: z.string().optional(),
+  status: z.enum(["active", "unconfirmed", "completed", "archive"]).optional(),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),   // YYYY-MM-DD
   baseRate: z.string().min(1),
@@ -192,6 +193,7 @@ export const createContractRequestSchema = z.object({
 export const updateContractRequestSchema = z.object({
   name: z.string().min(1).optional(),
   facility: z.string().optional(),
+  status: z.enum(["active", "unconfirmed", "completed", "archive"]).optional(),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // YYYY-MM-DD
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),   // YYYY-MM-DD
   baseRate: z.string().optional(),
