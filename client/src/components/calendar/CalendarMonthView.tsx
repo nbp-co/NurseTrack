@@ -289,18 +289,22 @@ export function CalendarMonthView({
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span>{formatDate(selectedDate)}</span>
-                <Badge variant="outline" className="text-xs">
-                  {dayShifts.length} shift{dayShifts.length !== 1 ? 's' : ''}
-                </Badge>
+                {dayShifts.length > 0 && (
+                  <Badge variant="outline" className="text-xs">
+                    {dayShifts.length} shift{dayShifts.length !== 1 ? 's' : ''}
+                  </Badge>
+                )}
               </div>
-              <Button 
-                onClick={() => onAddShift(selectedDate)}
-                size="sm"
-                data-testid="button-add-shift-day"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add Shift
-              </Button>
+              {dayShifts.length > 0 && (
+                <Button 
+                  onClick={() => onAddShift(selectedDate)}
+                  size="sm"
+                  data-testid="button-add-shift-day"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Shift
+                </Button>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -338,15 +342,7 @@ export function CalendarMonthView({
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
-                <p className="mb-4">No shifts scheduled for this day</p>
-                <Button 
-                  onClick={() => onAddShift(selectedDate)}
-                  variant="outline"
-                  data-testid="button-add-shift-empty-day"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Shift
-                </Button>
+                <p>No shifts scheduled for this day</p>
               </div>
             )}
           </CardContent>
