@@ -187,18 +187,24 @@ export async function seedShifts(
 
   for (const shift of shiftDates) {
     try {
-      await db.insert(shifts).values({
+      const result = await db.insert(shifts).values({
         userId,
         contractId,
         startUtc: shift.startUtc.toJSDate(),
         endUtc: shift.endUtc.toJSDate(),
         localDate: shift.localDate,
         source: 'contract_seed',
-        status: 'In Process',
+        status: 'scheduled',
       }).onConflictDoNothing({
         target: [shifts.contractId, shifts.localDate, shifts.source]
       });
-      created++;
+      
+      // Check if the insert actually happened
+      if (result.rowCount && result.rowCount > 0) {
+        created++;
+      } else {
+        skipped++;
+      }
     } catch (error) {
       // Conflict - shift already exists
       skipped++;
