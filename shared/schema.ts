@@ -54,6 +54,7 @@ export const shifts = pgTable("shifts", {
   otRate: decimal("ot_rate", { precision: 10, scale: 2 }),
 }, (table) => ({
   contractDateIdx: index("shifts_contract_date_idx").on(table.contractId, table.shiftDate),
+  contractDateSourceUnique: unique("shifts_contract_date_source_unique").on(table.contractId, table.shiftDate, table.source),
 }));
 
 export const expenses = pgTable("expenses", {
