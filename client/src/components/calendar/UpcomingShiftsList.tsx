@@ -23,14 +23,22 @@ export function UpcomingShiftsList({ shifts, onShiftClick }: UpcomingShiftsListP
   const [isExpanded, setIsExpanded] = useState(true);
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+    // Parse date string like "2025-09-06" correctly
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day); // month is 0-indexed
+    
     const today = new Date();
     const tomorrow = new Date();
     tomorrow.setDate(today.getDate() + 1);
     
-    if (date.toDateString() === today.toDateString()) {
+    // Compare just the date parts
+    const dateString = date.toDateString();
+    const todayString = today.toDateString();
+    const tomorrowString = tomorrow.toDateString();
+    
+    if (dateString === todayString) {
       return 'Today';
-    } else if (date.toDateString() === tomorrow.toDateString()) {
+    } else if (dateString === tomorrowString) {
       return 'Tomorrow';
     } else {
       return date.toLocaleDateString('en-US', { 
@@ -41,12 +49,18 @@ export function UpcomingShiftsList({ shifts, onShiftClick }: UpcomingShiftsListP
     }
   };
 
-  const formatTime = (utcDate: string) => {
-    return new Date(utcDate).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
+  const formatTime = (timeString: string) => {
+    // Handle simple time strings like "07:00:00" or "19:00:00"
+    const [hourStr, minuteStr] = timeString.split(':');
+    const hour = parseInt(hourStr, 10);
+    const minute = parseInt(minuteStr, 10);
+    
+    // Convert to 12-hour format
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    const period = hour < 12 ? 'AM' : 'PM';
+    const minuteStr2 = minute.toString().padStart(2, '0');
+    
+    return `${displayHour}:${minuteStr2} ${period}`;
   };
 
   // Filter and sort upcoming shifts (next 7 days, limit 5)
