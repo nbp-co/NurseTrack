@@ -441,6 +441,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(preview);
     } catch (error) {
       console.error('Failed to get schedule preview:', error);
+      
+      // Handle OUT_OF_RANGE error specifically
+      if (error.message === 'OUT_OF_RANGE') {
+        return res.status(409).json({ message: "Date is outside contract range" });
+      }
+      
       res.status(500).json({ message: "Failed to get schedule preview" });
     }
   });

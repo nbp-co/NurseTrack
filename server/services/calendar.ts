@@ -230,7 +230,15 @@ export async function getContractSchedulePreview(
     return null;
   }
   
+  // Validate date is within contract start/end range
   const dateObj = DateTime.fromISO(date);
+  const contractStart = DateTime.fromISO(contract.startDate);
+  const contractEnd = DateTime.fromISO(contract.endDate);
+  
+  if (dateObj < contractStart || dateObj > contractEnd) {
+    throw new Error('OUT_OF_RANGE');
+  }
+  
   const weekday = dateObj.weekday % 7; // Convert to 0=Sunday format
   
   // Get schedule for this weekday

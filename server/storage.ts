@@ -1,7 +1,7 @@
 import { type User, type InsertUser, type Contract, type InsertContract, type Shift, type InsertShift, type Expense, type InsertExpense, type Feedback, type InsertFeedback } from "@shared/schema";
 import { db } from "./db";
 import { users, contracts, shifts, expenses, feedback } from "@shared/schema";
-import { eq, and, gte, lte, desc, sql, isNull } from "drizzle-orm";
+import { eq, and, gte, lte, desc, sql, isNull, or } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -238,6 +238,8 @@ export class DatabaseStorage implements IStorage {
         contractName: contracts.name,
         contractFacility: contracts.facility,
         contractRole: contracts.role,
+        contractTimezone: contracts.timezone,
+        contractBaseRate: contracts.baseRate,
       })
       .from(shifts)
       .leftJoin(contracts, eq(shifts.contractId, contracts.id))
@@ -245,7 +247,12 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(shifts.userId, userId),
           gte(shifts.localDate, fromDate),
-          lte(shifts.localDate, toDate)
+          lte(shifts.localDate, toDate),
+          // Filter for seeded (source='contract_seed') + manual shifts
+          or(
+            eq(shifts.source, 'contract_seed'),
+            eq(shifts.source, 'manual')
+          )
         )
       )
       .orderBy(shifts.startUtc);
@@ -257,11 +264,14 @@ export class DatabaseStorage implements IStorage {
       endUtc: row.endUtc?.toISOString(),
       localDate: row.localDate,
       status: row.status,
+      source: row.source,
       contract: row.contractId ? {
         id: row.contractId,
         name: row.contractName,
         facility: row.contractFacility,
-        role: row.contractRole,
+        timezone: row.contractTimezone,
+        base_rate: row.contractBaseRate,
+        // Note: color field not available in current schema
       } : null
     }));
   }
