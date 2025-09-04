@@ -289,11 +289,6 @@ export function CalendarMonthView({
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span>{formatDate(selectedDate)}</span>
-                {dayShifts.length > 0 && (
-                  <Badge variant="outline" className="text-xs">
-                    {dayShifts.length} shift{dayShifts.length !== 1 ? 's' : ''}
-                  </Badge>
-                )}
               </div>
               {dayShifts.length > 0 && (
                 <Button 
