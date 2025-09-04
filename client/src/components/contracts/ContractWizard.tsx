@@ -373,7 +373,7 @@ export function ContractWizard({ isOpen, onClose, onSubmit, initialData }: Contr
           render={({ field }) => (
             <FormItem>
               <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger data-testid="select-status">
                     <SelectValue placeholder="Select status" />
