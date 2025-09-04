@@ -250,7 +250,7 @@ export default function CalendarPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {nextThreeShifts.map((shift) => {
                   const formatDate = (dateStr: string) => {
                     const date = new Date(dateStr);
@@ -280,20 +280,20 @@ export default function CalendarPage() {
                   };
 
                   return (
-                    <div key={shift.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg" data-testid={`shift-item-${shift.id}`}>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
+                    <div key={shift.id} className="bg-blue-50 border border-blue-200 rounded-lg p-3" data-testid={`shift-item-${shift.id}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
                           <div className="text-sm font-medium text-gray-900">
                             {formatDate(shift.localDate)}
                           </div>
-                          <div className="flex items-center gap-1 text-sm text-gray-600">
+                          <div className="flex items-center gap-1 text-xs text-gray-600">
                             <MapPin className="w-3 h-3" />
                             {shift.facility}
                           </div>
                         </div>
-                        <div className="text-sm text-gray-500 mt-1">
-                          {formatTime(shift.startUtc)} - {formatTime(shift.endUtc)} · {shift.role}
-                        </div>
+                      </div>
+                      <div className="text-sm text-gray-600 mt-1">
+                        {formatTime(shift.startUtc)} - {formatTime(shift.endUtc)}
                       </div>
                     </div>
                   );
